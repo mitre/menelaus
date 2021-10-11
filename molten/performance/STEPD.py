@@ -11,7 +11,7 @@ class STEPD(DriftDetector):
     STEPD is a drift detection algorithm based on a binary classifier's accuracy, intended for an online classifier.
 
     Two windows are defined -- "recent" and "past", with corresponding accuracies p_r and p_p. Roughly, the distribution
-    of their  difference, normalized by the accuracy of the two windows combined, T, is normally distributed.
+    of their absolute difference, normalized by the accuracy of the two windows combined, T, is normally distributed.
     So, this test statistic's p-value P(T) defines the warning and drift regions:
         If p_r < p_p (the classifier's accuracy on recent samples is decreased):
             and P(T) < alpha_warning, the detector's state is set to "warning".
