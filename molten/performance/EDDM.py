@@ -1,6 +1,6 @@
 from molten.DriftDetector import DriftDetector
-# TODO: threshold value defaults, potential reparameterization, etc
-from numpy import sqrt
+import numpy as np
+
 
 class EDDM(DriftDetector):
     """
@@ -28,7 +28,8 @@ class EDDM(DriftDetector):
         Resets when self.drift_state returns to None (no drift nor warning).
 
     """
-    def __init__(self, n_threshold=30, warning_thresh=.95, drift_thresh=.9):
+
+    def __init__(self, n_threshold=30, warning_thresh=0.95, drift_thresh=0.9):
         """
         :param n_threshold: the minimum number of samples required to test whether drift has occurred
         :param warning_thresh: defines the threshold over which to enter the warning state.
@@ -68,7 +69,7 @@ class EDDM(DriftDetector):
         :param y_pred: predicted class
         :param y_true: actual class
         """
-        if self.drift_state == 'drift':
+        if self.drift_state == "drift":
             self.reset()
 
         super().update()
@@ -85,9 +86,11 @@ class EDDM(DriftDetector):
             # calculate an average (updated at each time step), of the distance between two errors:
             #   prior average distance + distance between the most recent two will be the new average
             prev_dist_mean = self.dist_mean
-            self.dist_mean = self.dist_mean + (dist - self.dist_mean)/self._n_errors
-            self.dist_std = self.dist_std + (dist - self.dist_mean)*(dist - prev_dist_mean)
-            self.dist_std = sqrt(self.dist_std / self._n_errors)
+            self.dist_mean = self.dist_mean + (dist - self.dist_mean) / self._n_errors
+            self.dist_std = self.dist_std + (dist - self.dist_mean) * (
+                dist - prev_dist_mean
+            )
+            self.dist_std = np.sqrt(self.dist_std / self._n_errors)
 
             # it's unclear whether the 'burn-in' period should be updating the maximums - seems like a bad idea though.
             if self._n_errors < self.n_threshold:
@@ -121,11 +124,9 @@ class EDDM(DriftDetector):
         [drift index, drift index]. Be cautious, as this indicates an abrupt change.
         """
         if self.drift_state == "warning" and self.retraining_recs[0] is None:
-            self.retraining_recs[0] = (self.total_samples - 1)
+            self.retraining_recs[0] = self.total_samples - 1
 
-        if self.drift_state == 'drift':
-            self.retraining_recs[1] = (self.total_samples - 1)
+        if self.drift_state == "drift":
+            self.retraining_recs[1] = self.total_samples - 1
             if self.retraining_recs[0] is None:
-                self.retraining_recs[0] = (self.total_samples - 1)
-
-
+                self.retraining_recs[0] = self.total_samples - 1

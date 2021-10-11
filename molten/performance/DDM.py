@@ -1,7 +1,6 @@
 from molten.DriftDetector import DriftDetector
-from numpy import sqrt
-#TODO: docstrings
-#TODO: set up buffer/retraining_recs as in STEPD/ADWIN when this enters the warning region
+import numpy as np
+
 
 class DDM(DriftDetector):
     """
@@ -39,8 +38,8 @@ class DDM(DriftDetector):
 
         self._error_rate = 0
         self._error_std = 0
-        self._error_rate_min = float('inf')
-        self._error_std_min = float('inf')
+        self._error_rate_min = float("inf")
+        self._error_std_min = float("inf")
         self._initialize_retraining_recs()
 
     def reset(self):
@@ -51,8 +50,8 @@ class DDM(DriftDetector):
         super().reset()
         self._error_rate = 0
         self._error_std = 0
-        self._error_rate_min = float('inf')
-        self._error_std_min = float('inf')
+        self._error_rate_min = float("inf")
+        self._error_std_min = float("inf")
         self._initialize_retraining_recs()
 
     def update(self, y_pred, y_true):
@@ -61,7 +60,7 @@ class DDM(DriftDetector):
         :param y_pred: predicted class
         :param y_true: actual class
         """
-        if self.drift_state == 'drift':
+        if self.drift_state == "drift":
             self.reset()
 
         super().update()
@@ -69,21 +68,34 @@ class DDM(DriftDetector):
 
         # with each sample, update estimate of error and its std, along with minimums
         error_rate_prev = self._error_rate
-        self._error_rate = self._error_rate + (classifier_result - self._error_rate)/self.n
-        self._error_std = self._error_std + (classifier_result - self._error_rate)*(classifier_result - error_rate_prev)
-        self._error_std = sqrt(self._error_std / self.n)
+        self._error_rate = (
+            self._error_rate + (classifier_result - self._error_rate) / self.n
+        )
+        self._error_std = self._error_std + (classifier_result - self._error_rate) * (
+            classifier_result - error_rate_prev
+        )
+        self._error_std = np.sqrt(self._error_std / self.n)
 
         # it's unclear whether the 'burn-in' period should be updating the minimums - seems like a bad idea though.
         if self.n < self.n_threshold:
             return
 
-        if self._error_rate + self._error_std <= self._error_rate_min + self._error_std_min:
+        if (
+            self._error_rate + self._error_std
+            <= self._error_rate_min + self._error_std_min
+        ):
             self._error_rate_min = self._error_rate
             self._error_std_min = self._error_std
 
-        if self._error_rate + self._error_std >= self._error_rate_min + self.drift_scale * self._error_std:
+        if (
+            self._error_rate + self._error_std
+            >= self._error_rate_min + self.drift_scale * self._error_std
+        ):
             self.drift_state = "drift"
-        elif self._error_rate + self._error_std >= self._error_rate_min + self.warning_scale * self._error_std:
+        elif (
+            self._error_rate + self._error_std
+            >= self._error_rate_min + self.warning_scale * self._error_std
+        ):
             self.drift_state = "warning"
         else:
             self.drift_state = None
@@ -100,10 +112,9 @@ class DDM(DriftDetector):
         [drift index, drift index]. Be cautious, as this indicates an abrupt change.
         """
         if self.drift_state == "warning" and self.retraining_recs[0] is None:
-            self.retraining_recs[0] = (self.total_samples - 1)
+            self.retraining_recs[0] = self.total_samples - 1
 
-        if self.drift_state == 'drift':
-            self.retraining_recs[1] = (self.total_samples - 1)
+        if self.drift_state == "drift":
+            self.retraining_recs[1] = self.total_samples - 1
             if self.retraining_recs[0] is None:
-                self.retraining_recs[0] = (self.total_samples - 1)
-
+                self.retraining_recs[0] = self.total_samples - 1
