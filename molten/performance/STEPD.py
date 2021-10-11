@@ -1,9 +1,10 @@
 from molten.DriftDetector import DriftDetector
-from numpy import absolute, sqrt
-from scipy.stats import norm
+import numpy as np
+import scipy.stats
 
-#TODO: replace self._window with a numpy array
-#TODO: replace self.retraining_recs with a numpy array
+# TODO: replace self._window with a numpy array - test efficiency
+# TODO: replace self.retraining_recs with a numpy array - test efficiency
+
 
 class STEPD(DriftDetector):
     """
@@ -35,13 +36,14 @@ class STEPD(DriftDetector):
         Resets when self.drift_state returns to None (no drift nor warning).
 
     """
-    def __init__(self, window_size=30, alpha_warning=.05, alpha_drift=.003):
+
+    def __init__(self, window_size=30, alpha_warning=0.05, alpha_drift=0.003):
         """
         :param window_size: the size of the "recent" window
         :param alpha_warning: defines the threshold over which to enter the warning state.
         :param alpha_drift: defines the threshold over which to enter the drift state.
         """
-        #TODO: probably wants the property decorator on a bunch of these
+        # TODO: probably wants the property decorator on a bunch of these
         super().__init__()
         self.window_size = window_size
         self.alpha_warning = alpha_warning
@@ -70,7 +72,7 @@ class STEPD(DriftDetector):
         :param y_pred: predicted class
         :param y_true: actual class
         """
-        if self.drift_state == 'drift':
+        if self.drift_state == "drift":
             self.reset()
             self._initialize_retraining_recs()
 
@@ -86,19 +88,21 @@ class STEPD(DriftDetector):
             self._r += self._window[0]
             self._window = self._window[1:]
 
-        if self.n >= 2*self.window_size:
+        if self.n >= 2 * self.window_size:
             recent_accuracy = self.recent_accuracy()
             past_accuracy = self.past_accuracy()
             overall_accuracy = self.overall_accuracy()
-            self._test_statistic = ((absolute(past_accuracy - recent_accuracy) -
-                              .5 * ((1/(self.n - self.window_size)) + (1/self.window_size))
-                               ) /
-                              sqrt(overall_accuracy *
-                                   (1 - overall_accuracy) *
-                                   ((1/(self.n - self.window_size)) + (1/self.window_size))
-                                   )
-                             )
-            self._test_p = 1 - norm.cdf(self._test_statistic, 0, 1) #one-sided test
+            self._test_statistic = (
+                np.absolute(past_accuracy - recent_accuracy)
+                - 0.5 * ((1 / (self.n - self.window_size)) + (1 / self.window_size))
+            ) / np.sqrt(
+                overall_accuracy
+                * (1 - overall_accuracy)
+                * ((1 / (self.n - self.window_size)) + (1 / self.window_size))
+            )
+            self._test_p = 1 - scipy.stats.norm.cdf(
+                self._test_statistic, 0, 1
+            )  # one-sided test
 
             accuracy_decreased = past_accuracy > recent_accuracy
             if accuracy_decreased and self._test_p < self.alpha_drift:
@@ -149,6 +153,9 @@ class STEPD(DriftDetector):
 
     def _increment_retraining_recs(self):
         if self.retraining_recs[0] is None:
-            self.retraining_recs[0], self.retraining_recs[1] = self.total_samples, self.total_samples
+            self.retraining_recs[0], self.retraining_recs[1] = (
+                self.total_samples,
+                self.total_samples,
+            )
         else:
             self.retraining_recs[1] += 1
