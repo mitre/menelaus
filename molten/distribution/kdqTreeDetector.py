@@ -4,6 +4,8 @@ TODO:
 - Sliding windows: This implementation only uses fixed method
     1. Adjacent - windows are right next to one another
     2. Fixed - One window is fixed, other slides
+- window_size: the high-level presentation of the algorithm presents the reference window as size 2n, and test as size n.
+    current implementation has them of both size n.
 - "minimal" class for next_obs needs to be determined - takes dataframe now, might be better to take a numpy array without columns instead?
     the internal trackers (self.drift_tracker, self.drift_location) are currently necessary for the two visualization methods.
         may want to refactor s.t. they're unnecessary or captured externally, with a visualization utility separately?
@@ -13,15 +15,6 @@ TODO:
     number of points/minimum side length -- seems like? we only use the former criterion, hard-coded at 200 points. May
     want to make that a parameter, if nothing else. Because it isn't parameterized, it's not in the current class docstring.
     kdqTree stops splits after minimum points in the cell is reached. Minimum side lengths is not used.
-- Seems as though the bootstrapping ought to be using samples from the test and reference window, but we only use the reference
-    window below. Dasu specifically notes: "given the empirical distributions Phat derived from the counts P, we sample k sets
-    S_1, ... S_k, each of size 2n. Treating the first n elements S_i1 coming from one distribution F and the remaining n
-    elements S_i2 = S_i - S_i1 as coming from distribution g, we [compute the divergence]." This is written oddly, as if
-    we're doing bootstrapping on a single distribution, even though the empircical distributions are plural.. and the distinction
-    between distributions is made using the order of sampling!
-    If I were to be opinionated about it, it seems like we should have these bootstrapped samples coming from
-    self.window_data['reference'] and self.window_data['test'] separately, sampling k sets of size n for each (total 2n),
-    and then the divergence metric is calculated using those PMFs.
 - kmcnamara noted "retraining of trees should take on order of seconds, not minutes." We may have some room for optimization
 - can we maintain K-L divergence and Kulldorff statistic as the tree is reconstructed and save on time?
 
@@ -37,25 +30,25 @@ import matplotlib.pyplot as plt
 class kdqTreeDetector(DriftDetector):
     """
     kdqTree is a drift detection algorithm which detects drift via the Kullback-Leibler divergence, calculated after
-    partitioning the data space via constructing a k-d-quad-tree (kdq-tree).
+    partitioning the data space via constructing a k-d-quad-tree (kdq-tree). A reference window of initial data is
+    compared to a test window of later data. The Kullback-Leibler divergence between the empirical distributions of the
+    reference and test windows is calculated, and drift is alarmed when a threshold is reached.
 
-    A reference window of initial data is compared to a test window of later data, of some size. The Kullback-Leibler
-    divergence between the empirical distributions of the reference and test windows is calculated, and drift is
-    alarmed when a threshold is reached, typically defined by an alpha level of 0.05, using bootstrap estimates. Each
-    #################################################################
-        bootstrap estimate is constructed by drawing num_bootstrap_samples, 2*window_size times, from the reference window.
-        # this is not what is described in Kodie's notes, which say window_size times from both test and reference (I
-        #think). We may need to modify the bootstrapping code.
-    #################################################################
+    A kdqtree is a combination of k-d trees and quad-trees; it is a binary tree (k-d) whose nodes contain square cells
+    (quad) which are created via sequential splits along each dimension. This structure allows the calculation of the
+    K-L divergence for continuous distributions, as the K-L divergence is defined on probability mass functions.
+    The reference window is used to construct a kdq-tree via theory of types, and the data in both the reference and
+    test window are binned into this kdq-tree. The K-L divergence can then be calculated between the two windows.
 
-    As the K-L divergence is defined using probability mass functions, continuous distributions are mapped onto a
-    kdq-tree via theory of types. A kdqtree is a combination of k-d trees and quad-trees; it is a binary tree (k-d)
-    whose nodes contain square cells (quad) which are created via sequential splits along each dimension.
+    The threshold for drift is determined using the desired alpha level, by a bootstrap estimate for the critical
+    value of the K-L divergence, drawing num_bootstrap_samples samples, 2*window_size times, from the reference window.
 
     Additionally, the Kulldorff spatial scan statistic, which is a special case of the KL-divergence, can be calculated
     at each node of the kdq-tree, which gives a measure of the regions of the data space which have the greatest
-    difference between the reference and test windows. Note that these statistics are specific to the partitions of the
-    data space by the kdq-tree, rather than (necessarily) the maximally different region in general.
+    divergence between the reference and test windows. This can be used to visualize which regions of data space have
+    the greatest drift, implemented as kdqTreeDetector.drift_visualization. Note that these statistics are specific to
+    the partitions of the data space by the kdq-tree, rather than (necessarily) the maximally different region in
+    general.
 
     Note also that this algorithm could be used with other types of trees; the reference paper and this implementation
     use kdq-trees.
@@ -162,6 +155,7 @@ class kdqTreeDetector(DriftDetector):
                     )
 
                     # Build bootstrap samples from the reference window
+                    # These are used to define the critical region for the divergence metric, given the desired alpha.
                     bootstrap_samples = self._bootstrapping(
                         self.window_data["reference"]["bin"].tolist(),
                         2 * self._window_size,
