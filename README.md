@@ -1,5 +1,4 @@
 # Notes on use
-- for now, pip install -e . will resolve the references, before running examples/Testing Vignette.ipynb
 - need to make some decisions about setup.py, probably
 - packages:
     - jupyter matplotlib pandas numpy sklearn statistics plotly scipy
