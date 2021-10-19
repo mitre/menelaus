@@ -1,17 +1,9 @@
-'''
+"""
 TODO:
-- standardizing data as it comes in
-    right now the user preprocesses the data themselves (e.g. sklearn.StandardScaler)
-    we might want to standardize within this class using the reference window, esp. for the online setting
-    need to look at the pca transform functions; if they're orthonormal, do we need to standardize first?
-- fit(), track_state, and other convenience methods? do we want to implement similar elsewhere?
-    verbose causes prints bad output when fit() is not used
-- ensure update() is compatible with e.g. a numpy array
-
-memory issues?
-- stores at most 2*window_size samples in the test and reference windows
-- drift_tracker can potentially grow indefinitely, so added track_state to turn it on/off
-'''
+- verbose prints bad output when fit() is not used
+- ensure update() is compatible with e.g. a numpy array(?)
+- .05 for self.step should be a parameter
+"""
 
 from sklearn.decomposition import PCA
 from molten.DriftDetector import DriftDetector
@@ -20,6 +12,7 @@ from molten.other.PageHinkley import PageHinkley
 import statistics
 import numpy as np
 import pandas as pd
+
 
 class PCA_CD(DriftDetector):
     """
@@ -40,7 +33,15 @@ class PCA_CD(DriftDetector):
     935-44. https://doi.org/10.1145/2783258.2783359
     """
 
-    def __init__(self, window_size, ev_threshold=0.99, delta=.1, divergence_metric="kl", track_state=False, verbose=False):
+    def __init__(
+        self,
+        window_size,
+        ev_threshold=0.99,
+        delta=0.1,
+        divergence_metric="kl",
+        track_state=False,
+        verbose=False,
+    ):
         """
 
         :param window_size: size of the reference window. Note that PCA_CD will only try to detect drift periodically,
@@ -67,7 +68,9 @@ class PCA_CD(DriftDetector):
 
         self.delta = delta
 
-        self._drift_detection_monitor = PageHinkley(delta=self.delta, xi=self.xi, burn_in = 0)
+        self._drift_detection_monitor = PageHinkley(
+            delta=self.delta, xi=self.xi, burn_in=0
+        )
         if self.track_state:
             self._drift_tracker = pd.DataFrame()
 
@@ -81,13 +84,6 @@ class PCA_CD(DriftDetector):
         self._test_pca_projection = pd.DataFrame()
         self._kde_track_reference = {}
         self._kde_track_test = {}
-
-    #TODO: remove. is to be a convenience method, i.e. run PCA_CD on whatever dataframe it gets, till the end. at least should rename
-    #specific use case might be 'training' the detector on its initial reference window before letting it run online
-    #may want to rename this.
-    # def fit(self, data):
-    #     for i in range(len(data)):
-    #         self.update(data.iloc[[i]])
 
     def update(self, next_obs):
         """
@@ -127,24 +123,32 @@ class PCA_CD(DriftDetector):
                 self._pca = PCA(self.num_pcs)
                 self._pca.fit(self._reference_window)
 
-                self._reference_pca_projection = pd.DataFrame(self._pca.transform(self._reference_window),
-                                              columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
-                                              index=self._reference_window.index)
+                self._reference_pca_projection = pd.DataFrame(
+                    self._pca.transform(self._reference_window),
+                    columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
+                    index=self._reference_window.index,
+                )
 
                 # Compute reference distribution
                 for i in range(self.num_pcs):
-                    self._kde_track_reference[f'PC{i+1}'] = self._build_kde_track(self._reference_pca_projection.iloc[:, i])
+                    self._kde_track_reference[f"PC{i+1}"] = self._build_kde_track(
+                        self._reference_pca_projection.iloc[:, i]
+                    )
 
                 # Project test window onto PCs
                 self._pca.fit(self._test_window)
 
-                self._test_pca_projection = pd.DataFrame(self._pca.transform(self._test_window),
-                                              columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
-                                              index=self._test_window.index)
+                self._test_pca_projection = pd.DataFrame(
+                    self._pca.transform(self._test_window),
+                    columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
+                    index=self._test_window.index,
+                )
 
                 # Compute test distribution
                 for i in range(self.num_pcs):
-                    self._kde_track_test[f'PC{i+1}'] = self._build_kde_track(self._test_pca_projection.iloc[:, i])
+                    self._kde_track_test[f"PC{i+1}"] = self._build_kde_track(
+                        self._test_pca_projection.iloc[:, i]
+                    )
 
         else:
 
@@ -154,15 +158,20 @@ class PCA_CD(DriftDetector):
             self._pca.fit(self._test_window)
 
             self._test_pca_projection = self._test_pca_projection.iloc[1:, :].append(
-                pd.DataFrame(self._pca.transform(self._test_window),
-                             columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
-                             index=self._test_window.index).iloc[[-1]])
+                pd.DataFrame(
+                    self._pca.transform(self._test_window),
+                    columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
+                    index=self._test_window.index,
+                ).iloc[[-1]]
+            )
 
             # Compute test distribution
             # @TODO This currently rebuilds the KDETrack. Unsure if it should be updated instead?
             self._kde_track_test = {}
             for i in range(self.num_pcs):
-                self._kde_track_test[f'PC{i+1}'] = self._build_kde_track(self._test_pca_projection.iloc[:, i])
+                self._kde_track_test[f"PC{i+1}"] = self._build_kde_track(
+                    self._test_pca_projection.iloc[:, i]
+                )
 
             # Compute change score
             if (self.total_samples % self.step) == 0 and self.total_samples != 0:
@@ -173,43 +182,81 @@ class PCA_CD(DriftDetector):
                 change_scores = []
                 if self.divergence_metric == "kl":
                     for i in range(self.num_pcs):
-                        change_scores.append(max(
-                            kl_divergence(self._kde_track_reference[f'PC{i+1}']["kde_estimate"]["density"],
-                                          self._kde_track_test[f'PC{i+1}']["kde_estimate"]["density"], type="discrete"),
-                            kl_divergence(self._kde_track_test[f'PC{i+1}']["kde_estimate"]["density"],
-                                          self._kde_track_reference[f'PC{i+1}']["kde_estimate"]["density"], type="discrete")
-                        ))
+                        change_scores.append(
+                            max(
+                                kl_divergence(
+                                    self._kde_track_reference[f"PC{i+1}"][
+                                        "kde_estimate"
+                                    ]["density"],
+                                    self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
+                                        "density"
+                                    ],
+                                    type="discrete",
+                                ),
+                                kl_divergence(
+                                    self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
+                                        "density"
+                                    ],
+                                    self._kde_track_reference[f"PC{i+1}"][
+                                        "kde_estimate"
+                                    ]["density"],
+                                    type="discrete",
+                                ),
+                            )
+                        )
 
                 elif self.divergence_metric == "intersection":
                     for i in range(self.num_pcs):
                         change_scores.append(
-                            self._intersection_area(self._kde_track_reference[f'PC{i+1}']["kde_estimate"]["density"],
-                                             self._kde_track_test[f'PC{i+1}']["kde_estimate"]["density"])
+                            self._intersection_area(
+                                self._kde_track_reference[f"PC{i+1}"]["kde_estimate"][
+                                    "density"
+                                ],
+                                self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
+                                    "density"
+                                ],
+                            )
                         )
 
                 elif self.divergence_metric == "llh":
                     for i in range(self.num_pcs):
                         change_scores.append(
-                            self._log_likelihood(self._kde_track_reference[f'PC{i+1}']["kde_estimate"]["point"],
-                                          self._kde_track_test[f'PC{i+1}']["kde_estimate"]["point"])
+                            self._log_likelihood(
+                                self._kde_track_reference[f"PC{i+1}"]["kde_estimate"][
+                                    "point"
+                                ],
+                                self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
+                                    "point"
+                                ],
+                            )
                         )
 
                 change_score = max(change_scores)
                 if self.verbose:
                     print(f"Change score: {change_score}")
 
-                self._drift_detection_monitor.update(next_obs=change_score, obs_id=next_obs.index.values[0])
+                self._drift_detection_monitor.update(
+                    next_obs=change_score, obs_id=next_obs.index.values[0]
+                )
 
                 if self._drift_detection_monitor.drift_state is not None:
                     self._build_reference_and_test = True
-                    self.drift_state = 'drift'
+                    self.drift_state = "drift"
                     if self.track_state:
-                        self._drift_tracker = self._drift_tracker.append(self._drift_detection_monitor.to_dataframe())
+                        self._drift_tracker = self._drift_tracker.append(
+                            self._drift_detection_monitor.to_dataframe()
+                        )
 
                 if self.verbose:
-                    print(f"Page Hinkley value: {self._drift_detection_monitor.page_hinkley_values[-1]}")
-                    print(f"Difference value: {self._drift_detection_monitor.page_hinkley_differences[-1]}")
-                    print(f"Theta (threshold) value: {self._drift_detection_monitor.theta_threshold[-1]}")
+                    print(
+                        f"Page Hinkley value: {self._drift_detection_monitor.page_hinkley_values[-1]}"
+                    )
+                    print(
+                        f"Difference value: {self._drift_detection_monitor.page_hinkley_differences[-1]}"
+                    )
+                    print(
+                        f"Theta (threshold) value: {self._drift_detection_monitor.theta_threshold[-1]}"
+                    )
 
         super().update()
 
@@ -222,10 +269,10 @@ class PCA_CD(DriftDetector):
         :return: Epanechnikov kernel value for x_j.
         """
         if approx_zero:
-            const = 10**(-6)
+            const = 10 ** (-6)
         else:
             const = 0
-        return [const if (x_j<0 or x_j>1) else (3/4) * (1-(x_j**2))][0]
+        return [const if (x_j < 0 or x_j > 1) else (3 / 4) * (1 - (x_j ** 2))][0]
 
     def _log_likelihood(self, p, q):
         """
@@ -236,9 +283,33 @@ class PCA_CD(DriftDetector):
         """
         m = len(p)
         bandwidth = 1.06 * statistics.stdev(q) * (m ** (-1 / 5))
-        LLH_q = sum([np.log(sum([(1 / m) * self._epanechnikov_kernel((y - x)/bandwidth) for x in p])) for y in q])
-        LLH_p = sum([np.log(sum([(1 / m) * self._epanechnikov_kernel((y - x) / bandwidth) for x in p])) for y in p])
-        divergence = abs((LLH_q/len(q)) - (LLH_p/len(p)))
+        LLH_q = sum(
+            [
+                np.log(
+                    sum(
+                        [
+                            (1 / m) * self._epanechnikov_kernel((y - x) / bandwidth)
+                            for x in p
+                        ]
+                    )
+                )
+                for y in q
+            ]
+        )
+        LLH_p = sum(
+            [
+                np.log(
+                    sum(
+                        [
+                            (1 / m) * self._epanechnikov_kernel((y - x) / bandwidth)
+                            for x in p
+                        ]
+                    )
+                )
+                for y in p
+            ]
+        )
+        divergence = abs((LLH_q / len(q)) - (LLH_p / len(p)))
 
         return divergence
 
@@ -249,7 +320,7 @@ class PCA_CD(DriftDetector):
         :param: q (list): List of values from second distribution
         :return: Intersection area
         """
-        divergence = (1/2)*sum([abs(x - y) for x, y in zip(p, q)])
+        divergence = (1 / 2) * sum([abs(x - y) for x, y in zip(p, q)])
 
         return divergence
 
@@ -259,12 +330,14 @@ class PCA_CD(DriftDetector):
         :return: Bandwidth and dictionary of resampling points
         """
         m = len(X)
-        bandwidth = 1.06 * statistics.stdev(X) * (m**(-1/5))
-        density = [(1/(m*bandwidth)) * sum([self._epanechnikov_kernel((x - x_j)/bandwidth) for x_j in X]) for x in X]
+        bandwidth = 1.06 * statistics.stdev(X) * (m ** (-1 / 5))
+        density = [
+            (1 / (m * bandwidth))
+            * sum([self._epanechnikov_kernel((x - x_j) / bandwidth) for x_j in X])
+            for x in X
+        ]
 
-        return {"bandwidth": bandwidth,
-                "kde_estimate": {
-                    "point": X,
-                    "density": density
-                }}
-
+        return {
+            "bandwidth": bandwidth,
+            "kde_estimate": {"point": X, "density": density},
+        }

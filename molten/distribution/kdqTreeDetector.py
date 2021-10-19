@@ -1,24 +1,3 @@
-"""
-TODO:
-- parallel processing of test windows of size (n, 2n, 4n, ...) is suggested in the paper. Desirable?
-- Sliding windows: This implementation only uses fixed method
-    1. Adjacent - windows are right next to one another
-    2. Fixed - One window is fixed, other slides
-- window_size: the high-level presentation of the algorithm presents the reference window as size 2n, and test as size n.
-    current implementation has them of both size n.
-- "minimal" class for next_obs needs to be determined - takes dataframe now, might be better to take a numpy array without columns instead?
-    the internal trackers (self.drift_tracker, self.drift_location) are currently necessary for the two visualization methods.
-        may want to refactor s.t. they're unnecessary or captured externally, with a visualization utility separately?
-- does the note on "need 500-1000 samples to work well" generalize? should we make note of it in our example notebook,
-    or in the documentation?
-- the minimum on the size of the square cells at each node in the kdqtree is determined by some threshold on
-    number of points/minimum side length -- seems like? we only use the former criterion, hard-coded at 200 points. May
-    want to make that a parameter, if nothing else. Because it isn't parameterized, it's not in the current class docstring.
-    kdqTree stops splits after minimum points in the cell is reached. Minimum side lengths is not used.
-- kmcnamara noted "retraining of trees should take on order of seconds, not minutes." We may have some room for optimization
-- can we maintain K-L divergence and Kulldorff statistic as the tree is reconstructed and save on time?
-
-"""
 import pandas as pd
 import numpy as np
 from molten.DriftDetector import DriftDetector
@@ -155,7 +134,9 @@ class kdqTreeDetector(DriftDetector):
                     )
 
                     # Build bootstrap samples from the reference window
-                    # These are used to define the critical region for the divergence metric, given the desired alpha.
+                    # These are used to define the critical region for the divergence metric, given the desired alpha,
+                    # by using the appropriate percentile among calculated divergences comparing the first half of the
+                    # bootstrap samples to the second.
                     bootstrap_samples = self._bootstrapping(
                         self.window_data["reference"]["bin"].tolist(),
                         2 * self._window_size,
