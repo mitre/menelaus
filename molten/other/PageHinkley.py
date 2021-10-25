@@ -9,22 +9,24 @@ similar to PCA_CD, need to, at a minimum, make the internal tracker objects opti
 class PageHinkley(DriftDetector):
     """
     Page-Hinkley is a univariate concept drift detection algorithm, designed to detect changes in a sequential Gaussian
-    signal. The running mean is incremented with each observation, and the detector alarms when the difference between
-    the new observation and the average difference of prior observations exceeds a certain threshold (xi).
+    signal. Both the running mean and the running Page Hinkley (PH) statistic are incremented with each observation.
+    The PH stat monitors how far the current observation is from the running mean of all previously encountered
+    observations, while weighting it by a sensitivity parameter delta.The detector alarms when the difference between
+    the maximum or minimum PH statistic encountered is larger than the cumulative PH statistic certain threshold (xi).
 
     1. Increment mean with next observations
     2. Increment running sum of difference between observations and mean
-    3. Compute threshold & test statistic
+    3. Compute threshold & PH statistic
     4. Enter drift or warning state if PH value is outside threshold, and the number of samples is greater than the
         burn-in requirement.
+
 
     If the threshold is too small, PH may result in many false alarms. If too large, the PH test will be more robust,
     but may miss true drift.
 
     References:
-    E.S.Page. 1954. Continuous Inspection Schemes. Biometrika 41, 1/2 (1954),100-115
+    D.V.Hinkley. 1971. Inference about the change-point from cumulative sum tests. Biometrika 58, 3 (1971), 509-523
 
-    #TODO add in two other references (PH paper and data stream clustering methods paper)
 
     """
 
@@ -33,13 +35,15 @@ class PageHinkley(DriftDetector):
         :param delta: float
             Minimum amplitude of change in data needed to sound alarm
         :param xi: float
-            Threshold for sounding alarm. Corresponds with PH lambda. As suggested in data-stream (TODO: input source) paper,
-            consider setting to 1% of an appropriate window size for the dataset.
+            Threshold for sounding alarm. Corresponds with PH lambda. As suggested in PCA-CD, Qahton (2015)
+            recommends setting to 1% of an appropriate window size for the dataset.
         :param burn_in: int (default = 0)
             Minimum number of data points required to be seen before declaring drift
         :param direction: str (default = 'positive')
-            If 'positive', drift is only detected for an upward change in mean.
-            If 'negative', drift is only detected for a downward change in mean.
+            If 'positive', drift is only detected for an upward change in mean, when the cumulative PH statistic
+            differs from the minimum PH statistic significantly
+            If 'negative', drift is only detected for a downward change in mean, when the max PH statistic differs from
+            the cumulative PH statistic significantly
         """
         super().__init__()
 
