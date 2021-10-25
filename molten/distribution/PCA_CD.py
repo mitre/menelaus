@@ -47,12 +47,12 @@ class PCA_CD(DriftDetector):
         :param window_size: size of the reference window. Note that PCA_CD will only try to detect drift periodically,
             either every 100 observations or 5% of the window_size, whichever is smaller.
         :param ev_threshold: Threshold for percent explained variance required when selecting number of principal components
-        :param delta: TODO
+        :param delta: Parameter for Page Hinkley test. Minimum amplitude of change in data needed to sound alarm
         :param divergence_metric: divergence metric when comparing the two distributions when detecting drift.
             "kl" - symmetric Kullback-Leibler divergence
             "llh" - log-likelihood
             "intersection" - intersection area under the curves for the estimated density functions
-        :param track_state: whether to store the status of the PageHinkley detector every time drift is identified
+        :param track_state: whether to store the status of the Page Hinkley detector every time drift is identified
         :param verbose: whether to print intermediate progress to console
         """
         super().__init__()
@@ -112,7 +112,7 @@ class PCA_CD(DriftDetector):
                 # Compute principal components
                 self._pca = PCA(self.ev_threshold)
 
-                # Project Reference window onto PCs
+                # Fit Reference window onto PCs
                 self._pca.fit(self._reference_window)
                 self.num_pcs = len(self._pca.components_)
 
@@ -120,9 +120,7 @@ class PCA_CD(DriftDetector):
                     print(f"Number of PCS to examine: {self.num_pcs}")
                     print("------------------------------")
 
-                self._pca = PCA(self.num_pcs)
-                self._pca.fit(self._reference_window)
-
+                # Project Reference window onto PCs
                 self._reference_pca_projection = pd.DataFrame(
                     self._pca.transform(self._reference_window),
                     columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
@@ -136,8 +134,6 @@ class PCA_CD(DriftDetector):
                     )
 
                 # Project test window onto PCs
-                self._pca.fit(self._test_window)
-
                 self._test_pca_projection = pd.DataFrame(
                     self._pca.transform(self._test_window),
                     columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
@@ -152,18 +148,16 @@ class PCA_CD(DriftDetector):
 
         else:
 
-            # Project test window onto PCs
+            #Add new obs to test window
             self._test_window = self._test_window.iloc[1:, :].append(next_obs)
 
-            self._pca.fit(self._test_window)
+            # Project new observation onto PCs
+            next_proj =  pd.DataFrame(self._pca.transform(np.array(next_obs).reshape(1,-1)),
+                                      columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
+                                      index = pd.Series(self._test_window.index[-1]))
 
-            self._test_pca_projection = self._test_pca_projection.iloc[1:, :].append(
-                pd.DataFrame(
-                    self._pca.transform(self._test_window),
-                    columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
-                    index=self._test_window.index,
-                ).iloc[[-1]]
-            )
+            #Add projection to test projection data
+            self._test_pca_projection = self._test_pca_projection.iloc[1:, :].append(next_proj)
 
             # Compute test distribution
             # @TODO This currently rebuilds the KDETrack. Unsure if it should be updated instead?

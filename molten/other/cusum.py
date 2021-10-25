@@ -13,7 +13,8 @@ class CUSUM(DriftDetector):
     time series by calculating a moving average over recent observations. CUSUM can be used for tracking a single
     model performance metric, or could be applied to the mean of a feature variable of interest.
 
-    Ref. TODO add formatted citation
+    Ref.
+    E.S.Page. 1954. Continuous Inspection Schemes. Biometrika 41, 1/2 (1954),100-115
     """
     def __init__(self, target=None,sd_hat=None, burn_in=30, delta=0.005, threshold=50, direction=None):
         """
