@@ -1,12 +1,6 @@
-"""
-TODO:
-- verbose prints bad output when fit() is not used
-- ensure update() is compatible with e.g. a numpy array(?)
-- .05 for self.step should be a parameter
-"""
-
 from sklearn.decomposition import PCA
 from molten.DriftDetector import DriftDetector
+from sklearn.preprocessing import StandardScaler
 from molten.distribution.kl_divergence import kl_divergence
 from molten.other.PageHinkley import PageHinkley
 import statistics
@@ -39,8 +33,9 @@ class PCA_CD(DriftDetector):
         ev_threshold=0.99,
         delta=0.1,
         divergence_metric="kl",
+        sample_period=0.05,
+        online_scaling=False,
         track_state=False,
-        verbose=False,
     ):
         """
 
@@ -54,16 +49,19 @@ class PCA_CD(DriftDetector):
             "intersection" - intersection area under the curves for the estimated density functions
         :param track_state: whether to store the status of the Page Hinkley detector every time drift is identified
         :param verbose: whether to print intermediate progress to console
+        :param online_scaling: whether to standardize the data as it comes in, using the reference window, before applying PCA
+        :param sample_period: how often to check for drift. This is 100 samples or sample_period * window_size, whichever is
+            smaller. Default .05, or 5% of the window size.
         """
         super().__init__()
         self.window_size = window_size
-        self.verbose = verbose
         self.ev_threshold = ev_threshold
         self.divergence_metric = divergence_metric
         self.track_state = track_state
+        self.sample_period = sample_period
 
         # Initialize parameters
-        self.step = min(100, round(0.05 * window_size))
+        self.step = min(100, round(self.sample_period * window_size))
         self.xi = round(0.01 * window_size)
 
         self.delta = delta
@@ -75,6 +73,10 @@ class PCA_CD(DriftDetector):
             self._drift_tracker = pd.DataFrame()
 
         self.num_pcs = None
+
+        self.online_scaling = online_scaling
+        if self.online_scaling is True:
+            self._reference_scaler = StandardScaler()
 
         self._build_reference_and_test = True
         self._reference_window = pd.DataFrame()
@@ -90,13 +92,18 @@ class PCA_CD(DriftDetector):
         Update the detector with a new observation.
         :param next_obs: next observation, as a pandas Series
         """
-        if self.verbose:
-            print(f"Row Index: {next_obs.index.values[0]}")
 
         if self._build_reference_and_test:
             if self.drift_state is not None:
                 self._reference_window = self._test_window.copy()
+                if self.online_scaling is True:
+                    # we'll need to refit the scaler. this occurs when both reference and test
+                    # windows are full, so, inverse_transform first, here
+                    self._reference_window = pd.DataFrame(
+                        self._reference_scaler.inverse_transform(self._reference_window)
+                    )
                 self._test_window = pd.DataFrame()
+                # TODO: this reset method probably ought to initialize e.g. self._pca, scalers, ..
                 self.reset()
                 self._drift_detection_monitor.reset()
 
@@ -109,22 +116,25 @@ class PCA_CD(DriftDetector):
             if len(self._test_window) == self.window_size:
                 self._build_reference_and_test = False
 
+                # Fit Reference window onto PCs
+                if self.online_scaling is True:
+                    self._reference_window = pd.DataFrame(
+                        self._reference_scaler.fit_transform(self._reference_window)
+                    )
+                    self._test_window = pd.DataFrame(
+                        self._reference_scaler.transform(self._test_window)
+                    )
+
                 # Compute principal components
                 self._pca = PCA(self.ev_threshold)
-
-                # Fit Reference window onto PCs
                 self._pca.fit(self._reference_window)
                 self.num_pcs = len(self._pca.components_)
-
-                if self.verbose:
-                    print(f"Number of PCS to examine: {self.num_pcs}")
-                    print("------------------------------")
 
                 # Project Reference window onto PCs
                 self._reference_pca_projection = pd.DataFrame(
                     self._pca.transform(self._reference_window),
-                    columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
-                    index=self._reference_window.index,
+                    # columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
+                    # index=self._reference_window.index,
                 )
 
                 # Compute reference distribution
@@ -136,8 +146,8 @@ class PCA_CD(DriftDetector):
                 # Project test window onto PCs
                 self._test_pca_projection = pd.DataFrame(
                     self._pca.transform(self._test_window),
-                    columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
-                    index=self._test_window.index,
+                    # columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
+                    # index=self._test_window.index,
                 )
 
                 # Compute test distribution
@@ -148,16 +158,22 @@ class PCA_CD(DriftDetector):
 
         else:
 
-            #Add new obs to test window
+            # Add new obs to test window
+            if self.online_scaling is True:
+                next_obs = pd.DataFrame(self._reference_scaler.transform(next_obs))
             self._test_window = self._test_window.iloc[1:, :].append(next_obs)
 
             # Project new observation onto PCs
-            next_proj =  pd.DataFrame(self._pca.transform(np.array(next_obs).reshape(1,-1)),
-                                      columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
-                                      index = pd.Series(self._test_window.index[-1]))
+            next_proj = pd.DataFrame(
+                self._pca.transform(np.array(next_obs).reshape(1, -1)),
+                # columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
+                # index=pd.Series(self._test_window.index[-1]),
+            )
 
-            #Add projection to test projection data
-            self._test_pca_projection = self._test_pca_projection.iloc[1:, :].append(next_proj)
+            # Add projection to test projection data
+            self._test_pca_projection = self._test_pca_projection.iloc[1:, :].append(
+                next_proj, ignore_index=True
+            )
 
             # Compute test distribution
             # @TODO This currently rebuilds the KDETrack. Unsure if it should be updated instead?
@@ -169,8 +185,6 @@ class PCA_CD(DriftDetector):
 
             # Compute change score
             if (self.total_samples % self.step) == 0 and self.total_samples != 0:
-                if self.verbose:
-                    print("Computing change score:")
 
                 # Compute current score
                 change_scores = []
@@ -226,8 +240,6 @@ class PCA_CD(DriftDetector):
                         )
 
                 change_score = max(change_scores)
-                if self.verbose:
-                    print(f"Change score: {change_score}")
 
                 self._drift_detection_monitor.update(
                     next_obs=change_score, obs_id=next_obs.index.values[0]
@@ -240,17 +252,6 @@ class PCA_CD(DriftDetector):
                         self._drift_tracker = self._drift_tracker.append(
                             self._drift_detection_monitor.to_dataframe()
                         )
-
-                if self.verbose:
-                    print(
-                        f"Page Hinkley value: {self._drift_detection_monitor.page_hinkley_values[-1]}"
-                    )
-                    print(
-                        f"Difference value: {self._drift_detection_monitor.page_hinkley_differences[-1]}"
-                    )
-                    print(
-                        f"Theta (threshold) value: {self._drift_detection_monitor.theta_threshold[-1]}"
-                    )
 
         super().update()
 
