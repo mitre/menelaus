@@ -1,35 +1,45 @@
-from molten.DriftDetector import DriftDetector
 import numpy as np
+from molten.DriftDetector import DriftDetector
 
 
 class DDM(DriftDetector):
-    """
-    DDM is a drift detection algorithm which uses a binary classifier's error rate, which is binomially distributed.
-    The minimum probability of an error and its standard deviation (p_min, s_min) are found during training. If the
-    running estimates for element i in the stream, probability (p_i) and its standard deviation (s_i), exceeds a certain
-    threshold, then we assume that the distribution of the error rate is no longer stationary (drift has occurred).
+    """DDM is a drift detection algorithm which uses a binary classifier's error
+    rate, which is binomially distributed. The minimum probability of an error
+    and its standard deviation (p_min, s_min) are found during training. If the
+    running estimates for element i in the stream, probability (p_i) and its
+    standard deviation (s_i), exceeds a certain threshold, then we assume that
+    the distribution of the error rate is no longer stationary (drift has
+    occurred).
 
-    If p_i + s_i >= p_min + self.warning_scale * s_min the detector's state is set to "warning".
-    If p_i + s_i >= p_min + self.drift_scale * s_min, the detector's state is set to "drift".
+    If p_i + s_i >= p_min + self.warning_scale * s_min the detector's state is
+        set to "warning".
+    If p_i + s_i >= p_min + self.drift_scale * s_min, the
+        detector's state is set to "drift".
 
-    The index of the first sample which triggered a warning/drift state (relative to self.n) is stored in
-    self.retraining_recs.
+    The index of the first sample which triggered a warning/drift state
+    (relative to self.n) is stored in self.retraining_recs.
 
-    Ref. J. Gama, P. Medas, G. Castillo, and P. Rodrigues, "Learning with drift detection," in Proc. 17th Brazilian
-    Symp. Artificial Intelligence, ser. Lecture Notes in Computer Science. Springer, 2004, Book Section, pp. 286-295.
+    Ref. J. Gama, P. Medas, G. Castillo, and P. Rodrigues, "Learning with drift
+    detection," in Proc. 17th Brazilian Symp. Artificial Intelligence, ser.
+    Lecture Notes in Computer Science. Springer, 2004, Book Section, pp.
+    286-295.
 
     Attributes:
-    :attribute retraining_recs: recommended indices for retraining. Usually [first warning index, drift index].
-        If no warning state occurs, this will instead be [drift index, drift index] -- this indicates an abrupt
-        change.
-        Resets when self.drift_state returns to None (no drift nor warning).
+        n_threshold: the minimum number of samples required to test whether
+            drift has occurred
+        warning_scale: defines the threshold over which to enter the warning state.
+        drift_scale: defines the threshold over which to enter the drift state.
     """
 
     def __init__(self, n_threshold=30, warning_scale=2, drift_scale=3):
         """
-        :param n_threshold: the minimum number of samples required to test whether drift has occurred
-        :param warning_scale: defines the threshold over which to enter the warning state.
-        :param drift_scale: defines the threshold over which to enter the drift state.
+        Args:
+            n_threshold (int, optional): the minimum number of samples required
+                to test whether drift has occurred. Defaults to 30.
+            warning_scale (int, optional): defines the threshold over which to
+                enter the warning state. Defaults to 2.
+            drift_scale (int, optional): defines the threshold over which to
+                enter the drift state. Defaults to 3.
         """
         super().__init__()
         self.n_threshold = n_threshold
@@ -43,9 +53,8 @@ class DDM(DriftDetector):
         self._initialize_retraining_recs()
 
     def reset(self):
-        """
-        Initialize the detector's drift state and other relevant attributes. Intended for use after
-        drift_state == 'drift'.
+        """Initialize the detector's drift state and other relevant attributes.
+        Intended for use after drift_state == 'drift'.
         """
         super().reset()
         self._error_rate = 0
@@ -55,10 +64,11 @@ class DDM(DriftDetector):
         self._initialize_retraining_recs()
 
     def update(self, y_pred, y_true):
-        """
-        Update the detector with a new sample.
-        :param y_pred: predicted class
-        :param y_true: actual class
+        """Update the detector with a new sample.
+
+        Args:
+          y_pred: predicted class
+          y_true: actual class
         """
         if self.drift_state == "drift":
             self.reset()
@@ -76,7 +86,8 @@ class DDM(DriftDetector):
         )
         self._error_std = np.sqrt(self._error_std / self.n)
 
-        # it's unclear whether the 'burn-in' period should be updating the minimums - seems like a bad idea though.
+        # it's unclear whether the 'burn-in' period should be updating the
+        # minimums - seems like a bad idea though.
         if self.n < self.n_threshold:
             return
 
@@ -104,12 +115,13 @@ class DDM(DriftDetector):
             self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
+        """TODO: document me"""
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """
-        Default retraining recommendation is [warning index, drift index]. If no warning occurs, this will instead be
-        [drift index, drift index]. Be cautious, as this indicates an abrupt change.
+        """Default retraining recommendation is [warning index, drift index]. If
+        no warning occurs, this will instead be [drift index, drift index]. Be
+        cautious, as this indicates an abrupt change.
         """
         if self.drift_state == "warning" and self.retraining_recs[0] is None:
             self.retraining_recs[0] = self.total_samples - 1

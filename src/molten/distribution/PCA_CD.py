@@ -1,30 +1,33 @@
-from sklearn.decomposition import PCA
-from molten.DriftDetector import DriftDetector
-from sklearn.preprocessing import StandardScaler
-from molten.distribution.kl_divergence import kl_divergence
-from molten.other.PageHinkley import PageHinkley
 import statistics
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from molten.DriftDetector import DriftDetector
+from molten.distribution.kl_divergence import kl_divergence
+from molten.other.PageHinkley import PageHinkley
 
 
 class PCA_CD(DriftDetector):
-    """
-    Principal Component Analysis Change Detection (PCA-CD) is a drift detection algorithm which checks for change
-    in the distribution of the given data using one of several divergence metrics calculated on the data's principal
-    components.
+    """Principal Component Analysis Change Detection (PCA-CD) is a drift
+    detection algorithm which checks for change in the distribution of the given
+    data using one of several divergence metrics calculated on the data's
+    principal components.
 
-    First, principal components are built from the reference window - the initial window_size samples. New samples from
-    the test window, of the same width, are projected onto these principal components. The divergence metric is
-    calculated on these scores for the reference and test windows; if this metric diverges enough, then we consider
-    drift to have occurred. This threshold is determined dynamically through the use of the Page-Hinkley test.
+    First, principal components are built from the reference window - the
+    initial window_size samples. New samples from the test window, of the same
+    width, are projected onto these principal components. The divergence metric
+    is calculated on these scores for the reference and test windows; if this
+    metric diverges enough, then we consider drift to have occurred. This
+    threshold is determined dynamically through the use of the Page-Hinkley test.
 
-    Once drift is detected, the reference window is replaced with the current test window, and the test window is
-    initialized.
+    Once drift is detected, the reference window is replaced with the current
+    test window, and the test window is initialized.
 
-    Ref. Qahtan, A., Wang, S. A PCA-Based Change Detection Framework for Multidimensional Data Streams Categories and
-    Subject Descriptors. KDD '15: The 21st ACM SIGKDD International Conference on Knowledge Discovery and Data Mining,
-    935-44. https://doi.org/10.1145/2783258.2783359
+    Ref. Qahtan, A., Wang, S. A PCA-Based Change Detection Framework for
+    Multidimensional Data Streams Categories and Subject Descriptors. KDD '15:
+    The 21st ACM SIGKDD International Conference on Knowledge Discovery and Data
+    Mining, 935-44. https://doi.org/10.1145/2783258.2783359
     """
 
     def __init__(
@@ -38,20 +41,30 @@ class PCA_CD(DriftDetector):
         track_state=False,
     ):
         """
-
-        :param window_size: size of the reference window. Note that PCA_CD will only try to detect drift periodically,
-            either every 100 observations or 5% of the window_size, whichever is smaller.
-        :param ev_threshold: Threshold for percent explained variance required when selecting number of principal components
-        :param delta: Parameter for Page Hinkley test. Minimum amplitude of change in data needed to sound alarm
-        :param divergence_metric: divergence metric when comparing the two distributions when detecting drift.
-            "kl" - symmetric Kullback-Leibler divergence
-            "llh" - log-likelihood
-            "intersection" - intersection area under the curves for the estimated density functions
-        :param track_state: whether to store the status of the Page Hinkley detector every time drift is identified
-        :param verbose: whether to print intermediate progress to console
-        :param online_scaling: whether to standardize the data as it comes in, using the reference window, before applying PCA
-        :param sample_period: how often to check for drift. This is 100 samples or sample_period * window_size, whichever is
-            smaller. Default .05, or 5% of the window size.
+        Args:
+            window_size (int): size of the reference window. Note that PCA_CD
+                will only try to detect drift periodically, either every 100
+                observations or 5% of the window_size, whichever is smaller.
+            ev_threshold (float, optional): Threshold for percent explained
+                variance required when selecting number of principal components.
+                Defaults to 0.99.
+            delta (float, optional): Parameter for Page Hinkley test. Minimum
+                amplitude of change in data needed to sound alarm. Defaults to 0.1.
+            divergence_metric (str, optional): divergence metric when comparing
+                the two distributions when detecting drift. Defaults to "kl".
+                    "kl" - symmetric Kullback-Leibler divergence
+                    "llh" - log-likelihood
+                    "intersection" - intersection area under the curves for the
+                    estimated density functions.
+            sample_period (float, optional): how often to check for drift. This
+                is 100 samples or sample_period * window_size, whichever is
+                smaller. Default .05, or 5% of the window size.
+            online_scaling (bool, optional): whether to standardize the data as
+                it comes in, using the reference window, before applying PCA.
+                Defaults to False.
+            track_state (bool, optional): whether to store the status of the
+                Page Hinkley detector every time drift is identified.
+                Defaults to False.
         """
         super().__init__()
         self.window_size = window_size
@@ -88,9 +101,10 @@ class PCA_CD(DriftDetector):
         self._kde_track_test = {}
 
     def update(self, next_obs):
-        """
-        Update the detector with a new observation.
-        :param next_obs: next observation, as a pandas Series
+        """Update the detector with a new observation.
+
+        Args:
+            next_obs: next observation, as a pandas Series
         """
 
         if self._build_reference_and_test:
@@ -256,12 +270,17 @@ class PCA_CD(DriftDetector):
         super().update()
 
     def _epanechnikov_kernel(self, x_j, approx_zero=False):
-        """
-        Calculate the Epanechnikov kernel value for a given value x_j, for use in kernel density estimation.
-        :param x_j: single sample value
-        :param approx_zero: whether or not to approximate zero with a very small value
-            may be unnecessary in practice. Default False.
-        :return: Epanechnikov kernel value for x_j.
+        """Calculate the Epanechnikov kernel value for a given value x_j, for
+        use in kernel density estimation.
+
+        Args:
+            x_j: single sample value
+            approx_zero: whether or not to approximate zero with a very small value
+                may be unnecessary in practice. Default False.
+
+        Returns:
+            Epanechnikov kernel value for x_j.
+
         """
         if approx_zero:
             const = 10 ** (-6)
@@ -270,11 +289,15 @@ class PCA_CD(DriftDetector):
         return [const if (x_j < 0 or x_j > 1) else (3 / 4) * (1 - (x_j ** 2))][0]
 
     def _log_likelihood(self, p, q):
-        """
-        Computes Log-Likelihood similarity between two distributions
-        :param: p (list): List of values from first distribution
-        :param: q (list): List of values from second distribution
-        :return: Log-likelihood similarity
+        """Computes Log-Likelihood similarity between two distributions
+
+        Args:
+            p (list): List of values from first distribution
+            q (list): List of values from second distribution
+
+        Returns:
+          Log-likelihood similarity
+
         """
         m = len(p)
         bandwidth = 1.06 * statistics.stdev(q) * (m ** (-1 / 5))
@@ -309,11 +332,15 @@ class PCA_CD(DriftDetector):
         return divergence
 
     def _intersection_area(self, p, q):
-        """
-        Computes Intersection Area similarity between two distributions
-        :param: p (list): List of values from first distribution
-        :param: q (list): List of values from second distribution
-        :return: Intersection area
+        """Computes Intersection Area similarity between two distributions
+
+        Args:
+            p (list): List of values from first distribution
+            q (list): List of values from second distribution
+
+        Returns:
+            Intersection area
+
         """
         divergence = (1 / 2) * sum([abs(x - y) for x, y in zip(p, q)])
 
@@ -321,8 +348,13 @@ class PCA_CD(DriftDetector):
 
     def _build_kde_track(self, X):
         """Compute the Kernel Density Estimate Track for a given 1D data stream
-        :param: x (list/array/series): 1D data in which we desire to estimate its density function
-        :return: Bandwidth and dictionary of resampling points
+
+        Args:
+            X: 1D data in which we desire to estimate its density function
+
+        Returns:
+            Bandwidth and dictionary of resampling points
+
         """
         m = len(X)
         bandwidth = 1.06 * statistics.stdev(X) * (m ** (-1 / 5))
