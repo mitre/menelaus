@@ -1,47 +1,51 @@
-from molten.DriftDetector import DriftDetector
 import numpy as np
 import scipy.stats
+from molten.DriftDetector import DriftDetector
 
 # TODO: replace self._window with a numpy array - test efficiency
 # TODO: replace self.retraining_recs with a numpy array - test efficiency
 
 
 class STEPD(DriftDetector):
-    """
-    STEPD is a drift detection algorithm based on a binary classifier's accuracy, intended for an online classifier.
+    """STEPD is a drift detection algorithm based on a binary classifier's
+    accuracy, intended for an online classifier.
 
-    Two windows are defined -- "recent" and "past", with corresponding accuracies p_r and p_p. Roughly, the distribution
-    of their absolute difference, normalized by the accuracy of the two windows combined, T, is normally distributed.
-    So, this test statistic's p-value P(T) defines the warning and drift regions:
+    Two windows are defined -- "recent" and "past", with corresponding
+    accuracies p_r and p_p. Roughly, the distribution of their absolute
+    difference, normalized by the accuracy of the two windows combined, T, is
+    normally distributed. So, this test statistic's p-value P(T) defines the
+    warning and drift regions:
         If p_r < p_p (the classifier's accuracy on recent samples is decreased):
-            and P(T) < alpha_warning, the detector's state is set to "warning".
-            and P(T) < alpha_drift, the detector's state is set to "drift".
+            -and P(T) < alpha_warning, the detector's state is set to "warning".
+            -and P(T) < alpha_drift, the detector's state is set to "drift".
 
-    The index of the first sample which triggered a warning/drift state (relative to self.n) is stored in
-    self.retraining_recs, for retraining the classifier when drift occurs.
+    The index of the first sample which triggered a warning/drift state
+    (relative to self.n) is stored in self.retraining_recs, for retraining the
+    classifier when drift occurs.
 
-    STEPD is intended for use with an online classifier, which is trained on every new sample. That is, with each new
-    sample, the question is not whether the classifier will be retrained; it's whether some part of the previous
-    training data should be excluded during retraining. The implementation depends on whether the classifier involved
-    is able to incrementally retrain using only a single data point vs. being required to retrain on the entire set.
+    STEPD is intended for use with an online classifier, which is trained on
+    every new sample. That is, with each new sample, the question is not whether
+    the classifier will be retrained; it's whether some part of the previous
+    training data should be excluded during retraining. The implementation
+    depends on whether the classifier involved is able to incrementally retrain
+    using only a single data point vs. being required to retrain on the entire
+    set.
 
-    Ref. K. Nishida and K. Yamauchi, "Detecting concept drift using statistical testing," in Proc. 10th Int. Conf.
-    Discovery Science, V. Corruble, M. Takeda, and E. Suzuki, Eds. Berlin, Heidelberg: Springer Berlin Heidelberg, 2007,
-    Conference Proceedings, pp 264-269.
-
-    Attributes:
-    :attribute retraining_recs: recommended indices for retraining. Usually [first warning index, drift index].
-        If no warning state occurs, this will instead be [drift index, drift index] -- this indicates an abrupt
-        change.
-        Resets when self.drift_state returns to None (no drift nor warning).
-
+    Ref. K. Nishida and K. Yamauchi, "Detecting concept drift using statistical
+    testing," in Proc. 10th Int. Conf. Discovery Science, V. Corruble, M.
+    Takeda, and E. Suzuki, Eds. Berlin, Heidelberg: Springer Berlin Heidelberg,
+    2007, Conference Proceedings, pp 264-269.
     """
 
     def __init__(self, window_size=30, alpha_warning=0.05, alpha_drift=0.003):
         """
-        :param window_size: the size of the "recent" window
-        :param alpha_warning: defines the threshold over which to enter the warning state.
-        :param alpha_drift: defines the threshold over which to enter the drift state.
+        Args:
+            window_size (int, optional): the size of the "recent" window.
+                Defaults to 30.
+            alpha_warning (float, optional): defines the threshold over which to
+                enter the warning state. Defaults to 0.05.
+            alpha_drift (float, optional): defines the threshold over which to
+                enter the drift state. Defaults to 0.003.
         """
         # TODO: probably wants the property decorator on a bunch of these
         super().__init__()
@@ -55,9 +59,8 @@ class STEPD(DriftDetector):
         self._initialize_retraining_recs()
 
     def reset(self):
-        """
-        Initialize the detector's drift state and other relevant attributes. Intended for use after
-        drift_state == 'drift'.
+        """Initialize the detector's drift state and other relevant attributes.
+        Intended for use after drift_state == 'drift'.
         """
         super().reset()
         self._s, self._r = 0, 0
@@ -67,10 +70,11 @@ class STEPD(DriftDetector):
         self._initialize_retraining_recs()
 
     def update(self, y_pred, y_true):
-        """
-        Update the detector with a new sample.
-        :param y_pred: predicted class
-        :param y_true: actual class
+        """Update the detector with a new sample.
+
+        Args:
+          y_pred: predicted class
+          y_true: actual class
         """
         if self.drift_state == "drift":
             self.reset()
@@ -118,7 +122,9 @@ class STEPD(DriftDetector):
 
     def recent_accuracy(self):
         """
-        :return: the accuracy of the classifier among the last self.window_size samples the detector has seen
+        Returns:
+            float: the accuracy of the classifier among the last
+                self.window_size samples the detector has seen
         """
         if self.window_size == 0:
             out = 0
@@ -128,8 +134,10 @@ class STEPD(DriftDetector):
 
     def past_accuracy(self):
         """
-        :return: the accuracy of the classifier among the samples the detector has seen before its current window, but
-            after the last time the detector was reset
+        Returns:
+            float: the accuracy of the classifier among the samples the detector
+                has seen before its current window, but after the last time the
+                detector was reset
         """
         if (self.n - self.window_size) == 0:
             out = 0
@@ -139,8 +147,9 @@ class STEPD(DriftDetector):
 
     def overall_accuracy(self):
         """
-        :return: the accuracy of the classifier among the samples the detector has seen since the detector was last
-            reset
+        Returns:
+            float: the accuracy of the classifier among the samples the detector
+                has seen since the detector was last reset
         """
         if self.n == 0:
             out = 0
@@ -149,9 +158,13 @@ class STEPD(DriftDetector):
         return out
 
     def _initialize_retraining_recs(self):
+        """ """
+        # TODO: document me
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
+        """ """
+        # TODO: document me
         if self.retraining_recs[0] is None:
             self.retraining_recs[0], self.retraining_recs[1] = (
                 self.total_samples,

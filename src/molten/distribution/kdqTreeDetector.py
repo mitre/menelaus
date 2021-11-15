@@ -1,36 +1,44 @@
 import pandas as pd
 import numpy as np
-from molten.DriftDetector import DriftDetector
-from molten.distribution.kl_divergence import kl_divergence
 import plotly.express as px
 import matplotlib.pyplot as plt
+from molten.DriftDetector import DriftDetector
+from molten.distribution.kl_divergence import kl_divergence
 
 
 class kdqTreeDetector(DriftDetector):
-    """
-    kdqTree is a drift detection algorithm which detects drift via the Kullback-Leibler divergence, calculated after
-    partitioning the data space via constructing a k-d-quad-tree (kdq-tree). A reference window of initial data is
-    compared to a test window of later data. The Kullback-Leibler divergence between the empirical distributions of the
-    reference and test windows is calculated, and drift is alarmed when a threshold is reached.
+    """kdqTree is a drift detection algorithm which detects drift via the
+    Kullback-Leibler divergence, calculated after partitioning the data space
+    via constructing a k-d-quad-tree (kdq-tree). A reference window of initial
+    data is compared to a test window of later data. The Kullback-Leibler
+    divergence between the empirical distributions of the reference and test
+    windows is calculated, and drift is alarmed when a threshold is reached.
 
-    A kdqtree is a combination of k-d trees and quad-trees; it is a binary tree (k-d) whose nodes contain square cells
-    (quad) which are created via sequential splits along each dimension. This structure allows the calculation of the
-    K-L divergence for continuous distributions, as the K-L divergence is defined on probability mass functions.
-    The reference window is used to construct a kdq-tree via theory of types, and the data in both the reference and
-    test window are binned into this kdq-tree. The K-L divergence can then be calculated between the two windows.
+    A kdqtree is a combination of k-d trees and quad-trees; it is a binary tree
+    (k-d) whose nodes contain square cells (quad) which are created via
+    sequential splits along each dimension. This structure allows the
+    calculation of the K-L divergence for continuous distributions, as the K-L
+    divergence is defined on probability mass functions. The reference window is
+    used to construct a kdq-tree via theory of types, and the data in both the
+    reference and test window are binned into this kdq-tree. The K-L divergence
+    can then be calculated between the two windows.
 
-    The threshold for drift is determined using the desired alpha level, by a bootstrap estimate for the critical
-    value of the K-L divergence, drawing num_bootstrap_samples samples, 2*window_size times, from the reference window.
+    The threshold for drift is determined using the desired alpha level, by a
+    bootstrap estimate for the critical value of the K-L divergence, drawing
+    num_bootstrap_samples samples, 2*window_size times, from the reference
+    window.
 
-    Additionally, the Kulldorff spatial scan statistic, which is a special case of the KL-divergence, can be calculated
-    at each node of the kdq-tree, which gives a measure of the regions of the data space which have the greatest
-    divergence between the reference and test windows. This can be used to visualize which regions of data space have
-    the greatest drift, implemented as kdqTreeDetector.drift_visualization. Note that these statistics are specific to
-    the partitions of the data space by the kdq-tree, rather than (necessarily) the maximally different region in
-    general.
+    Additionally, the Kulldorff spatial scan statistic, which is a special case
+    of the KL-divergence, can be calculated at each node of the kdq-tree, which
+    gives a measure of the regions of the data space which have the greatest
+    divergence between the reference and test windows. This can be used to
+    visualize which regions of data space have the greatest drift, implemented
+    as kdqTreeDetector.drift_visualization. Note that these statistics are
+    specific to the partitions of the data space by the kdq-tree, rather than
+    (necessarily) the maximally different region in general.
 
-    Note also that this algorithm could be used with other types of trees; the reference paper and this implementation
-    use kdq-trees.
+    Note also that this algorithm could be used with other types of trees; the
+    reference paper and this implementation use kdq-trees.
     """
 
     def __init__(
@@ -43,14 +51,19 @@ class kdqTreeDetector(DriftDetector):
         verbose=True,
     ):
         """
-        :param min_points_in_bin: the minimum number of samples required to test whether drift has occurred, equivalent
-            to "maximum number of points in cell" in Dasu (2006)
-        :param window_size: size of window over which kdq detects drift
-        :param num_bootstrap_samples default: 500): the number of bootstrap samples to use to approximate the
-            empirical distributions. Equivalent to kappa in Dasu (2006). Dasu recommends 500-1000 samples.
-        :param gamma (default: 0.05): Persistence factor
-        :param alpha (default = 0.01): Achievable significance level
-        :param verbose (default: True): prints progress to console
+        Args:
+            window_size ([type]): the minimum number of samples required to test
+                whether drift has occurred, equivalent to "maximum number of points
+                in cell" in Dasu (2006)
+            min_points_in_bin (int, optional): size of window over which kdq
+                detects drift. Defaults to 100.
+            num_bootstrap_samples (int, optional): the number of bootstrap
+                samples to use to approximate the empirical distributions.
+                Equivalent to kappa in Dasu (2006). Dasu recommends 500-1000
+                samples. Defaults to 500.
+            gamma (float, optional): Persistence factor. Defaults to 0.05.
+            alpha (float, optional): Achievable significance level. Defaults to 0.01.
+            verbose (bool, optional): prints progress to console. Defaults to True.
         """
         super().__init__()
         self._min_points_in_bin = min_points_in_bin
@@ -79,9 +92,10 @@ class kdqTreeDetector(DriftDetector):
         self._iter = 0
 
     def update(self, next_obs):
-        """
-        Update the detector with a new sample.
-        :param next_obs: the next observation in the stream, as a dataframe.
+        """Update the detector with a new sample.
+
+        Args:
+            next_obs: the next observation in the stream, as a dataframe.
         """
         if self.drift_state == "drift":
             super().reset()
@@ -133,10 +147,11 @@ class kdqTreeDetector(DriftDetector):
                         bin=test_bins
                     )
 
-                    # Build bootstrap samples from the reference window
-                    # These are used to define the critical region for the divergence metric, given the desired alpha,
-                    # by using the appropriate percentile among calculated divergences comparing the first half of the
-                    # bootstrap samples to the second.
+                    # Build bootstrap samples from the reference window These
+                    # are used to define the critical region for the divergence
+                    # metric, given the desired alpha, by using the appropriate
+                    # percentile among calculated divergences comparing the
+                    # first half of the bootstrap samples to the second.
                     bootstrap_samples = self._bootstrapping(
                         self.window_data["reference"]["bin"].tolist(),
                         2 * self._window_size,
@@ -240,6 +255,11 @@ class kdqTreeDetector(DriftDetector):
                 self._c = 0
 
     def drift_visualization(self, id_date_df=None, save_fig=None):
+        """
+        Args:
+            id_date_df: (Default value = None)
+            save_fig: (Default value = None)
+        """
         if id_date_df is None:
             kl_distance_ts = pd.DataFrame(
                 self.drift_tracker, index=range(len(self.drift_tracker["dist"]))
@@ -337,6 +357,7 @@ class kdqTreeDetector(DriftDetector):
                 plt.show()
 
     def drift_location_visualization(self):
+        """ """
         if len(self.drift_location["spatial_scan_statistic"]) == 0:
             print("No drift detected")
             return None
@@ -387,12 +408,19 @@ class kdqTreeDetector(DriftDetector):
         return figs
 
     def _bootstrapping(self, list_input: list, sample_size: int, num_samples: int):
-        """
-        Computes bootstrap samples from a given list of objects
-        :param: list_input (list): List of objects to compute bootstrap samples from
-        :param: sample_size (int): Size of sample to take for each bootsrap. Sample q/ replacement
-        :param: num_samples (int): Number of bootstrap samples to conduct
-        :return: List of bootstrap samples.
+        """Computes bootstrap samples from a given list of objects
+
+        Args:
+            list_input (list): List of objects to compute bootstrap samples from
+            sample_size (int): Size of sample to take for each bootsrap. Sample q/ replacement
+            num_samples (int): Number of bootstrap samples to conduct
+            list_input (list):
+            sample_size (int):
+            num_samples (int):
+
+        Returns:
+            List of bootstrap samples.
+
         """
 
         bootstrap_samples = []
@@ -405,21 +433,35 @@ class kdqTreeDetector(DriftDetector):
         return bootstrap_samples
 
     def _compute_type(self, multiset: list, alphabet: list):
-        """
-        Computes the type for each letter in an alphabet, according to the theory of types
-        :param: multiset (list): Multiset of letters in alphabet
-        :param: alphabet (list): List of all letters in alphabet
-        :return: The Type of multiset
+        """Computes the type for each letter in an alphabet, according to the theory of types
+
+        Args:
+            multiset (list): Multiset of letters in alphabet
+            alphabet (list): List of all letters in alphabet
+
+        Returns:
+            The Type of multiset
+
         """
 
-        type = [
+        computed_type = [
             (multiset.count(a) + 0.5) / (len(multiset) + len(alphabet) / 2)
             for a in alphabet
         ]
 
-        return type
+        return computed_type
 
     def _kdq_tree_binner(self, kdqTreeNodes, data_point):
+        """
+
+        Args:
+            kdqTreeNodes:
+            data_point:
+
+        Returns:
+
+        """
+        # TODO: document me
         next_id = 1
         leaf_node = False
         while not leaf_node:
@@ -445,10 +487,14 @@ class kdqTreeDetector(DriftDetector):
         return bin_id
 
     def _kdq_tree_build_bins(self, clean_results):
-        """
-        Builds kdqTree bins from nodes and splits defined in the output of _kdq_tree_build_nodes()
-        :param: clean_results (DataFrame): Dataframe of nodes and splits produced from _kdq_tree_build_nodes()
-        :return: DataFrame of 2 columns - observation IDs and bin IDs
+        """Builds kdqTree bins from nodes and splits defined in the output of
+        _kdq_tree_build_nodes()
+
+        Args: clean_results (DataFrame): Dataframe of nodes and splits produced
+            from _kdq_tree_build_nodes()
+
+        Returns: DataFrame of 2 columns - observation IDs and bin IDs
+
         """
         ids = []
         bins = []
@@ -471,10 +517,14 @@ class kdqTreeDetector(DriftDetector):
         return kdqbins
 
     def _nested_dict_to_dataframe(self, nested_dict):
-        """
-        Unnests a nested node dictionary into a cleaned dataframe
-        :param: nested_dict (dict): Nested dictionary of nodes output from kdqTreeSplits()
-        :return: Unnested pandas dataframe of nodes and splits
+        """Unnests a nested node dictionary into a cleaned dataframe
+
+        Args:
+          nested_dict (dict): Nested dictionary of nodes output from kdqTreeSplits()
+
+        Returns:
+          Unnested pandas dataframe of nodes and splits
+
         """
 
         out = pd.DataFrame()
@@ -501,19 +551,28 @@ class kdqTreeDetector(DriftDetector):
         min_value: int,
         verbose=True,
     ):
-        """
-        Recursive function to create splits in a tree at a given node
-        :param: data_input (DataFrame): Set of points in data
-        :param: original_ids (list): Original list of IDs corresponding to each row of data_input at the root
-        :param: node (dict): A dictionary containing keys left_node, right_node, and results
-        :param: node_id (int): ID of current node to be included in the dataframe of `results` value
-        :param: depth (int): Current depth of the node we are creating a split at
-        :param: axis (int): Defines the index of the column we should be making a split on
-        :param: min_points (int): Minimum number of points allowed in each bin
-        :param: max_value (int): Maximum value in the given axis
-        :param: min_value (int): Minimum value in the given axis
-        :param: verbose (bool): Determines if intermediate output should be printed to console
-        :return: Node dictionary
+        """Recursive function to create splits in a tree at a given node
+
+        Args:
+            data_input (pd.DataFrame): Set of points in data
+            original_ids (list): Original list of IDs corresponding to each row of
+                data_input at the root
+            node (dict): A dictionary containing keys left_node, right_node, and
+                results
+            node_id (int): ID of current node to be included in the dataframe of
+                `results` value
+            depth (int): Current depth of the node we are creating a split at
+            axis (int): Defines the index of the column we should be making a
+                split on
+            min_points (int): Minimum number of points allowed in each bin
+            max_value (int): Maximum value in the given axis
+            min_value (int): Minimum value in the given axis
+            verbose: Determines if intermediate output should be printed to
+                console. Defaults to True.
+
+        Returns:
+            Node dictionary
+
         """
 
         if verbose:
@@ -602,12 +661,18 @@ class kdqTreeDetector(DriftDetector):
     def _kdq_tree_build_nodes(
         self, data_input: pd.DataFrame, min_points=200, verbose=True
     ):
-        """
-        Build out the nodes of the kdqTree
-        :param: data_input (DataFrame): Set of points in data
-        :param: min_points (int): Minimum number of points allowed in each bin
-        :param: verbose (bool): Determines if intermediate output should be printed to console
-        :return: Dataframe of splits in kdqTree
+        """Build out the nodes of the kdqTree
+
+        Args:
+            data_input (pd.DataFrame): Set of points in data
+            min_points (int): Minimum number of points allowed in each bin.
+                Default value = 200.
+            verbose: Determines if intermediate output should be printed to
+                console. Default value = True.
+
+        Returns:
+            Dataframe of splits in kdqTree
+
         """
 
         original_ids = list(data_input.index)
@@ -666,11 +731,18 @@ class kdqTreeDetector(DriftDetector):
         return clean_results
 
     def _kulldorff_spatial_scan_statistic(self, alphabet, bins_w1, bins_w2):
-        """Computes Kulldorf Spatial Scan Statistic between two bins in an alphabet
-        :param: alphabet (list): List of all elements in set (alphabet)
-        :param: bins_w1 (list): List of bins comprising window 1
-        :param: bins_w2 (list): List of bins comprising window 2
-        :return: DataFrame containing the input alphabet and the Kulldorf Spatial Scan Statistic for each element
+        """Computes Kulldorf Spatial Scan Statistic between two bins in an
+        alphabet
+
+        Args:
+            alphabet (list): List of all elements in set (alphabet)
+            bins_w1 (list): List of bins comprising window 1
+            bins_w2 (list): List of bins comprising window 2
+
+        Returns:
+            DataFrame containing the input alphabet and the Kulldorf Spatial
+                Scan Statistic for each element
+
         """
 
         len_w1 = len(bins_w1)
@@ -694,11 +766,15 @@ class kdqTreeDetector(DriftDetector):
         )
 
     def _tree_parser(self, kdqTreeNodes, bin_id):
-        """
-        Parse tree to bin into text
-        :param: kdqTreeNodes (DataFrame): Dataframe of kdqTree nodes
-        :param: bin_id (int): ID of the bin to which we should parse the tree
-        :return: String of text that follows path from root to bin
+        """Parse tree to bin into text
+
+        Args:
+            kdqTreeNodes (pd.DataFrame): Dataframe of kdqTree nodes
+            bin_id (int): ID of the bin to which we should parse the tree
+
+        Returns:
+            String of text that follows path from root to bin
+
         """
 
         node_ids = [kdqTreeNodes[kdqTreeNodes.bin_id == bin_id]["node_id"].tolist()[0]]
@@ -720,10 +796,10 @@ class kdqTreeDetector(DriftDetector):
                 not_root = False
 
         split_string = ""
-        for id in node_ids[::-1]:
-            tmp_row = kdqTreeNodes[kdqTreeNodes.node_id == id]
+        for node_id in node_ids[::-1]:
+            tmp_row = kdqTreeNodes[kdqTreeNodes.node_id == node_id]
 
-            if id % 2 == 0:
+            if node_id % 2 == 0:
                 operator = "<"
             else:
                 operator = ">"
