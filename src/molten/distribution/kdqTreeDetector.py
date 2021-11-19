@@ -81,6 +81,10 @@ class kdqTreeDetector(DriftDetector):
         self.window_data = {"reference": pd.DataFrame(), "test": pd.DataFrame()}
         self._critical_distance = None
 
+        # Drift tracker stores relevant statistics. Dist: for each new observation for which update is called, contains
+        # KL divergence value between reference and test window. Critical distance: Contains the threshold for
+        # evaluating KL divergence value to detect drift. Only recomputed for each new reference and test window.
+        # ID: contains the index value of each new observation
         self.drift_tracker = {"dist": [], "critical_distance": [], "id": []}
         self.drift_location = {
             "spatial_scan_statistic": [],
@@ -256,9 +260,16 @@ class kdqTreeDetector(DriftDetector):
 
     def drift_visualization(self, id_date_df=None, save_fig=None):
         """
+        Creates a time-series line plot comparing the KL divergence value (in blue) to the critical region
+        value (in gold). Vertical red lines indicate when drift occurs, ranging from the minimum KL divergence value to
+        the maximum critical distance value. Default x-axis marker is observation id. Plot contains streaming data - all
+        observations for which update is called.
+
         Args:
-            id_date_df: (Default value = None)
-            save_fig: (Default value = None)
+            id_date_df: (Default value = None) Must be a dataframe containing associated dates for each data point index
+                        If provided, uses dates as x-axis marker.
+            save_fig: (Default value = None) Saves figure using provided path.
+
         """
         if id_date_df is None:
             kl_distance_ts = pd.DataFrame(
@@ -357,12 +368,27 @@ class kdqTreeDetector(DriftDetector):
                 plt.show()
 
     def drift_location_visualization(self):
-        """ """
+        """
+        Iterates through each observation where drift has been observed and builds a tree map for each one. A tree map,
+        for the single observation at which drift is identified, visualizes which features in the dataset had the
+        greatest distributional divergence (or largest spatial scan statistic) measured between the current test
+        window to the current reference window. The tree is built on the reference window data.
+
+        For each drift observation, it will only visualize half of the tree.  It identifies and follows the path this
+        single drift observation traversed down the tree. As it seeks to highlight the features that had a high spatial
+        scan statistic, it only shows features associated with the tree path that this drift observation follows.
+
+        Returns:
+          Figs: a list containing multiple trees, one for each detection of drift. It is indexed by the number of times
+                drift has been detected, not the index of that observation in the original dataframe.
+        """
+
         if len(self.drift_location["spatial_scan_statistic"]) == 0:
             print("No drift detected")
             return None
 
         figs = []
+
         for t in range(len(self.drift_location["spatial_scan_statistic"])):
             spatial_scan_statistic = self.drift_location["spatial_scan_statistic"][t]
             kdqTreeNodes = self.drift_location["kdqTreeNodes"][t]
@@ -375,6 +401,10 @@ class kdqTreeDetector(DriftDetector):
             )
             bins = spatial_scan_statistic["bin"].tolist()
 
+            # iterates through each bin for which these is a spatial scan statistic for this timestamp. Identifies path
+            # to reach each bin - necessary for visualizing tree map. Uses identified path as input parameter "path"
+            # for treemap - provides the list of features in the order that the tree map should divide the tree to reach
+            # each bin.
             for j in range(len(bins)):
 
                 tmp_bin = bins[j]
@@ -383,7 +413,6 @@ class kdqTreeDetector(DriftDetector):
                 ].tolist()[j]
 
                 bin_path = self._tree_parser(kdqTreeNodes, tmp_bin)
-
                 nodes = ["kdqTree"] + bin_path.split(", ") + [f"Bin {tmp_bin}"]
                 if len(nodes) < 11:
                     nodes = nodes + [None] * (11 - len(nodes))
@@ -391,6 +420,8 @@ class kdqTreeDetector(DriftDetector):
                 bin_df.loc[bin_df.shape[0]] = nodes + [tmp_statistics]
 
             bin_df_columns = bin_df.columns
+
+            # only retains non-empty splits in tree
             for col in bin_df_columns:
                 if bin_df[[col]].isnull().all().values[0]:
                     bin_df.drop(columns=[col], inplace=True)
