@@ -1,3 +1,6 @@
+# Overview
+The `molten` library contains a suite of streaming drift detetors, encompassing both data drift and concept drift. 
+
 # Notes on use
 - need to make some decisions about setup.py, probably
 - packages:
