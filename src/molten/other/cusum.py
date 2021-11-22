@@ -127,7 +127,6 @@ class CUSUM(DriftDetector):
 
                 else:
                     self.all_drift_states.append(None)
-            # TODO check if stats need to change for one sided
             elif self.direction == "positive":
                 if self.upper_bound[self.n] > self.threshold:
                     self.all_drift_states.append("drift")
