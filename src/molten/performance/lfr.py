@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 
 
 class LinearFourRates(DriftDetector):
@@ -139,28 +139,48 @@ class LinearFourRates(DriftDetector):
         new_rates = self.get_four_rates(self._C)
 
         # init next index for test stats
-        self._R.update({self.n: self._R[self.n - 1].copy()})
-        self.P.update({self.n: self.P[self.n - 1].copy()})
+        self._R.update(
+            {self.samples_since_reset: self._R[self.samples_since_reset - 1].copy()}
+        )
+        self.P.update(
+            {self.samples_since_reset: self.P[self.samples_since_reset - 1].copy()}
+        )
         self.warning_states.update(
-            {self.n: {"tpr": False, "tnr": False, "ppv": False, "npv": False}}
+            {
+                self.samples_since_reset: {
+                    "tpr": False,
+                    "tnr": False,
+                    "ppv": False,
+                    "npv": False,
+                }
+            }
         )
         self.alarm_states.update(
-            {self.n: {"tpr": False, "tnr": False, "ppv": False, "npv": False}}
+            {
+                self.samples_since_reset: {
+                    "tpr": False,
+                    "tnr": False,
+                    "ppv": False,
+                    "npv": False,
+                }
+            }
         )
 
         for rate in ["tpr", "tnr", "ppv", "npv"]:
             if new_rates[rate] != old_rates[rate]:
-                new_R = self.time_decay_factor * self._R[self.n][rate] + (
-                    1 - self.time_decay_factor
-                ) * (y_t == yhat_t)
+                new_R = self.time_decay_factor * self._R[self.samples_since_reset][
+                    rate
+                ] + (1 - self.time_decay_factor) * (y_t == yhat_t)
             else:
-                new_R = self._R[self.n - 1][rate]
+                new_R = self._R[self.samples_since_reset - 1][rate]
 
-            self.P[self.n][rate] = new_rates[rate]
-            self._R[self.n][rate] = new_R
+            self.P[self.samples_since_reset][rate] = new_rates[rate]
+            self._R[self.samples_since_reset][rate] = new_R
             self._N[rate + "_N"] = self.get_four_denominators(self._C)[rate + "_N"]
 
-            if (self.n > self.burn_in) & (self.n % self.subsample == 0):
+            if (self.samples_since_reset > self.burn_in) & (
+                self.samples_since_reset % self.subsample == 0
+            ):
                 est_rate = new_rates[rate]
                 N = self._N[rate + "_N"]
 
@@ -174,17 +194,17 @@ class LinearFourRates(DriftDetector):
                 lb_detect = bound_dict["lb_detect"]
                 ub_detect = bound_dict["ub_detect"]
 
-                self.warning_states[self.n][rate] = (new_R < lb_warn) | (
-                    new_R > ub_warn
-                )
-                self.alarm_states[self.n][rate] = (new_R < lb_detect) | (
-                    new_R > ub_detect
-                )
+                self.warning_states[self.samples_since_reset][rate] = (
+                    new_R < lb_warn
+                ) | (new_R > ub_warn)
+                self.alarm_states[self.samples_since_reset][rate] = (
+                    new_R < lb_detect
+                ) | (new_R > ub_detect)
 
-        if any(self.alarm_states[self.n].values()):
+        if any(self.alarm_states[self.samples_since_reset].values()):
             self.all_drift_states.append("drift")
             self.drift_state = "drift"
-        elif any(self.warning_states[self.n].values()):
+        elif any(self.warning_states[self.samples_since_reset].values()):
             self.all_drift_states.append("warning")
             self.drift_state = "warning"
         else:

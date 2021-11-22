@@ -1,5 +1,5 @@
 import numpy as np  # maybe only import power
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 
 
 class Adwin(DriftDetector):

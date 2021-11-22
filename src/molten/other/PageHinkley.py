@@ -1,5 +1,5 @@
 import pandas as pd
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 
 """
 TODO
@@ -85,7 +85,7 @@ class PageHinkley(DriftDetector):
             self.reset()
         super().update()
 
-        self.mean = self.mean + (next_obs - self.mean) / self.n
+        self.mean = self.mean + (next_obs - self.mean) / self.samples_since_reset
         self.sum = self.sum + next_obs - self.mean - self.delta
         theta = self.xi * self.mean
 
@@ -102,7 +102,7 @@ class PageHinkley(DriftDetector):
 
         drift_check = ph_difference > theta
 
-        if drift_check and self.n > self.burn_in:
+        if drift_check and self.samples_since_reset > self.burn_in:
             self.drift_state = "drift"
 
         self.ids.append(obs_id)
