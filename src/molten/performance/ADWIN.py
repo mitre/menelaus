@@ -2,7 +2,7 @@ import numpy as np  # maybe only import power
 from molten.DriftDetector import DriftDetector
 
 
-class ADWIN(DriftDetector):
+class Adwin(DriftDetector):
     """ADWIN is a drift detection algorithm which uses a sliding window to
     estimate the running mean and variance of a given statistic. Note that the
     statistic is assumed to be on the range 0 to 1.
@@ -85,7 +85,7 @@ class ADWIN(DriftDetector):
         self._window_size = 0
         self.retraining_recs = [None, None]
 
-    def update(self, new_value):
+    def update(self, new_value, *args, **kwargs):
         """Update the detector with a new sample.
 
         Args:
@@ -140,9 +140,9 @@ class ADWIN(DriftDetector):
                 # take the first two buckets in this row and combine them the
                 # number of elements stored in a bucket is 2^(position in the
                 # list)
-                n = np.power(2, list_position)
-                mean1 = curr_bucket_row.bucket_totals[0] / n
-                mean2 = curr_bucket_row.bucket_totals[1] / n
+                n_elements = np.power(2, list_position)
+                mean1 = curr_bucket_row.bucket_totals[0] / n_elements
+                mean2 = curr_bucket_row.bucket_totals[1] / n_elements
                 new_total = (
                     curr_bucket_row.bucket_totals[0] + curr_bucket_row.bucket_totals[1]
                 )
@@ -151,8 +151,9 @@ class ADWIN(DriftDetector):
                 new_variance = (
                     curr_bucket_row.bucket_variances[0]
                     + curr_bucket_row.bucket_variances[1]
-                    + n * (mean1 - mean2) * (mean1 - mean2) / 2
-                    # equivalent: n * n * (mean1 - mean2) * (mean1 - mean2) / (n + n)
+                    + n_elements * (mean1 - mean2) * (mean1 - mean2) / 2
+                    # equivalent: n_elements * n_elements * (mean1 - mean2) * \
+                    # (mean1 - mean2) / (n_elements + n_elements)
                 )
                 next_bucket_row.add_bucket(new_total, new_variance)
 
@@ -186,7 +187,7 @@ class ADWIN(DriftDetector):
                 exit_shrink = False
 
                 # window0 begins empty, window1 begins with the full set
-                n0, n1 = 0, self._window_size
+                n_elements0, n_elements1 = 0, self._window_size
                 total0, total1 = 0, self._curr_total
 
                 # traverse the BucketRowList from tail to head
@@ -200,8 +201,8 @@ class ADWIN(DriftDetector):
                 while (not exit_shrink) and (curr_bucket_row is not None):
                     n_increment = np.power(2, list_pos)
                     for bucket_index in range(curr_bucket_row.bucket_count):
-                        n0 += n_increment
-                        n1 -= n_increment
+                        n_elements0 += n_increment
+                        n_elements1 -= n_increment
                         total0 += curr_bucket_row.bucket_totals[bucket_index]
                         total1 -= curr_bucket_row.bucket_totals[bucket_index]
 
@@ -216,14 +217,16 @@ class ADWIN(DriftDetector):
 
                         # check whether to drop elements
                         if (
-                            (n0 >= self.subwindow_size_thresh)
-                            and (n1 >= self.subwindow_size_thresh)
-                            and self._check_epsilon(n0, total0, n1, total1)
+                            (n_elements0 >= self.subwindow_size_thresh)
+                            and (n_elements1 >= self.subwindow_size_thresh)
+                            and self._check_epsilon(
+                                n_elements0, total0, n_elements1, total1
+                            )
                         ):
                             start_from_empty_subwindow = True
                             self.drift_state = "drift"
                             if self._window_size > 0:
-                                n0 -= self._remove_last()
+                                n_elements0 -= self._remove_last()
                                 self.retraining_recs = (
                                     self.total_samples - self._window_size,
                                     self.total_samples - 1,
@@ -231,48 +234,46 @@ class ADWIN(DriftDetector):
                                 exit_shrink = True
                                 break
 
-                    # TODO: implement resetting the thinger
                     curr_bucket_row = curr_bucket_row.prev
                     list_pos -= 1
 
-    def _check_epsilon(self, n0, total0, n1, total1):
-        # TODO: document me, document me!
+    def _check_epsilon(self, n_elements0, total0, n_elements1, total1):
         """Calculate epsilon_cut given the size and totals of two windows
         (equation 3.1 from Bifet 2006).
 
         Args:
-          n0:
+          n_elements0:
           total0:
-          n1:
+          n_elements1:
           total1:
 
         Returns:
 
         """
 
-        window_diff = 1.0 * ((total0 / n0) - (total1 / n1))
+        window_diff = 1.0 * ((total0 / n_elements0) - (total1 / n_elements1))
 
         variance = self.variance()
-        n = self._window_size
+        n_elements = self._window_size
 
         # note that this is defined as its reciprocal in Bifet
-        m = 1 / (n0 - self.subwindow_size_thresh + 1) + 1 / (
-            n1 - self.subwindow_size_thresh + 1
+        n_harmonic = 1 / (n_elements0 - self.subwindow_size_thresh + 1) + 1 / (
+            n_elements1 - self.subwindow_size_thresh + 1
         )
 
         if not self.conservative_bound:
             # form below is under normality assumption for 'large' window sizes
             delta_prime_den = np.log(
-                2 * np.log(n) / self.delta
+                2 * np.log(n_elements) / self.delta
             )  # noted in Bifet as sufficient in practice vs. delta/n
             eps_cut = (
-                np.sqrt((2 * m) * variance * delta_prime_den)
-                + 1.0 * (2 / 3) * m * delta_prime_den
+                np.sqrt((2 * n_harmonic) * variance * delta_prime_den)
+                + 1.0 * (2 / 3) * n_harmonic * delta_prime_den
             )
         else:
-            delta_prime_den = np.log(4 * np.log(n) / self.delta)
+            delta_prime_den = np.log(4 * np.log(n_elements) / self.delta)
             eps_cut = np.sqrt(
-                (0.5 * m) * delta_prime_den
+                (0.5 * n_harmonic) * delta_prime_den
             )  # for "totally rigorous performance guarantees"
 
         return np.absolute(window_diff) > eps_cut
