@@ -201,7 +201,6 @@ class LinearFourRates(DriftDetector):
 
     def _initialize_retraining_recs(self):
         """ """
-        # TODO: document me
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
@@ -333,7 +332,6 @@ class LinearFourRates(DriftDetector):
             Returns:
 
             """
-            # TODO: document me
             bools = np.random.binomial(n=1, p=est_rate, size=N)
             return (1 - eta) * sum(vec * bools)
 

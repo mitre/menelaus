@@ -467,7 +467,6 @@ class kdqTreeDetector(DriftDetector):
         Returns:
 
         """
-        # TODO: document me
         next_id = 1
         leaf_node = False
         while not leaf_node:

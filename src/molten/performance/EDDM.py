@@ -117,7 +117,6 @@ class EDDM(DriftDetector):
             # threshold, warn
             self.test_statistic = curr_numerator / self._max_numerator
 
-            # TODO: store the n-ago of when drift/warning began as in
             # self.buffer_size of STEPD
             if self.test_statistic <= self.drift_thresh:
                 self.drift_state = "drift"
@@ -130,7 +129,6 @@ class EDDM(DriftDetector):
                 self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        # TODO: document me
         """"""
         self.retraining_recs = [None, None]
 

@@ -2,8 +2,6 @@ import numpy as np
 import scipy.stats
 from molten.DriftDetector import DriftDetector
 
-# TODO: replace self._window with a numpy array - test efficiency
-# TODO: replace self.retraining_recs with a numpy array - test efficiency
 
 
 class STEPD(DriftDetector):
@@ -47,7 +45,6 @@ class STEPD(DriftDetector):
             alpha_drift (float, optional): defines the threshold over which to
                 enter the drift state. Defaults to 0.003.
         """
-        # TODO: probably wants the property decorator on a bunch of these
         super().__init__()
         self.window_size = window_size
         self.alpha_warning = alpha_warning
@@ -159,12 +156,10 @@ class STEPD(DriftDetector):
 
     def _initialize_retraining_recs(self):
         """ """
-        # TODO: document me
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
         """ """
-        # TODO: document me
         if self.retraining_recs[0] is None:
             self.retraining_recs[0], self.retraining_recs[1] = (
                 self.total_samples,
