@@ -1,5 +1,5 @@
 import numpy as np
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 
 
 class CUSUM(DriftDetector):
@@ -79,18 +79,18 @@ class CUSUM(DriftDetector):
         super().update()
         self.stream.append(next_obs)
 
-        if self.n <= self.burn_in:
+        if self.samples_since_reset <= self.burn_in:
             self.all_drift_states.append(None)
 
         # cannot compute s_h/s_l, should we set those to 0?
-        if (self.target is None) & (self.n < self.burn_in):
+        if (self.target is None) & (self.samples_since_reset < self.burn_in):
             s_h = 0
             s_l = 0
             self.upper_bound.append(s_h)
             self.lower_bound.append(s_l)
 
         # derive mean and sd from first n points if they are not specified
-        if (self.target is None) & (self.n == self.burn_in):
+        if (self.target is None) & (self.samples_since_reset == self.burn_in):
             self.target = np.mean(self.stream)
             self.sd_hat = np.std(self.stream)
 
@@ -98,24 +98,26 @@ class CUSUM(DriftDetector):
         if self.target is not None:
             s_h = max(
                 0,
-                self.upper_bound[self.n - 1]
-                + (self.stream[self.n - 1] - self.target) / self.sd_hat
+                self.upper_bound[self.samples_since_reset - 1]
+                + (self.stream[self.samples_since_reset - 1] - self.target)
+                / self.sd_hat
                 - self.delta,
             )
             s_l = max(
                 0,
-                self.lower_bound[self.n - 1]
+                self.lower_bound[self.samples_since_reset - 1]
                 - self.delta
-                - (self.stream[self.n - 1] - self.target) / self.sd_hat,
+                - (self.stream[self.samples_since_reset - 1] - self.target)
+                / self.sd_hat,
             )
             self.upper_bound.append(s_h)
             self.lower_bound.append(s_l)
 
         # check alarm if past burn in
-        if self.n > self.burn_in:
+        if self.samples_since_reset > self.burn_in:
             if self.direction is None:
-                if (self.upper_bound[self.n] > self.threshold) | (
-                    self.lower_bound[self.n] > self.threshold
+                if (self.upper_bound[self.samples_since_reset] > self.threshold) | (
+                    self.lower_bound[self.samples_since_reset] > self.threshold
                 ):
                     self.all_drift_states.append("drift")
                     self.drift_state = "drift"
@@ -123,13 +125,13 @@ class CUSUM(DriftDetector):
                 else:
                     self.all_drift_states.append(None)
             elif self.direction == "positive":
-                if self.upper_bound[self.n] > self.threshold:
+                if self.upper_bound[self.samples_since_reset] > self.threshold:
                     self.all_drift_states.append("drift")
                     self.drift_state = "drift"
                 else:
                     self.all_drift_states.append(None)
             elif self.direction == "negative":
-                if self.lower_bound[self.n] > self.threshold:
+                if self.lower_bound[self.samples_since_reset] > self.threshold:
                     self.all_drift_states.append("drift")
                     self.drift_state = "drift"
                 else:

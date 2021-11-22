@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 from molten.distribution.kl_divergence import kl_divergence
 
 

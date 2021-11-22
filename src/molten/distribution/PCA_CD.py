@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 from molten.distribution.kl_divergence import kl_divergence
 from molten.other.PageHinkley import PageHinkley
 

@@ -1,7 +1,4 @@
-'''
-'''
-
 # from .DDM import DDM
-# from .DriftDetector import DriftDetector
+# from .drift_detector import drift_detector
 # from .EDDM import EDDM
 # from .STEPD import STEPD
