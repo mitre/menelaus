@@ -506,9 +506,7 @@ class KdqTree(DriftDetector):
         for col in clean_results.columns[7:]:
             tmp_df = clean_results.loc[clean_results[col] == True, :][
                 ["depth", "bin_id", col]
-            ].sort_values(
-                by="depth", ascending=False
-            )  # pylint: disable=singleton-comparison
+            ].sort_values(by="depth", ascending=False)
             ids.append(col[1:])
             bins.append(tmp_df.bin_id.tolist()[0])
 
