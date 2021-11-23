@@ -55,7 +55,7 @@ class CUSUM(DriftDetector):
         self.lower_bound = [0]
         self.stream = []
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """
@@ -64,7 +64,7 @@ class CUSUM(DriftDetector):
         self.upper_bound = [0]
         self.lower_bound = [0]
 
-    def update(self, next_obs):
+    def update(self, next_obs, *args, **kwargs):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:

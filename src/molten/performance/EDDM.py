@@ -57,7 +57,7 @@ class EDDM(DriftDetector):
         self.test_statistic = None
         self._initialize_retraining_recs()
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """
@@ -71,7 +71,9 @@ class EDDM(DriftDetector):
         self.test_statistic = None
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true):
+    def update(
+        self, y_pred, y_true, *args, **kwargs
+    ):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:
