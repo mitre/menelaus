@@ -1,12 +1,6 @@
 import pandas as pd
 from molten.drift_detector import DriftDetector
 
-"""
-TODO
-similar to PCA_CD, need to, at a minimum, make the internal tracker objects optional
-    this might break some code that PCA_CD relies on.
-"""
-
 
 class PageHinkley(DriftDetector):
     """Page-Hinkley is a univariate concept drift detection algorithm, designed
@@ -32,13 +26,13 @@ class PageHinkley(DriftDetector):
     cumulative sum tests. Biometrika 58, 3 (1971), 509-523
     """
 
-    def __init__(self, delta=0.01, xi=20, burn_in=30, direction="positive"):
+    def __init__(self, delta=0.01, threshold=20, burn_in=30, direction="positive"):
         """
         Args:
             delta (float, optional): Minimum amplitude of change in data needed
                 to sound alarm. Defaults to 0.01.
-            xi (int, optional): Threshold for sounding alarm. Corresponds with
-                PH lambda. As suggested in PCA-CD, Qahton (2015)
+            threshold (int, optional): Threshold for sounding alarm. Corresponds with
+                PH lambda. As suggested in PCA-CD, Qahtan (2015)
             recommends setting to 1% of an appropriate window size for the
                 dataset. Defaults to 20.
             burn_in (int, optional): Minimum number of data points required to
@@ -56,7 +50,7 @@ class PageHinkley(DriftDetector):
 
         self.burn_in = burn_in
         self.delta = delta
-        self.xi = xi
+        self.threshold = threshold
         self.direction = direction
 
         self.max = 0
@@ -74,7 +68,9 @@ class PageHinkley(DriftDetector):
         self.mins = []
         self.means = []
 
-    def update(self, next_obs, obs_id=None):
+    def update(
+        self, next_obs, *args, obs_id=None, **kwargs
+    ):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:
@@ -87,7 +83,7 @@ class PageHinkley(DriftDetector):
 
         self.mean = self.mean + (next_obs - self.mean) / self.samples_since_reset
         self.sum = self.sum + next_obs - self.mean - self.delta
-        theta = self.xi * self.mean
+        theta = self.threshold * self.mean
 
         if self.sum < self.min:
             self.min = self.sum
@@ -116,7 +112,7 @@ class PageHinkley(DriftDetector):
         self.mins.append(self.min)
         self.means.append(self.mean)
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """

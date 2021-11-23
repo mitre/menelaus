@@ -2,7 +2,7 @@ import numpy as np  # maybe only import power
 from molten.drift_detector import DriftDetector
 
 
-class Adwin(DriftDetector):
+class ADWIN(DriftDetector):
     """ADWIN is a drift detection algorithm which uses a sliding window to
     estimate the running mean and variance of a given statistic. Note that the
     statistic is assumed to be on the range 0 to 1.
@@ -85,7 +85,7 @@ class Adwin(DriftDetector):
         self._window_size = 0
         self.retraining_recs = [None, None]
 
-    def update(self, new_value, *args, **kwargs):
+    def update(self, new_value, *args, **kwargs): # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:

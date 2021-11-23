@@ -3,7 +3,6 @@ import scipy.stats
 from molten.drift_detector import DriftDetector
 
 
-
 class STEPD(DriftDetector):
     """STEPD is a drift detection algorithm based on a binary classifier's
     accuracy, intended for an online classifier.
@@ -55,7 +54,7 @@ class STEPD(DriftDetector):
         self._test_p = None
         self._initialize_retraining_recs()
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """
@@ -66,7 +65,9 @@ class STEPD(DriftDetector):
         self._test_p = None
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true):
+    def update(
+        self, y_pred, y_true, *args, **kwargs
+    ):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:

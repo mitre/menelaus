@@ -96,7 +96,7 @@ class LinearFourRates(DriftDetector):
         self._R = self.P.copy()  # dictionary of test statistics for P at each index
         self._initialize_retraining_recs()
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """
@@ -113,7 +113,9 @@ class LinearFourRates(DriftDetector):
         }
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true, round_val=4):
+    def update(
+        self, y_pred, y_true, *args, round_val=4, **kwargs
+    ):  # pylint: disable=arguments-differ
         """Update detector with a new observation:
             1. Updates confusion matrix (self._C) with new predictions
             2. Updates the four rates
