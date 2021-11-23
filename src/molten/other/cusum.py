@@ -1,7 +1,3 @@
-# TODO: remove/make optional the internal tracking attributes, or set some limit --
-#  hypothetically several attributes could grow indefinitely in memory, if drift is never detected
-#  we do need some portion of the stream to actually calculate the necessary stats, though
-# TODO (maybe): explain the meaning of delta
 import numpy as np
 from molten.DriftDetector import DriftDetector
 
@@ -86,7 +82,6 @@ class CUSUM(DriftDetector):
         if self.n <= self.burn_in:
             self.all_drift_states.append(None)
 
-        # TODO: what if self.target is None and we are less than 30 datapoints?
         # cannot compute s_h/s_l, should we set those to 0?
         if (self.target is None) & (self.n < self.burn_in):
             s_h = 0
@@ -127,7 +122,6 @@ class CUSUM(DriftDetector):
 
                 else:
                     self.all_drift_states.append(None)
-            # TODO check if stats need to change for one sided
             elif self.direction == "positive":
                 if self.upper_bound[self.n] > self.threshold:
                     self.all_drift_states.append("drift")

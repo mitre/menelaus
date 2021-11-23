@@ -39,6 +39,12 @@ class kdqTreeDetector(DriftDetector):
 
     Note also that this algorithm could be used with other types of trees; the
     reference paper and this implementation use kdq-trees.
+
+    Ref. T. Dasu, S. Krishnan, S. Venkatasubramanian, and K. Yi, “An
+    information-theoretic approach to detecting changes in multidimensional
+    data streams,” in Proc. Symp. the Interface of Statistics,
+    Computing Science, and Applications. Citeseer, 2006, Conference
+    Proceedings, pp. 1–24.
     """
 
     def __init__(
@@ -461,7 +467,6 @@ class kdqTreeDetector(DriftDetector):
         Returns:
 
         """
-        # TODO: document me
         next_id = 1
         leaf_node = False
         while not leaf_node:

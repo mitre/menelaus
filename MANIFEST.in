@@ -1,4 +1,3 @@
-#TODO: tests, examples as .py
 
 include setup.py
 include MANIFEST.in

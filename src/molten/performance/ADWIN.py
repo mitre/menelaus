@@ -231,12 +231,10 @@ class ADWIN(DriftDetector):
                                 exit_shrink = True
                                 break
 
-                    # TODO: implement resetting the thinger
                     curr_bucket_row = curr_bucket_row.prev
                     list_pos -= 1
 
     def _check_epsilon(self, n0, total0, n1, total1):
-        # TODO: document me, document me!
         """Calculate epsilon_cut given the size and totals of two windows
         (equation 3.1 from Bifet 2006).
 

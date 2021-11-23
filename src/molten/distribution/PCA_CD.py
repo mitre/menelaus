@@ -117,7 +117,6 @@ class PCA_CD(DriftDetector):
                         self._reference_scaler.inverse_transform(self._reference_window)
                     )
                 self._test_window = pd.DataFrame()
-                # TODO: this reset method probably ought to initialize e.g. self._pca, scalers, ..
                 self.reset()
                 self._drift_detection_monitor.reset()
 
@@ -190,7 +189,6 @@ class PCA_CD(DriftDetector):
             )
 
             # Compute test distribution
-            # @TODO This currently rebuilds the KDETrack. Unsure if it should be updated instead?
             self._kde_track_test = {}
             for i in range(self.num_pcs):
                 self._kde_track_test[f"PC{i+1}"] = self._build_kde_track(

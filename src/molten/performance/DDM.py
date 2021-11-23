@@ -115,7 +115,7 @@ class DDM(DriftDetector):
             self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """TODO: document me"""
+        """document me"""
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):

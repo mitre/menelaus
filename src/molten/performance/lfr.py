@@ -22,6 +22,10 @@ class LinearFourRates(DriftDetector):
     of number of time steps and estimated empirical rate, if a given combination
     has been simulated before, the bounds are re-used.
 
+    Ref. W. Heng and Z. Abraham, “Concept drift detection for streaming
+    data,” in Proc. 2015 Int. Joint Conf. Neural Networks, 2015, Conference
+    Proceedings, pp. 1–9.
+
     Attributes:
         warning_states: dictionary of warning state for each rate at each index
         alarm_states: dictionary of alarm state for each rate at each index
@@ -35,6 +39,7 @@ class LinearFourRates(DriftDetector):
             of drift. If no warning alarms, recommendation is from current drift
             -> current drift. Urge caution when retraining as this situation
             indicates an abrupt change.
+
     """
 
     def __init__(
@@ -196,7 +201,6 @@ class LinearFourRates(DriftDetector):
 
     def _initialize_retraining_recs(self):
         """ """
-        # TODO: document me
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
@@ -328,7 +332,6 @@ class LinearFourRates(DriftDetector):
             Returns:
 
             """
-            # TODO: document me
             bools = np.random.binomial(n=1, p=est_rate, size=N)
             return (1 - eta) * sum(vec * bools)
 
