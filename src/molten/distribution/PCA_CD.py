@@ -188,15 +188,15 @@ class PCA_CD(DriftDetector):
                 next_proj, ignore_index=True
             )
 
-            # Compute test distribution
-            self._kde_track_test = {}
-            for i in range(self.num_pcs):
-                self._kde_track_test[f"PC{i+1}"] = self._build_kde_track(
-                    self._test_pca_projection.iloc[:, i]
-                )
-
             # Compute change score
             if (self.total_samples % self.step) == 0 and self.total_samples != 0:
+
+                # Compute test distribution
+                self._kde_track_test = {}
+                for i in range(self.num_pcs):
+                    self._kde_track_test[f"PC{i + 1}"] = self._build_kde_track(
+                        self._test_pca_projection.iloc[:, i]
+                    )
 
                 # Compute current score
                 change_scores = []
