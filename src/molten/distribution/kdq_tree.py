@@ -87,10 +87,12 @@ class KdqTree(DriftDetector):
         self.window_data = {"reference": pd.DataFrame(), "test": pd.DataFrame()}
         self._critical_distance = None
 
-        # Drift tracker stores relevant statistics. Dist: for each new observation for which update is called, contains
-        # KL divergence value between reference and test window. Critical distance: Contains the threshold for
-        # evaluating KL divergence value to detect drift. Only recomputed for each new reference and test window.
-        # ID: contains the index value of each new observation
+        # Drift tracker stores relevant statistics. Dist: for each new
+        # observation for which update is called, contains KL divergence value
+        # between reference and test window. Critical distance: Contains the
+        # threshold for evaluating KL divergence value to detect drift. Only
+        # recomputed for each new reference and test window. ID: contains the
+        # index value of each new observation
         self.drift_tracker = {"dist": [], "critical_distance": [], "id": []}
         self.drift_location = {
             "spatial_scan_statistic": [],
@@ -266,14 +268,17 @@ class KdqTree(DriftDetector):
 
     def drift_visualization(self, id_date_df=None, save_fig=None):
         """
-        Creates a time-series line plot comparing the KL divergence value (in blue) to the critical region
-        value (in gold). Vertical red lines indicate when drift occurs, ranging from the minimum KL divergence value to
-        the maximum critical distance value. Default x-axis marker is observation id. Plot contains streaming data - all
-        observations for which update is called.
+        Creates a time-series line plot comparing the KL divergence value (in
+        blue) to the critical region value (in gold). Vertical red lines
+        indicate when drift occurs, ranging from the minimum KL divergence value
+        to the maximum critical distance value. Default x-axis marker is
+        observation id. Plot contains streaming data - all observations for
+        which update is called.
 
         Args:
-            id_date_df: (Default value = None) Must be a dataframe containing associated dates for each data point index
-                        If provided, uses dates as x-axis marker.
+            id_date_df: (Default value = None) Must be a dataframe containing
+                associated dates for each data point index If provided, uses dates
+                as x-axis marker.
             save_fig: (Default value = None) Saves figure using provided path.
 
         """
@@ -375,18 +380,23 @@ class KdqTree(DriftDetector):
 
     def drift_location_visualization(self):
         """
-        Iterates through each observation where drift has been observed and builds a tree map for each one. A tree map,
-        for the single observation at which drift is identified, visualizes which features in the dataset had the
-        greatest distributional divergence (or largest spatial scan statistic) measured between the current test
-        window to the current reference window. The tree is built on the reference window data.
+        Iterates through each observation where drift has been observed and
+        builds a tree map for each one. A tree map, for the single observation
+        at which drift is identified, visualizes which features in the dataset
+        had the greatest distributional divergence (or largest spatial scan
+        statistic) measured between the current test window to the current
+        reference window. The tree is built on the reference window data.
 
-        For each drift observation, it will only visualize half of the tree.  It identifies and follows the path this
-        single drift observation traversed down the tree. As it seeks to highlight the features that had a high spatial
-        scan statistic, it only shows features associated with the tree path that this drift observation follows.
+        For each drift observation, it will only visualize half of the tree.  It
+        identifies and follows the path this single drift observation traversed
+        down the tree. As it seeks to highlight the features that had a high
+        spatial scan statistic, it only shows features associated with the tree
+        path that this drift observation follows.
 
         Returns:
-          Figs: a list containing multiple trees, one for each detection of drift. It is indexed by the number of times
-                drift has been detected, not the index of that observation in the original dataframe.
+          figs: a list containing multiple trees, one for each detection of
+            drift. It is indexed by the number of times drift has been detected,
+            not the index of that observation in the original dataframe.
         """
 
         if len(self.drift_location["spatial_scan_statistic"]) == 0:
@@ -407,9 +417,11 @@ class KdqTree(DriftDetector):
             )
             bins = spatial_scan_statistic["bin"].tolist()
 
-            # iterates through each bin for which these is a spatial scan statistic for this timestamp. Identifies path
-            # to reach each bin - necessary for visualizing tree map. Uses identified path as input parameter "path"
-            # for treemap - provides the list of features in the order that the tree map should divide the tree to reach
+            # iterates through each bin for which these is a spatial scan
+            # statistic for this timestamp. Identifies path to reach each bin -
+            # necessary for visualizing tree map. Uses identified path as input
+            # parameter "path" for treemap - provides the list of features in
+            # the order that the tree map should divide the tree to reach
             # each bin.
             for j in range(len(bins)):
 
