@@ -3,12 +3,12 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 from molten.distribution.kl_divergence import kl_divergence
-from molten.other.PageHinkley import PageHinkley
+from molten.other.page_hinkley import PageHinkley
 
 
-class PCA_CD(DriftDetector):
+class PCACD(DriftDetector):
     """Principal Component Analysis Change Detection (PCA-CD) is a drift
     detection algorithm which checks for change in the distribution of the given
     data using one of several divergence metrics calculated on the data's
@@ -75,12 +75,12 @@ class PCA_CD(DriftDetector):
 
         # Initialize parameters
         self.step = min(100, round(self.sample_period * window_size))
-        self.xi = round(0.01 * window_size)
+        self.ph_threshold = round(0.01 * window_size)
 
         self.delta = delta
 
         self._drift_detection_monitor = PageHinkley(
-            delta=self.delta, xi=self.xi, burn_in=0
+            delta=self.delta, threshold=self.ph_threshold, burn_in=0
         )
         if self.track_state:
             self._drift_tracker = pd.DataFrame()
@@ -100,7 +100,7 @@ class PCA_CD(DriftDetector):
         self._kde_track_reference = {}
         self._kde_track_test = {}
 
-    def update(self, next_obs):
+    def update(self, next_obs, *args, **kwargs):  # pylint: disable=arguments-differ
         """Update the detector with a new observation.
 
         Args:
@@ -211,7 +211,7 @@ class PCA_CD(DriftDetector):
                                     self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
                                         "density"
                                     ],
-                                    type="discrete",
+                                    d_type="discrete",
                                 ),
                                 kl_divergence(
                                     self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
@@ -220,7 +220,7 @@ class PCA_CD(DriftDetector):
                                     self._kde_track_reference[f"PC{i+1}"][
                                         "kde_estimate"
                                     ]["density"],
-                                    type="discrete",
+                                    d_type="discrete",
                                 ),
                             )
                         )
@@ -286,83 +286,85 @@ class PCA_CD(DriftDetector):
             const = 0
         return [const if (x_j < 0 or x_j > 1) else (3 / 4) * (1 - (x_j ** 2))][0]
 
-    def _log_likelihood(self, p, q):
+    def _log_likelihood(self, values_p, values_q):
         """Computes Log-Likelihood similarity between two distributions
 
         Args:
-            p (list): List of values from first distribution
-            q (list): List of values from second distribution
+            values_p (list): List of values from first distribution
+            values_q (list): List of values from second distribution
 
         Returns:
           Log-likelihood similarity
 
         """
-        m = len(p)
-        bandwidth = 1.06 * statistics.stdev(q) * (m ** (-1 / 5))
-        LLH_q = sum(
+        sample_length = len(values_p)
+        bandwidth = 1.06 * statistics.stdev(values_q) * (sample_length ** (-1 / 5))
+        llh_q = sum(
             [
                 np.log(
                     sum(
                         [
-                            (1 / m) * self._epanechnikov_kernel((y - x) / bandwidth)
-                            for x in p
+                            (1 / sample_length)
+                            * self._epanechnikov_kernel((y - x) / bandwidth)
+                            for x in values_p
                         ]
                     )
                 )
-                for y in q
+                for y in values_q
             ]
         )
-        LLH_p = sum(
+        llh_p = sum(
             [
                 np.log(
                     sum(
                         [
-                            (1 / m) * self._epanechnikov_kernel((y - x) / bandwidth)
-                            for x in p
+                            (1 / sample_length)
+                            * self._epanechnikov_kernel((y - x) / bandwidth)
+                            for x in values_p
                         ]
                     )
                 )
-                for y in p
+                for y in values_p
             ]
         )
-        divergence = abs((LLH_q / len(q)) - (LLH_p / len(p)))
+        divergence = abs((llh_q / len(values_q)) - (llh_p / len(values_p)))
 
         return divergence
 
-    def _intersection_area(self, p, q):
+    def _intersection_area(self, values_p, values_q):
         """Computes Intersection Area similarity between two distributions
 
         Args:
-            p (list): List of values from first distribution
-            q (list): List of values from second distribution
+            values_p (list): List of values from first distribution
+            values_q (list): List of values from second distribution
 
         Returns:
             Intersection area
 
         """
-        divergence = (1 / 2) * sum([abs(x - y) for x, y in zip(p, q)])
+        divergence = (1 / 2) * sum([abs(x - y) for x, y in zip(values_p, values_q)])
 
         return divergence
 
-    def _build_kde_track(self, X):
+    def _build_kde_track(self, values):
         """Compute the Kernel Density Estimate Track for a given 1D data stream
 
         Args:
-            X: 1D data in which we desire to estimate its density function
+            values: 1D data in which we desire to estimate its density function
 
         Returns:
             Bandwidth and dictionary of resampling points
 
         """
-        m = len(X)
-        bandwidth = 1.06 * statistics.stdev(X) * (m ** (-1 / 5))
+        sample_length = len(values)
+        bandwidth = 1.06 * statistics.stdev(values) * (sample_length ** (-1 / 5))
         density = [
-            (1 / (m * bandwidth))
-            * sum([self._epanechnikov_kernel((x - x_j) / bandwidth) for x_j in X])
-            for x in X
+            (1 / (sample_length * bandwidth))
+            * sum([self._epanechnikov_kernel((x - x_j) / bandwidth) for x_j in values])
+            for x in values
         ]
 
         return {
             "bandwidth": bandwidth,
-            "kde_estimate": {"point": X, "density": density},
+            "kde_estimate": {"point": values, "density": density},
         }

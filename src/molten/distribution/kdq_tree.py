@@ -2,11 +2,11 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 from molten.distribution.kl_divergence import kl_divergence
 
 
-class kdqTreeDetector(DriftDetector):
+class KdqTree(DriftDetector):
     """kdqTree is a drift detection algorithm which detects drift via the
     Kullback-Leibler divergence, calculated after partitioning the data space
     via constructing a k-d-quad-tree (kdq-tree). A reference window of initial
@@ -81,7 +81,7 @@ class kdqTreeDetector(DriftDetector):
 
         self._build_reference_and_test = True
 
-        self._kdqTreeNodes = None
+        self._kdq_tree_nodes = None
         self._alphabet = None
 
         self.window_data = {"reference": pd.DataFrame(), "test": pd.DataFrame()}
@@ -94,14 +94,14 @@ class kdqTreeDetector(DriftDetector):
         self.drift_tracker = {"dist": [], "critical_distance": [], "id": []}
         self.drift_location = {
             "spatial_scan_statistic": [],
-            "kdqTreeNodes": [],
+            "kdq_tree_nodes": [],
             "id": [],
         }
 
         self._c = 0
         self._iter = 0
 
-    def update(self, next_obs):
+    def update(self, next_obs, *args, **kwargs):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:
@@ -127,14 +127,14 @@ class kdqTreeDetector(DriftDetector):
                 if len(self.window_data["test"]) == self._window_size:
                     self._build_reference_and_test = False
 
-                    self._kdqTreeNodes = self._kdq_tree_build_nodes(
+                    self._kdq_tree_nodes = self._kdq_tree_build_nodes(
                         data_input=self.window_data["reference"],
                         min_points=self._min_points_in_bin,
                         verbose=self._verbose,
                     )
 
                     # Merge in the bins for both the reference and test windows
-                    kdqbins = self._kdq_tree_build_bins(self._kdqTreeNodes)
+                    kdqbins = self._kdq_tree_build_bins(self._kdq_tree_nodes)
                     self.window_data["reference"] = self.window_data["reference"].merge(
                         kdqbins, how="left", left_index=True, right_on="id"
                     )
@@ -149,7 +149,7 @@ class kdqTreeDetector(DriftDetector):
                     for i in range(len(self.window_data["test"])):
                         test_bins.append(
                             self._kdq_tree_binner(
-                                kdqTreeNodes=self._kdqTreeNodes,
+                                kdq_tree_nodes=self._kdq_tree_nodes,
                                 data_point=self.window_data["test"].iloc[[i]],
                             )
                         )
@@ -176,19 +176,19 @@ class kdqTreeDetector(DriftDetector):
                         ]
                         for x in bootstrap_samples
                     ]
-                    bootstrap_KL_distances = [
+                    bootstrap_kl_distances = [
                         kl_divergence(x[0], x[1]) for x in bootstrap_types
                     ]
-                    bootstrap_KL_distances.sort()
+                    bootstrap_kl_distances.sort()
 
-                    self._critical_distance = bootstrap_KL_distances[
+                    self._critical_distance = bootstrap_kl_distances[
                         int(np.ceil(self._num_bootstrap_samples * self._alpha))
                     ]
 
         else:
             next_obs = next_obs.assign(
                 bin=self._kdq_tree_binner(
-                    kdqTreeNodes=self._kdqTreeNodes, data_point=next_obs
+                    kdq_tree_nodes=self._kdq_tree_nodes, data_point=next_obs
                 )
             )
 
@@ -226,7 +226,7 @@ class kdqTreeDetector(DriftDetector):
                     self.drift_location["id"].append(next_obs.index.values[0])
 
                     kdqbins_filtered = self._kdq_tree_build_bins(
-                        self._kdqTreeNodes[self._kdqTreeNodes["depth"] < 9]
+                        self._kdq_tree_nodes[self._kdq_tree_nodes["depth"] < 9]
                     )
 
                     self.drift_location["spatial_scan_statistic"].append(
@@ -253,7 +253,7 @@ class kdqTreeDetector(DriftDetector):
                         )
                     )
 
-                    self.drift_location["kdqTreeNodes"].append(self._kdqTreeNodes)
+                    self.drift_location["kdq_tree_nodes"].append(self._kdq_tree_nodes)
 
                     self._build_reference_and_test = True
                     self.window_data["reference"] = self.window_data["test"].drop(
@@ -318,8 +318,8 @@ class kdqTreeDetector(DriftDetector):
                 plt.xlabel("Time")
                 plt.ylabel("Divergence Value")
 
-                ax = plt.gca()
-                ax.axes.yaxis.set_ticks([])
+                ax_out = plt.gca()
+                ax_out.axes.yaxis.set_ticks([])
 
                 if save_fig is not None:
                     plt.savefig(f"{save_fig}")
@@ -365,8 +365,8 @@ class kdqTreeDetector(DriftDetector):
                 plt.xlabel("Time")
                 plt.ylabel("Divergence Value")
 
-                ax = plt.gca()
-                ax.axes.yaxis.set_ticks([])
+                ax_out = plt.gca()
+                ax_out.axes.yaxis.set_ticks([])
 
                 if save_fig is not None:
                     plt.savefig(f"{save_fig}")
@@ -395,10 +395,10 @@ class kdqTreeDetector(DriftDetector):
 
         figs = []
 
-        for t in range(len(self.drift_location["spatial_scan_statistic"])):
-            spatial_scan_statistic = self.drift_location["spatial_scan_statistic"][t]
-            kdqTreeNodes = self.drift_location["kdqTreeNodes"][t]
-            current_id = self.drift_location["id"][t]
+        for i in range(len(self.drift_location["spatial_scan_statistic"])):
+            spatial_scan_statistic = self.drift_location["spatial_scan_statistic"][i]
+            kdq_tree_nodes = self.drift_location["kdq_tree_nodes"][i]
+            current_id = self.drift_location["id"][i]
 
             bin_df = pd.DataFrame(
                 columns=["kdqTree"]
@@ -418,7 +418,7 @@ class kdqTreeDetector(DriftDetector):
                     "kulldorff_spatial_scan_statistic"
                 ].tolist()[j]
 
-                bin_path = self._tree_parser(kdqTreeNodes, tmp_bin)
+                bin_path = self._tree_parser(kdq_tree_nodes, tmp_bin)
                 nodes = ["kdqTree"] + bin_path.split(", ") + [f"Bin {tmp_bin}"]
                 if len(nodes) < 11:
                     nodes = nodes + [None] * (11 - len(nodes))
@@ -462,7 +462,7 @@ class kdqTreeDetector(DriftDetector):
 
         bootstrap_samples = []
 
-        for i in range(num_samples):
+        for _ in range(num_samples):
             bootstrap_samples.append(
                 np.random.choice(list_input, size=sample_size).tolist()
             )
@@ -488,11 +488,11 @@ class kdqTreeDetector(DriftDetector):
 
         return computed_type
 
-    def _kdq_tree_binner(self, kdqTreeNodes, data_point):
+    def _kdq_tree_binner(self, kdq_tree_nodes, data_point):
         """
 
         Args:
-            kdqTreeNodes:
+            kdq_tree_nodes:
             data_point:
 
         Returns:
@@ -502,7 +502,7 @@ class kdqTreeDetector(DriftDetector):
         leaf_node = False
         while not leaf_node:
             current_id = next_id
-            row_select = kdqTreeNodes[(kdqTreeNodes.node_id == current_id)]
+            row_select = kdq_tree_nodes[(kdq_tree_nodes.node_id == current_id)]
 
             # Move to the left cut
             next_id = 2 * row_select.node_id.values[0]
@@ -516,7 +516,7 @@ class kdqTreeDetector(DriftDetector):
 
             # If this proposed next node does not exist, then we have reached a leaf node
             # Similarly, we could check the type of node and see if it is a leaf of any type
-            if next_id not in kdqTreeNodes.node_id.values:
+            if next_id not in kdq_tree_nodes.node_id.values:
                 bin_id = row_select.bin_id.values[0]
                 leaf_node = True
 
@@ -535,14 +535,9 @@ class kdqTreeDetector(DriftDetector):
         ids = []
         bins = []
         for col in clean_results.columns[7:]:
-            try:
-                tmp_df = clean_results.loc[clean_results[col] == True, :][
-                    ["depth", "bin_id", col]
-                ].sort_values(by="depth", ascending=False)
-            except:
-                tmp_df = clean_results.loc[clean_results[col].iloc[:, 0] == True, :][
-                    ["depth", "bin_id", col]
-                ].sort_values(by="depth", ascending=False)
+            tmp_df = clean_results.loc[clean_results[col] == True, :][
+                ["depth", "bin_id", col]
+            ].sort_values(by="depth", ascending=False)
             ids.append(col[1:])
             bins.append(tmp_df.bin_id.tolist()[0])
 
@@ -566,7 +561,7 @@ class kdqTreeDetector(DriftDetector):
         out = pd.DataFrame()
 
         if isinstance(nested_dict, dict):
-            for key, value in nested_dict.items():
+            for value in nested_dict.values():
                 out = pd.concat([out, self._nested_dict_to_dataframe(value)])
 
         elif isinstance(nested_dict, pd.DataFrame):
@@ -801,11 +796,11 @@ class kdqTreeDetector(DriftDetector):
             {"bin": alphabet, "kulldorff_spatial_scan_statistic": statistic}
         )
 
-    def _tree_parser(self, kdqTreeNodes, bin_id):
+    def _tree_parser(self, kdq_tree_nodes, bin_id):
         """Parse tree to bin into text
 
         Args:
-            kdqTreeNodes (pd.DataFrame): Dataframe of kdqTree nodes
+            kdq_tree_nodes (pd.DataFrame): Dataframe of kdqTree nodes
             bin_id (int): ID of the bin to which we should parse the tree
 
         Returns:
@@ -813,7 +808,9 @@ class kdqTreeDetector(DriftDetector):
 
         """
 
-        node_ids = [kdqTreeNodes[kdqTreeNodes.bin_id == bin_id]["node_id"].tolist()[0]]
+        node_ids = [
+            kdq_tree_nodes[kdq_tree_nodes.bin_id == bin_id]["node_id"].tolist()[0]
+        ]
 
         not_root = True
         tmp_id = node_ids[0]
@@ -833,7 +830,7 @@ class kdqTreeDetector(DriftDetector):
 
         split_string = ""
         for node_id in node_ids[::-1]:
-            tmp_row = kdqTreeNodes[kdqTreeNodes.node_id == node_id]
+            tmp_row = kdq_tree_nodes[kdq_tree_nodes.node_id == node_id]
 
             if node_id % 2 == 0:
                 operator = "<"
@@ -842,7 +839,8 @@ class kdqTreeDetector(DriftDetector):
 
             split_string = (
                 split_string
-                + f"{tmp_row['axis'].tolist()[0]} {operator} {round(tmp_row['cutpoint'].tolist()[0],2)}, "
+                + f"{tmp_row['axis'].tolist()[0]} {operator} \
+                    {round(tmp_row['cutpoint'].tolist()[0],2)}, "
             )
 
         split_string = split_string[:-2]

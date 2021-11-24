@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 
 
 class LinearFourRates(DriftDetector):
@@ -87,24 +87,26 @@ class LinearFourRates(DriftDetector):
         self.alarm_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
         }
-        self.P = {0: {"tpr": 0.5, "tnr": 0.5, "ppv": 0.5, "npv": 0.5}}
+        self._p_table = {0: {"tpr": 0.5, "tnr": 0.5, "ppv": 0.5, "npv": 0.5}}
         self.bounds = dict()
-        self._C = np.array([[1, 1], [1, 1]])  # confusion matrix
-        self._N = {
+        self._confusion = np.array([[1, 1], [1, 1]])  # confusion matrix
+        self._denominators = {
             0: {"tpr_N": 2, "tnr_N": 2, "ppv_N": 2, "npv_N": 2}
         }  # dictionary of denominators for each statistic at each index
-        self._R = self.P.copy()  # dictionary of test statistics for P at each index
+        self._r_stat = (
+            self._p_table.copy()
+        )  # dictionary of test statistics for P at each index
         self._initialize_retraining_recs()
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """
         super().reset()
-        self.P = {0: {"tpr": 0.5, "tnr": 0.5, "ppv": 0.5, "npv": 0.5}}
-        self._C = np.array([[1, 1], [1, 1]])  # C at a given time point
-        self._N = {0: {"tpr_N": 2, "tnr_N": 2, "ppv_N": 2, "npv_N": 2}}
-        self._R = self.P.copy()
+        self._p_table = {0: {"tpr": 0.5, "tnr": 0.5, "ppv": 0.5, "npv": 0.5}}
+        self._confusion = np.array([[1, 1], [1, 1]])  # C at a given time point
+        self._denominators = {0: {"tpr_N": 2, "tnr_N": 2, "ppv_N": 2, "npv_N": 2}}
+        self._r_stat = self._p_table.copy()
         self.warning_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
         }
@@ -113,9 +115,11 @@ class LinearFourRates(DriftDetector):
         }
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true, round_val=4):
+    def update(
+        self, y_pred, y_true, *args, round_val=4, **kwargs
+    ):  # pylint: disable=arguments-differ
         """Update detector with a new observation:
-            1. Updates confusion matrix (self._C) with new predictions
+            1. Updates confusion matrix (self._confusion) with new predictions
             2. Updates the four rates
             3. Test each rate for change over time using bounds from Monte Carlo
                 simulations
@@ -137,59 +141,89 @@ class LinearFourRates(DriftDetector):
         y_t = 1 * y_true
         yhat_t = 1 * y_pred
 
-        old_C = self._C.copy()
-        self._C[yhat_t][y_t] += 1
+        old_confusion = self._confusion.copy()
+        self._confusion[yhat_t][y_t] += 1
 
-        old_rates = self.get_four_rates(old_C)
-        new_rates = self.get_four_rates(self._C)
+        old_rates = self.get_four_rates(old_confusion)
+        new_rates = self.get_four_rates(self._confusion)
 
         # init next index for test stats
-        self._R.update({self.n: self._R[self.n - 1].copy()})
-        self.P.update({self.n: self.P[self.n - 1].copy()})
+        self._r_stat.update(
+            {
+                self.samples_since_reset: self._r_stat[
+                    self.samples_since_reset - 1
+                ].copy()
+            }
+        )
+        self._p_table.update(
+            {
+                self.samples_since_reset: self._p_table[
+                    self.samples_since_reset - 1
+                ].copy()
+            }
+        )
         self.warning_states.update(
-            {self.n: {"tpr": False, "tnr": False, "ppv": False, "npv": False}}
+            {
+                self.samples_since_reset: {
+                    "tpr": False,
+                    "tnr": False,
+                    "ppv": False,
+                    "npv": False,
+                }
+            }
         )
         self.alarm_states.update(
-            {self.n: {"tpr": False, "tnr": False, "ppv": False, "npv": False}}
+            {
+                self.samples_since_reset: {
+                    "tpr": False,
+                    "tnr": False,
+                    "ppv": False,
+                    "npv": False,
+                }
+            }
         )
 
         for rate in ["tpr", "tnr", "ppv", "npv"]:
             if new_rates[rate] != old_rates[rate]:
-                new_R = self.time_decay_factor * self._R[self.n][rate] + (
-                    1 - self.time_decay_factor
-                ) * (y_t == yhat_t)
+                new_r_stat = self.time_decay_factor * self._r_stat[
+                    self.samples_since_reset
+                ][rate] + (1 - self.time_decay_factor) * (y_t == yhat_t)
             else:
-                new_R = self._R[self.n - 1][rate]
+                new_r_stat = self._r_stat[self.samples_since_reset - 1][rate]
 
-            self.P[self.n][rate] = new_rates[rate]
-            self._R[self.n][rate] = new_R
-            self._N[rate + "_N"] = self.get_four_denominators(self._C)[rate + "_N"]
+            self._p_table[self.samples_since_reset][rate] = new_rates[rate]
+            self._r_stat[self.samples_since_reset][rate] = new_r_stat
+            self._denominators[rate + "_N"] = self.get_four_denominators(
+                self._confusion
+            )[rate + "_N"]
 
-            if (self.n > self.burn_in) & (self.n % self.subsample == 0):
+            if (self.samples_since_reset > self.burn_in) & (
+                self.samples_since_reset % self.subsample == 0
+            ):
                 est_rate = new_rates[rate]
-                N = self._N[rate + "_N"]
+                curr_n = self._denominators[rate + "_N"]
 
                 r_est_rate = round(est_rate, round_val)
-                r_N = round(N, round_val)
+                r_n = round(curr_n, round_val)
 
-                bound_dict = self.update_bounds_dict(est_rate, N, r_est_rate, r_N)
+                bound_dict = self.update_bounds_dict(est_rate, curr_n, r_est_rate, r_n)
 
                 lb_warn = bound_dict["lb_warn"]
                 ub_warn = bound_dict["ub_warn"]
                 lb_detect = bound_dict["lb_detect"]
                 ub_detect = bound_dict["ub_detect"]
 
-                self.warning_states[self.n][rate] = (new_R < lb_warn) | (
-                    new_R > ub_warn
-                )
-                self.alarm_states[self.n][rate] = (new_R < lb_detect) | (
-                    new_R > ub_detect
-                )
+                self.warning_states[self.samples_since_reset][rate] = (
+                    new_r_stat < lb_warn
+                ) | (new_r_stat > ub_warn)
+                self.alarm_states[self.samples_since_reset][rate] = (
+                    new_r_stat < lb_detect
+                ) | (new_r_stat > ub_detect)
 
-        if any(self.alarm_states[self.n].values()):
+        if any(self.alarm_states[self.samples_since_reset].values()):
             self.all_drift_states.append("drift")
             self.drift_state = "drift"
-        elif any(self.warning_states[self.n].values()):
+        elif any(self.warning_states[self.samples_since_reset].values()):
             self.all_drift_states.append("warning")
             self.drift_state = "warning"
         else:
@@ -228,12 +262,12 @@ class LinearFourRates(DriftDetector):
             dict: a dictionary with TPR, TNR, PPV, NPV.
         """
         tn, fn, fp, tp = confusion.ravel()
-        d = dict()
-        d["tpr"] = tp / (tp + fn)
-        d["tnr"] = tn / (tn + fp)
-        d["ppv"] = tp / (fp + tp)
-        d["npv"] = tn / (tn + fn)
-        return d
+        result = dict()
+        result["tpr"] = tp / (tp + fn)
+        result["tnr"] = tn / (tn + fp)
+        result["ppv"] = tp / (fp + tp)
+        result["npv"] = tn / (tn + fn)
+        return result
 
     def get_four_denominators(self, confusion):
         """Takes a confusion matrix and returns a dictionary with denominators
@@ -247,14 +281,14 @@ class LinearFourRates(DriftDetector):
             dict: a dictionary with denominators for TPR, TNR, PPV, NPV.
         """
         tn, fn, fp, tp = confusion.ravel()
-        d = dict()
-        d["tpr_N"] = tp + fn
-        d["tnr_N"] = tn + fp
-        d["ppv_N"] = fp + tp
-        d["npv_N"] = tn + fn
-        return d
+        result = dict()
+        result["tpr_N"] = tp + fn
+        result["tnr_N"] = tn + fp
+        result["ppv_N"] = fp + tp
+        result["npv_N"] = tn + fn
+        return result
 
-    def update_bounds_dict(self, est_rate, N, r_est_rate, r_N):
+    def update_bounds_dict(self, est_rate, denom, r_est_rate, r_n):
         """Checks if combination of rounded est_rate and N has been seen before.
         If yes, reuse the bounds estimates. If no, simulate new bounds estimates
         and maintain in sorted bound dictionary. This method calculates Monte
@@ -263,46 +297,46 @@ class LinearFourRates(DriftDetector):
 
         Args:
             est_rate: empirical estimate of rate (P)
-            N: denominator of rate
+            denom: denominator of rate
             r_est_rate: rounded est_rate
-            r_N: rounded N
+            r_n: rounded denom
 
         Returns:
             dict: dictionary storing the bounds from MonteCarlo simulation for
                 each rate for previously seen pairs of estimated empirical rate
-                and N (time steps) with the structure:
+                and denom (time steps) with the structure:
                     {rate: {N_1: bound1, N_2: bound2, ...}}
         """
         if r_est_rate in self.bounds:
-            N_dict = self.bounds[r_est_rate]
+            denom_dict = self.bounds[r_est_rate]
 
-            if r_N in N_dict:
-                bound_dict = N_dict[r_N]
+            if r_n in denom_dict:
+                bound_dict = denom_dict[r_n]
             else:
-                bound_dict = self.sim_bounds(est_rate, N)
-                N_dict[r_N] = bound_dict
-                N_dict = dict(sorted(N_dict.items()))
-                self.bounds[r_est_rate] = N_dict
+                bound_dict = self.sim_bounds(est_rate, denom)
+                denom_dict[r_n] = bound_dict
+                denom_dict = dict(sorted(denom_dict.items()))
+                self.bounds[r_est_rate] = denom_dict
         else:
-            bound_dict = self.sim_bounds(est_rate, N)
+            bound_dict = self.sim_bounds(est_rate, denom)
 
-            N_dict = {r_N: bound_dict}
-            self.bounds[r_est_rate] = N_dict
+            denom_dict = {r_n: bound_dict}
+            self.bounds[r_est_rate] = denom_dict
             self.bounds = dict(sorted(self.bounds.items()))
 
         return bound_dict
 
-    def sim_bounds(self, est_rate, N):
-        """Takes an estimated rate and number of time steps N and returns
+    def sim_bounds(self, est_rate, denom):
+        """Takes an estimated rate and number of time steps denom and returns
         dictionary of lower and upper bounds for its empirical distribution.
 
         Args:
             est_rate: empirical estimate of rate (P)
-            N: denominator of rate
+            denom: denominator of rate
 
         Returns:
             dict: dictionary with keys ['lb_warn', 'ub_warn', 'lb_detect',
-                'ub_detect'] correpsonding to the lower and upper bounds at
+                'ub_detect'] corresponding to the lower and upper bounds at
                 the respective thresholds
 
 
@@ -312,30 +346,30 @@ class LinearFourRates(DriftDetector):
         detect_level = self.detect_level
         num_mc = self.num_mc
 
-        exps = [N - i for i in range(1, N + 1)]
+        exps = [denom - i for i in range(1, denom + 1)]
         prods = [
-            eta ** (exps[i]) for i in range(N)
-        ]  # eta^(N - i) where i is from 1 to N
+            eta ** (exps[i]) for i in range(denom)
+        ]  # eta^(denom - i) where i is from 1 to denom
         result_matrix = pd.DataFrame(
             np.repeat(prods, num_mc).reshape(len(prods), num_mc)
         )
 
-        def get_Rj(vec, eta, est_rate, N):
+        def get_Rj(vec, eta, est_rate, denom):
             """
 
             Args:
               vec:
               eta:
               est_rate:
-              N:
+              denom:
 
             Returns:
 
             """
-            bools = np.random.binomial(n=1, p=est_rate, size=N)
+            bools = np.random.binomial(n=1, p=est_rate, size=denom)
             return (1 - eta) * sum(vec * bools)
 
-        result_vector = result_matrix.apply(get_Rj, axis=0, args=(eta, est_rate, N))
+        result_vector = result_matrix.apply(get_Rj, axis=0, args=(eta, est_rate, denom))
 
         # find lower and upper bound for each alpha level
         lb_warn = np.percentile(result_vector, q=warning_level * 100)

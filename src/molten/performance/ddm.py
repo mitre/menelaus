@@ -1,5 +1,5 @@
 import numpy as np
-from molten.DriftDetector import DriftDetector
+from molten.drift_detector import DriftDetector
 
 
 class DDM(DriftDetector):
@@ -17,7 +17,7 @@ class DDM(DriftDetector):
         detector's state is set to "drift".
 
     The index of the first sample which triggered a warning/drift state
-    (relative to self.n) is stored in self.retraining_recs.
+    (relative to self.samples_since_reset) is stored in self.retraining_recs.
 
     Ref. J. Gama, P. Medas, G. Castillo, and P. Rodrigues, "Learning with drift
     detection," in Proc. 17th Brazilian Symp. Artificial Intelligence, ser.
@@ -52,7 +52,7 @@ class DDM(DriftDetector):
         self._error_std_min = float("inf")
         self._initialize_retraining_recs()
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """
@@ -63,7 +63,9 @@ class DDM(DriftDetector):
         self._error_std_min = float("inf")
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true):
+    def update(
+        self, y_pred, y_true, *args, **kwargs
+    ):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:
@@ -79,16 +81,17 @@ class DDM(DriftDetector):
         # with each sample, update estimate of error and its std, along with minimums
         error_rate_prev = self._error_rate
         self._error_rate = (
-            self._error_rate + (classifier_result - self._error_rate) / self.n
+            self._error_rate
+            + (classifier_result - self._error_rate) / self.samples_since_reset
         )
         self._error_std = self._error_std + (classifier_result - self._error_rate) * (
             classifier_result - error_rate_prev
         )
-        self._error_std = np.sqrt(self._error_std / self.n)
+        self._error_std = np.sqrt(self._error_std / self.samples_since_reset)
 
         # it's unclear whether the 'burn-in' period should be updating the
         # minimums - seems like a bad idea though.
-        if self.n < self.n_threshold:
+        if self.samples_since_reset < self.n_threshold:
             return
 
         if (
