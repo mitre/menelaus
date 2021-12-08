@@ -194,6 +194,8 @@ class PCACD(DriftDetector):
                 # Compute test distribution
                 self._kde_track_test = {}
                 for i in range(self.num_pcs):
+
+                    #for each PC builds KDE track and stores it in kde track test dictionary
                     self._kde_track_test[f"PC{i + 1}"] = self._build_kde_track(
                         self._test_pca_projection.iloc[:, i]
                     )
@@ -267,24 +269,21 @@ class PCACD(DriftDetector):
 
         super().update()
 
-    def _epanechnikov_kernel(self, x_j, approx_zero=False):
+    def _epanechnikov_kernel(self, x_j):
         """Calculate the Epanechnikov kernel value for a given value x_j, for
         use in kernel density estimation.
 
         Args:
-            x_j: single sample value
-            approx_zero: whether or not to approximate zero with a very small value
-                may be unnecessary in practice. Default False.
+            x_j: single value
 
         Returns:
             Epanechnikov kernel value for x_j.
 
         """
-        if approx_zero:
-            const = 10 ** (-6)
+        if abs(x_j) <= 1:
+            return (3 / 4) * (1 - (x_j ** 2))
         else:
-            const = 0
-        return [const if (x_j < 0 or x_j > 1) else (3 / 4) * (1 - (x_j ** 2))][0]
+            return 0
 
     def _log_likelihood(self, values_p, values_q):
         """Computes Log-Likelihood similarity between two distributions
