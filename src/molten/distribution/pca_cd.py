@@ -28,6 +28,21 @@ class PCACD(DriftDetector):
     Multidimensional Data Streams Categories and Subject Descriptors. KDD '15:
     The 21st ACM SIGKDD International Conference on Knowledge Discovery and Data
     Mining, 935-44. https://doi.org/10.1145/2783258.2783359
+
+    Attributes:
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
+        step (int): how frequently (by number of samples), to detect drift.
+            This is either 100 samples or sample_period * window_size, whichever
+            is smaller.
+        ph_threshold (float): threshold parameter for the internal Page-Hinkley
+            detector. Takes the value of .01 * window_size.
+        num_pcs (int): the number of principal components being used to meet
+            the specified ev_threshold parameter.
     """
 
     def __init__(
@@ -195,7 +210,7 @@ class PCACD(DriftDetector):
                 self._kde_track_test = {}
                 for i in range(self.num_pcs):
 
-                    #for each PC builds KDE track and stores it in kde track test dictionary
+                    # for each PC builds KDE track and stores it in kde track test dictionary
                     self._kde_track_test[f"PC{i + 1}"] = self._build_kde_track(
                         self._test_pca_projection.iloc[:, i]
                     )
@@ -269,6 +284,7 @@ class PCACD(DriftDetector):
 
         super().update()
 
+    @staticmethod
     def _epanechnikov_kernel(self, x_j):
         """Calculate the Epanechnikov kernel value for a given value x_j, for
         use in kernel density estimation.
@@ -285,7 +301,8 @@ class PCACD(DriftDetector):
         else:
             return 0
 
-    def _log_likelihood(self, values_p, values_q):
+    @staticmethod
+    def _log_likelihood(values_p, values_q):
         """Computes Log-Likelihood similarity between two distributions
 
         Args:
@@ -330,6 +347,7 @@ class PCACD(DriftDetector):
 
         return divergence
 
+    @staticmethod
     def _intersection_area(self, values_p, values_q):
         """Computes Intersection Area similarity between two distributions
 
@@ -345,7 +363,8 @@ class PCACD(DriftDetector):
 
         return divergence
 
-    def _build_kde_track(self, values):
+    @classmethod
+    def _build_kde_track(cls, values):
         """Compute the Kernel Density Estimate Track for a given 1D data stream
 
         Args:
@@ -359,7 +378,7 @@ class PCACD(DriftDetector):
         bandwidth = 1.06 * statistics.stdev(values) * (sample_length ** (-1 / 5))
         density = [
             (1 / (sample_length * bandwidth))
-            * sum([self._epanechnikov_kernel((x - x_j) / bandwidth) for x_j in values])
+            * sum([cls._epanechnikov_kernel((x - x_j) / bandwidth) for x_j in values])
             for x in values
         ]
 
