@@ -28,11 +28,17 @@ class EDDM(DriftDetector):
     Workshop Knowledge Discovery from Data Streams, 2006, Conference Paper.
 
     Attributes:
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
         retraining_recs: recommended indices for retraining. Usually
             [first warning index, drift index]. If no warning state occurs, this
             will instead be [drift index, drift index] -- this indicates an
             abrupt change.
-        Resets when self.drift_state returns to None (no drift nor warning).
+            Resets when self.drift_state returns to None (no drift nor warning).
     """
 
     def __init__(self, n_threshold=30, warning_thresh=0.95, drift_thresh=0.9):
@@ -51,10 +57,10 @@ class EDDM(DriftDetector):
         self._n_errors = 0
         self._index_error_curr = 0
         self._index_error_last = 0
-        self.dist_mean = 0
-        self.dist_std = 0
+        self._dist_mean = 0
+        self._dist_std = 0
         self._max_numerator = 0
-        self.test_statistic = None
+        self._test_statistic = None
         self._initialize_retraining_recs()
 
     def reset(self, *args, **kwargs):
@@ -65,10 +71,10 @@ class EDDM(DriftDetector):
         self._n_errors = 0
         self._index_error_curr = 0
         self._index_error_last = 0
-        self.dist_mean = 0
-        self.dist_std = 0
+        self._dist_mean = 0
+        self._dist_std = 0
         self._max_numerator = 0
-        self.test_statistic = None
+        self._test_statistic = None
         self._initialize_retraining_recs()
 
     def update(
@@ -99,12 +105,14 @@ class EDDM(DriftDetector):
             # calculate an average (updated at each time step), of the distance
             #   between two errors: prior average distance + distance between
             #   the most recent two will be the new average
-            prev_dist_mean = self.dist_mean
-            self.dist_mean = self.dist_mean + (dist - self.dist_mean) / self._n_errors
-            self.dist_std = self.dist_std + (dist - self.dist_mean) * (
+            prev_dist_mean = self._dist_mean
+            self._dist_mean = (
+                self._dist_mean + (dist - self._dist_mean) / self._n_errors
+            )
+            self._dist_std = self._dist_std + (dist - self._dist_mean) * (
                 dist - prev_dist_mean
             )
-            self.dist_std = np.sqrt(self.dist_std / self._n_errors)
+            self._dist_std = np.sqrt(self._dist_std / self._n_errors)
 
             # it's unclear whether the 'burn-in' period should be updating the
             # maximums - seems like a bad idea though.
@@ -113,18 +121,18 @@ class EDDM(DriftDetector):
 
             # check if the new average and SD are greater than the maximum, then
             # store what we need of them
-            curr_numerator = self.dist_mean + 2 * self.dist_std
+            curr_numerator = self._dist_mean + 2 * self._dist_std
             if self._max_numerator < curr_numerator:
                 self._max_numerator = curr_numerator
 
             # if the ratio of the current (p+2s)/(pmax + 2smax) is greater than
             # threshold, warn
-            self.test_statistic = curr_numerator / self._max_numerator
+            self._test_statistic = curr_numerator / self._max_numerator
 
             # self.buffer_size of STEPD
-            if self.test_statistic <= self.drift_thresh:
+            if self._test_statistic <= self.drift_thresh:
                 self.drift_state = "drift"
-            elif self.test_statistic <= self.warning_thresh:
+            elif self._test_statistic <= self.warning_thresh:
                 self.drift_state = "warning"
             else:
                 self.drift_state = None
@@ -133,13 +141,12 @@ class EDDM(DriftDetector):
                 self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """"""
+        """Sets self.retraining_recs to [None, None]."""
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Default retraining recommendation is [warning index, drift index]. If
-        no warning occurs, this will instead be [drift index, drift index]. Be
-        cautious, as this indicates an abrupt change.
+        """Set self.retraining_recs to the beginning and end of the current 
+        drift/warning region. 
         """
         if self.drift_state == "warning" and self.retraining_recs[0] is None:
             self.retraining_recs[0] = self.total_samples - 1

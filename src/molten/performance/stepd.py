@@ -32,6 +32,14 @@ class STEPD(DriftDetector):
     testing," in Proc. 10th Int. Conf. Discovery Science, V. Corruble, M.
     Takeda, and E. Suzuki, Eds. Berlin, Heidelberg: Springer Berlin Heidelberg,
     2007, Conference Proceedings, pp 264-269.
+
+    Attributes:
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
     """
 
     def __init__(self, window_size=30, alpha_warning=0.05, alpha_drift=0.003):
@@ -163,11 +171,13 @@ class STEPD(DriftDetector):
         return out
 
     def _initialize_retraining_recs(self):
-        """ """
+        """Sets self.retraining_recs to [None, None]."""
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """ """
+        """Set self.retraining_recs to the beginning and end of the current 
+        drift/warning region. 
+        """
         if self.retraining_recs[0] is None:
             self.retraining_recs[0], self.retraining_recs[1] = (
                 self.total_samples,

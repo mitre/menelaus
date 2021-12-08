@@ -45,6 +45,15 @@ class KdqTree(DriftDetector):
     data streams,” in Proc. Symp. the Interface of Statistics,
     Computing Science, and Applications. Citeseer, 2006, Conference
     Proceedings, pp. 1–24.
+
+
+    Attributes:
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
     """
 
     def __init__(
@@ -72,19 +81,19 @@ class KdqTree(DriftDetector):
             verbose (bool, optional): prints progress to console. Defaults to True.
         """
         super().__init__()
-        self._min_points_in_bin = min_points_in_bin
-        self._window_size = window_size
-        self._num_bootstrap_samples = num_bootstrap_samples
-        self._gamma = gamma
-        self._verbose = verbose
-        self._alpha = alpha
+        self.min_points_in_bin = min_points_in_bin
+        self.window_size = window_size
+        self.num_bootstrap_samples = num_bootstrap_samples
+        self.gamma = gamma
+        self.alpha = alpha
+        self.verbose = verbose
 
         self._build_reference_and_test = True
 
         self._kdq_tree_nodes = None
         self._alphabet = None
 
-        self.window_data = {"reference": pd.DataFrame(), "test": pd.DataFrame()}
+        self._window_data = {"reference": pd.DataFrame(), "test": pd.DataFrame()}
         self._critical_distance = None
 
         # Drift tracker stores relevant statistics. Dist: for each new
@@ -93,8 +102,8 @@ class KdqTree(DriftDetector):
         # threshold for evaluating KL divergence value to detect drift. Only
         # recomputed for each new reference and test window. ID: contains the
         # index value of each new observation
-        self.drift_tracker = {"dist": [], "critical_distance": [], "id": []}
-        self.drift_location = {
+        self._drift_tracker = {"dist": [], "critical_distance": [], "id": []}
+        self._drift_location = {
             "spatial_scan_statistic": [],
             "kdq_tree_nodes": [],
             "id": [],
@@ -114,48 +123,48 @@ class KdqTree(DriftDetector):
 
         super().update()
 
-        if self._verbose:
+        if self.verbose:
             print(f"Row Index: {next_obs.index.values[0]}")
 
         if self._build_reference_and_test:
-            if len(self.window_data["reference"]) < self._window_size:
-                self.window_data["reference"] = self.window_data["reference"].append(
+            if len(self._window_data["reference"]) < self.window_size:
+                self._window_data["reference"] = self._window_data["reference"].append(
                     next_obs
                 )
 
-            elif len(self.window_data["test"]) < self._window_size:
-                self.window_data["test"] = self.window_data["test"].append(next_obs)
+            elif len(self._window_data["test"]) < self.window_size:
+                self._window_data["test"] = self._window_data["test"].append(next_obs)
 
-                if len(self.window_data["test"]) == self._window_size:
+                if len(self._window_data["test"]) == self.window_size:
                     self._build_reference_and_test = False
 
                     self._kdq_tree_nodes = self._kdq_tree_build_nodes(
-                        data_input=self.window_data["reference"],
-                        min_points=self._min_points_in_bin,
-                        verbose=self._verbose,
+                        data_input=self._window_data["reference"],
+                        min_points=self.min_points_in_bin,
+                        verbose=self.verbose,
                     )
 
                     # Merge in the bins for both the reference and test windows
                     kdqbins = self._kdq_tree_build_bins(self._kdq_tree_nodes)
-                    self.window_data["reference"] = self.window_data["reference"].merge(
-                        kdqbins, how="left", left_index=True, right_on="id"
-                    )
-                    self.window_data["reference"].set_index("id", inplace=True)
-                    self.window_data["reference"].index.name = self.window_data[
+                    self._window_data["reference"] = self._window_data[
+                        "reference"
+                    ].merge(kdqbins, how="left", left_index=True, right_on="id")
+                    self._window_data["reference"].set_index("id", inplace=True)
+                    self._window_data["reference"].index.name = self._window_data[
                         "test"
                     ].index.name
 
                     self._alphabet = list(kdqbins.bin.unique())
 
                     test_bins = []
-                    for i in range(len(self.window_data["test"])):
+                    for i in range(len(self._window_data["test"])):
                         test_bins.append(
                             self._kdq_tree_binner(
                                 kdq_tree_nodes=self._kdq_tree_nodes,
-                                data_point=self.window_data["test"].iloc[[i]],
+                                data_point=self._window_data["test"].iloc[[i]],
                             )
                         )
-                    self.window_data["test"] = self.window_data["test"].assign(
+                    self._window_data["test"] = self._window_data["test"].assign(
                         bin=test_bins
                     )
 
@@ -165,9 +174,9 @@ class KdqTree(DriftDetector):
                     # percentile among calculated divergences comparing the
                     # first half of the bootstrap samples to the second.
                     bootstrap_samples = self._bootstrapping(
-                        self.window_data["reference"]["bin"].tolist(),
-                        2 * self._window_size,
-                        self._num_bootstrap_samples,
+                        self._window_data["reference"]["bin"].tolist(),
+                        2 * self.window_size,
+                        self.num_bootstrap_samples,
                     )
                     bootstrap_types = [
                         [
@@ -184,7 +193,7 @@ class KdqTree(DriftDetector):
                     bootstrap_kl_distances.sort()
 
                     self._critical_distance = bootstrap_kl_distances[
-                        int(np.ceil(self._num_bootstrap_samples * self._alpha))
+                        int(np.ceil(self.num_bootstrap_samples * self.alpha))
                     ]
 
         else:
@@ -194,44 +203,44 @@ class KdqTree(DriftDetector):
                 )
             )
 
-            self.window_data["test"] = (
-                self.window_data["test"].iloc[1:, :].append(next_obs)
+            self._window_data["test"] = (
+                self._window_data["test"].iloc[1:, :].append(next_obs)
             )
 
             type1 = self._compute_type(
-                self.window_data["reference"]["bin"].tolist(), self._alphabet
+                self._window_data["reference"]["bin"].tolist(), self._alphabet
             )
             type2 = self._compute_type(
-                self.window_data["test"]["bin"].tolist(), self._alphabet
+                self._window_data["test"]["bin"].tolist(), self._alphabet
             )
 
             dist = kl_divergence(type1, type2)
 
-            self.drift_tracker["dist"].append(dist)
-            self.drift_tracker["critical_distance"].append(self._critical_distance)
-            self.drift_tracker["id"].append(next_obs.index.values[0])
+            self._drift_tracker["dist"].append(dist)
+            self._drift_tracker["critical_distance"].append(self._critical_distance)
+            self._drift_tracker["id"].append(next_obs.index.values[0])
 
-            if self._verbose:
+            if self.verbose:
                 print(f"Distance: {str(round(dist, 4))}")
                 print("------------------------------")
 
             if dist > self._critical_distance:
                 self._c = self._c + 1
 
-                if self._c > self._gamma * self._window_size:
+                if self._c > self.gamma * self.window_size:
 
-                    if self._verbose:
+                    if self.verbose:
                         print("Change detected!")
 
                     self.drift_state = "drift"
 
-                    self.drift_location["id"].append(next_obs.index.values[0])
+                    self._drift_location["id"].append(next_obs.index.values[0])
 
                     kdqbins_filtered = self._kdq_tree_build_bins(
                         self._kdq_tree_nodes[self._kdq_tree_nodes["depth"] < 9]
                     )
 
-                    self.drift_location["spatial_scan_statistic"].append(
+                    self._drift_location["spatial_scan_statistic"].append(
                         self._kulldorff_spatial_scan_statistic(
                             alphabet=list(kdqbins_filtered.bin.unique()),
                             bins_w1=[
@@ -240,7 +249,7 @@ class KdqTree(DriftDetector):
                                     list(kdqbins_filtered.bin),
                                     list(kdqbins_filtered.id),
                                 )
-                                if y in self.window_data["reference"].index.tolist()
+                                if y in self._window_data["reference"].index.tolist()
                             ],
                             bins_w2=[
                                 x
@@ -248,20 +257,20 @@ class KdqTree(DriftDetector):
                                     list(kdqbins_filtered.bin),
                                     list(kdqbins_filtered.id),
                                 )
-                                if y in self.window_data["test"].index.tolist()
+                                if y in self._window_data["test"].index.tolist()
                             ],
                         ).sort_values(
                             "kulldorff_spatial_scan_statistic", ascending=False
                         )
                     )
 
-                    self.drift_location["kdq_tree_nodes"].append(self._kdq_tree_nodes)
+                    self._drift_location["kdq_tree_nodes"].append(self._kdq_tree_nodes)
 
                     self._build_reference_and_test = True
-                    self.window_data["reference"] = self.window_data["test"].drop(
+                    self._window_data["reference"] = self._window_data["test"].drop(
                         columns=["bin"]
                     )
-                    self.window_data["test"] = pd.DataFrame()
+                    self._window_data["test"] = pd.DataFrame()
                     self._c = 0
             else:
                 self._c = 0
@@ -284,7 +293,7 @@ class KdqTree(DriftDetector):
         """
         if id_date_df is None:
             kl_distance_ts = pd.DataFrame(
-                self.drift_tracker, index=range(len(self.drift_tracker["dist"]))
+                self._drift_tracker, index=range(len(self._drift_tracker["dist"]))
             )
 
             with plt.style.context("fivethirtyeight"):
@@ -332,7 +341,7 @@ class KdqTree(DriftDetector):
                 plt.show()
         else:
             kl_distance_ts = pd.DataFrame(
-                self.drift_tracker, index=range(len(self.drift_tracker["dist"]))
+                self._drift_tracker, index=range(len(self._drift_tracker["dist"]))
             ).merge(id_date_df, how="left", on="id")
             with plt.style.context("fivethirtyeight"):
                 plt.figure(figsize=(20, 8))
@@ -399,16 +408,16 @@ class KdqTree(DriftDetector):
             not the index of that observation in the original dataframe.
         """
 
-        if len(self.drift_location["spatial_scan_statistic"]) == 0:
+        if len(self._drift_location["spatial_scan_statistic"]) == 0:
             print("No drift detected")
             return None
 
         figs = []
 
-        for i in range(len(self.drift_location["spatial_scan_statistic"])):
-            spatial_scan_statistic = self.drift_location["spatial_scan_statistic"][i]
-            kdq_tree_nodes = self.drift_location["kdq_tree_nodes"][i]
-            current_id = self.drift_location["id"][i]
+        for i in range(len(self._drift_location["spatial_scan_statistic"])):
+            spatial_scan_statistic = self._drift_location["spatial_scan_statistic"][i]
+            kdq_tree_nodes = self._drift_location["kdq_tree_nodes"][i]
+            current_id = self._drift_location["id"][i]
 
             bin_df = pd.DataFrame(
                 columns=["kdqTree"]
@@ -456,7 +465,8 @@ class KdqTree(DriftDetector):
             )
         return figs
 
-    def _bootstrapping(self, list_input: list, sample_size: int, num_samples: int):
+    @staticmethod
+    def _bootstrapping(list_input: list, sample_size: int, num_samples: int):
         """Computes bootstrap samples from a given list of objects
 
         Args:
@@ -481,7 +491,8 @@ class KdqTree(DriftDetector):
 
         return bootstrap_samples
 
-    def _compute_type(self, multiset: list, alphabet: list):
+    @staticmethod
+    def _compute_type(multiset: list, alphabet: list):
         """Computes the type for each letter in an alphabet, according to the theory of types
 
         Args:
@@ -500,14 +511,18 @@ class KdqTree(DriftDetector):
 
         return computed_type
 
-    def _kdq_tree_binner(self, kdq_tree_nodes, data_point):
-        """
+    @staticmethod
+    def _kdq_tree_binner(kdq_tree_nodes, data_point):
+        """Returns the bin_id that the passed data_point should be placed in
+        in the existing kdq_tree_nodes.
 
         Args:
-            kdq_tree_nodes:
-            data_point:
+            kdq_tree_nodes: the kdq-tree in which to place data_point
+            data_point: the data_point to be placed
 
         Returns:
+            int: the ID of the selected bin, to be stapled onto the observation
+                dataframe.
 
         """
         next_id = 1
@@ -534,7 +549,8 @@ class KdqTree(DriftDetector):
 
         return bin_id
 
-    def _kdq_tree_build_bins(self, clean_results):
+    @staticmethod
+    def _kdq_tree_build_bins(clean_results):
         """Builds kdqTree bins from nodes and splits defined in the output of
         _kdq_tree_build_nodes()
 
@@ -581,8 +597,9 @@ class KdqTree(DriftDetector):
 
         return out
 
+    @classmethod
     def _kdq_tree_splits(
-        self,
+        cls,
         data_input: pd.DataFrame,
         original_ids: list,
         node: dict,
@@ -673,7 +690,7 @@ class KdqTree(DriftDetector):
             max_next = np.max(data_input.iloc[:, axis_next])
             min_next = np.min(data_input.iloc[:, axis_next])
 
-            node["left_child"] = self._kdq_tree_splits(
+            node["left_child"] = cls._kdq_tree_splits(
                 data_input.loc[left_of_cutpoint, :],
                 original_ids=original_ids,
                 node=node.copy(),
@@ -686,7 +703,7 @@ class KdqTree(DriftDetector):
                 verbose=verbose,
             )
 
-            node["right_child"] = self._kdq_tree_splits(
+            node["right_child"] = cls._kdq_tree_splits(
                 data_input.loc[[not x for x in left_of_cutpoint], :],
                 original_ids=original_ids,
                 node=node.copy(),
@@ -773,7 +790,8 @@ class KdqTree(DriftDetector):
 
         return clean_results
 
-    def _kulldorff_spatial_scan_statistic(self, alphabet, bins_w1, bins_w2):
+    @staticmethod
+    def _kulldorff_spatial_scan_statistic(alphabet, bins_w1, bins_w2):
         """Computes Kulldorf Spatial Scan Statistic between two bins in an
         alphabet
 
@@ -808,6 +826,7 @@ class KdqTree(DriftDetector):
             {"bin": alphabet, "kulldorff_spatial_scan_statistic": statistic}
         )
 
+    @staticmethod
     def _tree_parser(self, kdq_tree_nodes, bin_id):
         """Parse tree to bin into text
 

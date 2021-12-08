@@ -24,6 +24,14 @@ class PageHinkley(DriftDetector):
 
     References: D.V.Hinkley. 1971. Inference about the change-point from
     cumulative sum tests. Biometrika 58, 3 (1971), 509-523
+
+    Attributes:
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
     """
 
     def __init__(self, delta=0.01, threshold=20, burn_in=30, direction="positive"):
@@ -53,20 +61,22 @@ class PageHinkley(DriftDetector):
         self.threshold = threshold
         self.direction = direction
 
-        self.max = 0
-        self.min = 0
-        self.sum = 0
-        self.mean = 0
+        self._max = 0
+        self._min = 0
+        self._sum = 0
+        self._mean = 0
 
-        self.ids = []
-        self.change_scores = []
-        self.page_hinkley_values = []
-        self.page_hinkley_differences = []
-        self.theta_threshold = []
-        self.drift_detected = []
-        self.maxes = []
-        self.mins = []
-        self.means = []
+        # currently, if these need to be made available, they are through the
+        # to_dataframe method
+        self._ids = []
+        self._change_scores = []
+        self._page_hinkley_values = []
+        self._page_hinkley_differences = []
+        self._theta_threshold = []
+        self._drift_detected = []
+        self._maxes = []
+        self._mins = []
+        self._means = []
 
     def update(
         self, next_obs, *args, obs_id=None, **kwargs
@@ -81,70 +91,70 @@ class PageHinkley(DriftDetector):
             self.reset()
         super().update()
 
-        self.mean = self.mean + (next_obs - self.mean) / self.samples_since_reset
-        self.sum = self.sum + next_obs - self.mean - self.delta
-        theta = self.threshold * self.mean
+        self._mean = self._mean + (next_obs - self._mean) / self.samples_since_reset
+        self._sum = self._sum + next_obs - self._mean - self.delta
+        theta = self.threshold * self._mean
 
-        if self.sum < self.min:
-            self.min = self.sum
+        if self._sum < self._min:
+            self._min = self._sum
 
-        if self.sum > self.max:
-            self.max = self.sum
+        if self._sum > self._max:
+            self._max = self._sum
 
         if self.direction == "positive":
-            ph_difference = self.sum - self.min
+            ph_difference = self._sum - self._min
         elif self.direction == "negative":
-            ph_difference = self.max - self.sum
+            ph_difference = self._max - self._sum
 
         drift_check = ph_difference > theta
 
         if drift_check and self.samples_since_reset > self.burn_in:
             self.drift_state = "drift"
 
-        self.ids.append(obs_id)
-        self.change_scores.append(next_obs)
-        self.page_hinkley_values.append(self.sum)
-        self.page_hinkley_differences.append(ph_difference)
-        self.drift_detected.append(drift_check)
-        self.theta_threshold.append(theta)
+        self._ids.append(obs_id)
+        self._change_scores.append(next_obs)
+        self._page_hinkley_values.append(self._sum)
+        self._page_hinkley_differences.append(ph_difference)
+        self._drift_detected.append(drift_check)
+        self._theta_threshold.append(theta)
 
-        self.maxes.append(self.max)
-        self.mins.append(self.min)
-        self.means.append(self.mean)
+        self._maxes.append(self._max)
+        self._mins.append(self._min)
+        self._means.append(self._mean)
 
     def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'.
         """
         super().reset()
-        self.max = 0
-        self.min = 0
-        self.sum = 0
-        self.mean = 0
+        self._max = 0
+        self._min = 0
+        self._sum = 0
+        self._mean = 0
 
-        self.ids = []
-        self.change_scores = []
-        self.page_hinkley_values = []
-        self.page_hinkley_differences = []
-        self.theta_threshold = []
-        self.drift_detected = []
+        self._ids = []
+        self._change_scores = []
+        self._page_hinkley_values = []
+        self._page_hinkley_differences = []
+        self._theta_threshold = []
+        self._drift_detected = []
 
-        self.maxes = []
-        self.mins = []
-        self.means = []
+        self._maxes = []
+        self._mins = []
+        self._means = []
 
     def to_dataframe(self):
         """Returns a dataframe storing current statistics"""
         return pd.DataFrame(
             {
-                "ids": self.ids,
-                "change_scores": self.change_scores,
-                "page_hinkley_values": self.page_hinkley_values,
-                "page_hinkley_differences": self.page_hinkley_differences,
-                "theta_threshold": self.theta_threshold,
-                "drift_detected": self.drift_detected,
-                "maximum_sum_values": self.maxes,
-                "minimum_sum_values": self.mins,
-                "mean_values": self.means,
+                "ids": self._ids,
+                "change_scores": self._change_scores,
+                "page_hinkley_values": self._page_hinkley_values,
+                "page_hinkley_differences": self._page_hinkley_differences,
+                "theta_threshold": self._theta_threshold,
+                "drift_detected": self._drift_detected,
+                "maximum_sum_values": self._maxes,
+                "minimum_sum_values": self._mins,
+                "mean_values": self._means,
             }
         )

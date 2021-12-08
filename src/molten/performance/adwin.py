@@ -27,6 +27,19 @@ class ADWIN(DriftDetector):
     Ref. A. Bifet and R. Gavalda, "Learning from time-changing data with
     adaptive windowing." in Proc. 2007 SIAM Int. Conf. Data Mining, vol. 7.
     SIAM, 2007, Conference Proceedings, p. 2007.
+
+    Attributes:
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
+        retraining_recs: recommended indices for retraining. If drift is detected,
+            set to [beginning of ADWIN's new window, end of ADWIN's new window].
+            If these are e.g. the 5th and 13th sample that ADWIN has been updated
+            with, the values with be [4, 12].
+
     """
 
     def __init__(
@@ -55,7 +68,7 @@ class ADWIN(DriftDetector):
                 the window required to check for drift. Defaults to 10.
             subwindow_size_thresh (int, optional): the minimum number of samples
                 in each subwindow reqired to check it for drift. Defaults to 5.
-                conservative_bound (bool, optional): whether to assume a 'large
+            conservative_bound (bool, optional): whether to assume a 'large
                 enough' sample when constructing drift cutoff. Defaults to False.
 
         Raises:
@@ -85,7 +98,7 @@ class ADWIN(DriftDetector):
         self._window_size = 0
         self.retraining_recs = [None, None]
 
-    def update(self, new_value, *args, **kwargs): # pylint: disable=arguments-differ
+    def update(self, new_value, *args, **kwargs):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
 
         Args:
@@ -239,16 +252,21 @@ class ADWIN(DriftDetector):
 
     def _check_epsilon(self, n_elements0, total0, n_elements1, total1):
         """Calculate epsilon_cut given the size and totals of two windows
-        (equation 3.1 from Bifet 2006).
+        (equation 3.1 from Bifet 2006). If the difference between the estimated
+        mean of the two windows (defined by n_elements*, total*) is greater
+        than the calculated threshold, it indicates that drift has occurred.
+
 
         Args:
-          n_elements0:
-          total0:
-          n_elements1:
-          total1:
+          n_elements0 (int): number of elements in the first window
+          total0 (float): running total for elements in the first window
+          n_elements1 (int): number of elements in the second window
+          total1 (float): running total for elements in the second window
 
         Returns:
-
+            bool: whether or not the difference between the two windows' means
+                exceeds the current threshold defined by ADWIN's variance
+                estimate and the chosen delta value.
         """
 
         window_diff = 1.0 * ((total0 / n_elements0) - (total1 / n_elements1))
@@ -429,7 +447,8 @@ class _BucketRow:
         self.bucket_variances = self.shift(self.bucket_variances, num_buckets)
         self.bucket_count -= num_buckets
 
-    def shift(self, arr, num, fill_value=0):
+    @staticmethod
+    def shift(arr, num, fill_value=0):
         """Shift arr toward the 0 index by num indices; the last num indices
         will be filled with fill_value.
 

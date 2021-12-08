@@ -25,10 +25,21 @@ class DDM(DriftDetector):
     286-295.
 
     Attributes:
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
         n_threshold: the minimum number of samples required to test whether
             drift has occurred
         warning_scale: defines the threshold over which to enter the warning state.
         drift_scale: defines the threshold over which to enter the drift state.
+        retraining_recs: indices of the first and last recommended training
+            samples. A list of length 2, containing [warning index, drift index].
+            If no warning occurs, this will instead be [drift index, drift index].
+            The latter should cause caution, as it indicates an abrupt change.
+            Resets when to [None, None] after drift is detected.
     """
 
     def __init__(self, n_threshold=30, warning_scale=2, drift_scale=3):
@@ -118,13 +129,12 @@ class DDM(DriftDetector):
             self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """document me"""
+        """Sets self.retraining_recs to [None, None]."""
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Default retraining recommendation is [warning index, drift index]. If
-        no warning occurs, this will instead be [drift index, drift index]. Be
-        cautious, as this indicates an abrupt change.
+        """Set self.retraining_recs to the beginning and end of the current 
+        drift/warning region. 
         """
         if self.drift_state == "warning" and self.retraining_recs[0] is None:
             self.retraining_recs[0] = self.total_samples - 1

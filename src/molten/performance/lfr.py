@@ -27,13 +27,12 @@ class LinearFourRates(DriftDetector):
     Proceedings, pp. 1–9.
 
     Attributes:
-        warning_states: dictionary of warning state for each rate at each index
-        alarm_states: dictionary of alarm state for each rate at each index
-        P: dictionary of values for each of the four rates at each index
-        bounds: dictionary storing the bounds from MonteCarlo simulation for
-            each rate for previously seen pairs of estimated empirical rate and
-            N (time steps) with the structure:
-                {rate: {N_1: bound1, N_2: bound2, ...}}
+        total_samples (int): number of samples the drift detector has ever
+            been updated with
+        samples_since_reset (int): number of samples since the last time the
+            drift detector was reset
+        drift_state (str): detector's current drift state. Can take values
+            "drift", "warning", or None.
         retraining_recs: recommends indexes between first warning and drift for
             retraining. Resets during return to normal state after each detection
             of drift. If no warning alarms, recommendation is from current drift
@@ -64,7 +63,7 @@ class LinearFourRates(DriftDetector):
             burn_in (int, optional): Number of observations to make up a burn-in
                 period; simulations will not happen until this index has passed,
                 initially and after reaching drift state. Defaults to 50.
-                num_mc (int, optional): Number of Monte Carlo iterations to run.
+            num_mc (int, optional): Number of Monte Carlo iterations to run.
                 Defaults to 10000.
             subsample (int, optional): A subsample of value n will only test for
                 drift every nth observation. Rates will still be calculated, the
@@ -81,14 +80,14 @@ class LinearFourRates(DriftDetector):
             self.burn_in = 0
         self.subsample = subsample
         self.all_drift_states = []
-        self.warning_states = {
+        self._warning_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
         }
-        self.alarm_states = {
+        self._alarm_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
         }
         self._p_table = {0: {"tpr": 0.5, "tnr": 0.5, "ppv": 0.5, "npv": 0.5}}
-        self.bounds = dict()
+        self._bounds = dict()
         self._confusion = np.array([[1, 1], [1, 1]])  # confusion matrix
         self._denominators = {
             0: {"tpr_N": 2, "tnr_N": 2, "ppv_N": 2, "npv_N": 2}
@@ -107,10 +106,10 @@ class LinearFourRates(DriftDetector):
         self._confusion = np.array([[1, 1], [1, 1]])  # C at a given time point
         self._denominators = {0: {"tpr_N": 2, "tnr_N": 2, "ppv_N": 2, "npv_N": 2}}
         self._r_stat = self._p_table.copy()
-        self.warning_states = {
+        self._warning_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
         }
-        self.alarm_states = {
+        self._alarm_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
         }
         self._initialize_retraining_recs()
@@ -162,7 +161,7 @@ class LinearFourRates(DriftDetector):
                 ].copy()
             }
         )
-        self.warning_states.update(
+        self._warning_states.update(
             {
                 self.samples_since_reset: {
                     "tpr": False,
@@ -172,7 +171,7 @@ class LinearFourRates(DriftDetector):
                 }
             }
         )
-        self.alarm_states.update(
+        self._alarm_states.update(
             {
                 self.samples_since_reset: {
                     "tpr": False,
@@ -213,17 +212,17 @@ class LinearFourRates(DriftDetector):
                 lb_detect = bound_dict["lb_detect"]
                 ub_detect = bound_dict["ub_detect"]
 
-                self.warning_states[self.samples_since_reset][rate] = (
+                self._warning_states[self.samples_since_reset][rate] = (
                     new_r_stat < lb_warn
                 ) | (new_r_stat > ub_warn)
-                self.alarm_states[self.samples_since_reset][rate] = (
+                self._alarm_states[self.samples_since_reset][rate] = (
                     new_r_stat < lb_detect
                 ) | (new_r_stat > ub_detect)
 
-        if any(self.alarm_states[self.samples_since_reset].values()):
+        if any(self._alarm_states[self.samples_since_reset].values()):
             self.all_drift_states.append("drift")
             self.drift_state = "drift"
-        elif any(self.warning_states[self.samples_since_reset].values()):
+        elif any(self._warning_states[self.samples_since_reset].values()):
             self.all_drift_states.append("warning")
             self.drift_state = "warning"
         else:
@@ -234,13 +233,12 @@ class LinearFourRates(DriftDetector):
             self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """ """
+        """Sets self.retraining_recs to [None, None]."""
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Default retraining recommendation is [warning index, drift index]. If
-        no warning occurs, this will instead be [drift index, drift index]. Be
-        cautious, as this indicates an abrupt change.
+        """Set self.retraining_recs to the beginning and end of the current
+        drift/warning region.
         """
         if self.drift_state == "warning" and self.retraining_recs[0] is None:
             self.retraining_recs[0] = self.total_samples - 1
@@ -250,7 +248,8 @@ class LinearFourRates(DriftDetector):
             if self.retraining_recs[0] is None:
                 self.retraining_recs[0] = self.total_samples - 1
 
-    def get_four_rates(self, confusion):
+    @staticmethod
+    def get_four_rates(confusion):
         """Takes a confusion matrix and returns a dictionary with TPR, TNR, PPV,
         NPV.
 
@@ -269,7 +268,8 @@ class LinearFourRates(DriftDetector):
         result["npv"] = tn / (tn + fn)
         return result
 
-    def get_four_denominators(self, confusion):
+    @staticmethod
+    def get_four_denominators(confusion):
         """Takes a confusion matrix and returns a dictionary with denominators
         for TPR, TNR, PPV, NPV.
 
@@ -307,8 +307,8 @@ class LinearFourRates(DriftDetector):
                 and denom (time steps) with the structure:
                     {rate: {N_1: bound1, N_2: bound2, ...}}
         """
-        if r_est_rate in self.bounds:
-            denom_dict = self.bounds[r_est_rate]
+        if r_est_rate in self._bounds:
+            denom_dict = self._bounds[r_est_rate]
 
             if r_n in denom_dict:
                 bound_dict = denom_dict[r_n]
@@ -316,13 +316,13 @@ class LinearFourRates(DriftDetector):
                 bound_dict = self.sim_bounds(est_rate, denom)
                 denom_dict[r_n] = bound_dict
                 denom_dict = dict(sorted(denom_dict.items()))
-                self.bounds[r_est_rate] = denom_dict
+                self._bounds[r_est_rate] = denom_dict
         else:
             bound_dict = self.sim_bounds(est_rate, denom)
 
             denom_dict = {r_n: bound_dict}
-            self.bounds[r_est_rate] = denom_dict
-            self.bounds = dict(sorted(self.bounds.items()))
+            self._bounds[r_est_rate] = denom_dict
+            self._bounds = dict(sorted(self._bounds.items()))
 
         return bound_dict
 
@@ -355,17 +355,19 @@ class LinearFourRates(DriftDetector):
         )
 
         def get_Rj(vec, eta, est_rate, denom):
-            """
+            """Get modified rate as a test statistic for the empirical rate
 
             Args:
-              vec:
-              eta:
-              est_rate:
-              denom:
+              vec: vector to re-weight by result of bernoulli trials
+              eta: time decay factor (see self.time_decay_factor)
+              est_rate: current estimated rate
+              denom: current denominator for the rate
 
             Returns:
 
             """
+            # est_rate and size seem like they could be inferred from the passed
+            # vector and self.time_decay_rate
             bools = np.random.binomial(n=1, p=est_rate, size=denom)
             return (1 - eta) * sum(vec * bools)
 
