@@ -285,7 +285,7 @@ class PCACD(DriftDetector):
         super().update()
 
     @staticmethod
-    def _epanechnikov_kernel(self, x_j):
+    def _epanechnikov_kernel(x_j):
         """Calculate the Epanechnikov kernel value for a given value x_j, for
         use in kernel density estimation.
 
@@ -348,7 +348,7 @@ class PCACD(DriftDetector):
         return divergence
 
     @staticmethod
-    def _intersection_area(self, values_p, values_q):
+    def _intersection_area(values_p, values_q):
         """Computes Intersection Area similarity between two distributions
 
         Args:

@@ -827,7 +827,7 @@ class KdqTree(DriftDetector):
         )
 
     @staticmethod
-    def _tree_parser(self, kdq_tree_nodes, bin_id):
+    def _tree_parser(kdq_tree_nodes, bin_id):
         """Parse tree to bin into text
 
         Args:
