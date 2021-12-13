@@ -388,7 +388,8 @@ class PCACD(DriftDetector):
 
         return {"point": values, "density": density}
 
-    def _build_histograms(self, values, bins):
+    @staticmethod
+    def _build_histograms(values, bins):
         """Compute the histogram density estimates for a given 1D data stream. Density estimates consist of the value of
         the pdf in each bin, normalized s.t. integral over the entire range is 1
 
