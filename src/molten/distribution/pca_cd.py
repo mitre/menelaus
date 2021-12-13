@@ -1,6 +1,7 @@
 import statistics
 import numpy as np
 import pandas as pd
+import math
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from molten.drift_detector import DriftDetector
@@ -50,6 +51,7 @@ class PCACD(DriftDetector):
         window_size,
         ev_threshold=0.99,
         delta=0.1,
+        density="kde",
         divergence_metric="kl",
         sample_period=0.05,
         online_scaling=False,
@@ -65,6 +67,12 @@ class PCACD(DriftDetector):
                 Defaults to 0.99.
             delta (float, optional): Parameter for Page Hinkley test. Minimum
                 amplitude of change in data needed to sound alarm. Defaults to 0.1.
+            density (str, optional): density estimate when computing distributions
+                of two windows. Defaults to "kde"
+                    "kde" - use kernel density estimation with epanechnikov kernel
+                    "histograms" - uses histograms to estimate densities of windows.
+                    A discontinuous, less accurate density estimate that should
+                    only be used when efficiency is of concern.
             divergence_metric (str, optional): divergence metric when comparing
                 the two distributions when detecting drift. Defaults to "kl".
                     "kl" - symmetric Kullback-Leibler divergence
@@ -85,12 +93,16 @@ class PCACD(DriftDetector):
         self.window_size = window_size
         self.ev_threshold = ev_threshold
         self.divergence_metric = divergence_metric
+        self.density = density
         self.track_state = track_state
-        self.sample_period = sample_period
+        self.sample_period = (
+            sample_period  # TODO modify sample period dependent upon density estimate
+        )
 
         # Initialize parameters
         self.step = min(100, round(self.sample_period * window_size))
         self.ph_threshold = round(0.01 * window_size)
+        self.bins = math.floor(math.sqrt(self.window_size))
 
         self.delta = delta
 
@@ -112,8 +124,8 @@ class PCACD(DriftDetector):
         self._pca = None
         self._reference_pca_projection = pd.DataFrame()
         self._test_pca_projection = pd.DataFrame()
-        self._kde_track_reference = {}
-        self._kde_track_test = {}
+        self._density_reference = {}
+        self._density_test = {}
 
     def update(self, next_obs, *args, **kwargs):  # pylint: disable=arguments-differ
         """Update the detector with a new observation.
@@ -167,9 +179,17 @@ class PCACD(DriftDetector):
 
                 # Compute reference distribution
                 for i in range(self.num_pcs):
-                    self._kde_track_reference[f"PC{i+1}"] = self._build_kde_track(
-                        self._reference_pca_projection.iloc[:, i]
-                    )
+
+                    if self.density == "kde":
+                        self._density_reference[f"PC{i + 1}"] = self._build_kde_track(
+                            self._reference_pca_projection.iloc[:, i]
+                        )
+
+                    else:
+
+                        self._density_reference[f"PC{i + 1}"] = self._build_histograms(
+                            self._reference_pca_projection.iloc[:, i], bins=self.bins
+                        )
 
                 # Project test window onto PCs
                 self._test_pca_projection = pd.DataFrame(
@@ -177,12 +197,6 @@ class PCACD(DriftDetector):
                     # columns=[f"PC{i}" for i in list(range(1, self.num_pcs + 1))],
                     # index=self._test_window.index,
                 )
-
-                # Compute test distribution
-                for i in range(self.num_pcs):
-                    self._kde_track_test[f"PC{i+1}"] = self._build_kde_track(
-                        self._test_pca_projection.iloc[:, i]
-                    )
 
         else:
 
@@ -207,36 +221,34 @@ class PCACD(DriftDetector):
             if (self.total_samples % self.step) == 0 and self.total_samples != 0:
 
                 # Compute test distribution
-                self._kde_track_test = {}
+                self._density_test = {}
                 for i in range(self.num_pcs):
 
-                    # for each PC builds KDE track and stores it in kde track test dictionary
-                    self._kde_track_test[f"PC{i + 1}"] = self._build_kde_track(
-                        self._test_pca_projection.iloc[:, i]
-                    )
+                    if self.density == "kde":
+                        self._density_test[f"PC{i + 1}"] = self._build_kde_track(
+                            self._test_pca_projection.iloc[:, i]
+                        )
+
+                    else:
+                        self._density_test[f"PC{i + 1}"] = self._build_histograms(
+                            self._test_pca_projection.iloc[:, i], bins=self.bins
+                        )
 
                 # Compute current score
                 change_scores = []
                 if self.divergence_metric == "kl":
+
                     for i in range(self.num_pcs):
                         change_scores.append(
                             max(
                                 kl_divergence(
-                                    self._kde_track_reference[f"PC{i+1}"][
-                                        "kde_estimate"
-                                    ]["density"],
-                                    self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
-                                        "density"
-                                    ],
+                                    self._density_reference[f"PC{i + 1}"]["density"],
+                                    self._density_test[f"PC{i + 1}"]["density"],
                                     d_type="discrete",
                                 ),
                                 kl_divergence(
-                                    self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
-                                        "density"
-                                    ],
-                                    self._kde_track_reference[f"PC{i+1}"][
-                                        "kde_estimate"
-                                    ]["density"],
+                                    self._density_test[f"PC{i + 1}"]["density"],
+                                    self._density_reference[f"PC{i + 1}"]["density"],
                                     d_type="discrete",
                                 ),
                             )
@@ -246,12 +258,8 @@ class PCACD(DriftDetector):
                     for i in range(self.num_pcs):
                         change_scores.append(
                             self._intersection_area(
-                                self._kde_track_reference[f"PC{i+1}"]["kde_estimate"][
-                                    "density"
-                                ],
-                                self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
-                                    "density"
-                                ],
+                                self._density_reference[f"PC{i + 1}"]["density"],
+                                self._density_test[f"PC{i + 1}"]["density"],
                             )
                         )
 
@@ -259,12 +267,8 @@ class PCACD(DriftDetector):
                     for i in range(self.num_pcs):
                         change_scores.append(
                             self._log_likelihood(
-                                self._kde_track_reference[f"PC{i+1}"]["kde_estimate"][
-                                    "point"
-                                ],
-                                self._kde_track_test[f"PC{i+1}"]["kde_estimate"][
-                                    "point"
-                                ],
+                                self._density_reference[f"PC{i + 1}"]["point"],
+                                self._density_test[f"PC{i + 1}"]["point"],
                             )
                         )
 
@@ -382,7 +386,20 @@ class PCACD(DriftDetector):
             for x in values
         ]
 
-        return {
-            "bandwidth": bandwidth,
-            "kde_estimate": {"point": values, "density": density},
-        }
+        return {"point": values, "density": density}
+
+    def _build_histograms(self, values, bins):
+        """Compute the histogram density estimates for a given 1D data stream. Density estimates consist of the value of
+        the pdf in each bin, normalized s.t. integral over the entire range is 1
+
+                Args:
+                    values: 1D data in which we desire to estimate its density function
+                    bins: number of bins for estimating histograms. Equal to sqrt of cardinality of ref window
+
+                Returns:
+                    Bandwidth and dictionary of resampling points
+
+        """
+
+        density = np.histogram(values, bins=bins, density=True)
+        return {"point": values, "density": list(density[0])}
