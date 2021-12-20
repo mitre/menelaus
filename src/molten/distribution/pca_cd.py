@@ -305,8 +305,8 @@ class PCACD(DriftDetector):
         else:
             return 0
 
-    @staticmethod
-    def _log_likelihood(values_p, values_q):
+    @classmethod
+    def _log_likelihood(cls, values_p, values_q):
         """Computes Log-Likelihood similarity between two distributions
 
         Args:
@@ -325,7 +325,7 @@ class PCACD(DriftDetector):
                     sum(
                         [
                             (1 / sample_length)
-                            * self._epanechnikov_kernel((y - x) / bandwidth)
+                            * cls._epanechnikov_kernel((y - x) / bandwidth)
                             for x in values_p
                         ]
                     )
@@ -339,7 +339,7 @@ class PCACD(DriftDetector):
                     sum(
                         [
                             (1 / sample_length)
-                            * self._epanechnikov_kernel((y - x) / bandwidth)
+                            * cls._epanechnikov_kernel((y - x) / bandwidth)
                             for x in values_p
                         ]
                     )

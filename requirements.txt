@@ -11,4 +11,6 @@ plotly
 black
 pylint
 math
+pytest
+coverage
 -e . #install current (molten) directory in editable mode

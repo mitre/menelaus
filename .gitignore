@@ -8,3 +8,7 @@ build
 dist
 *.egg-info
 _build
+src/molten/tools/artifacts/p*
+src/molten/tools/*.ipynb*
+src/molten/tools/__pycache__
+*nohup*
