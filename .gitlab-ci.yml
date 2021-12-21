@@ -14,7 +14,8 @@ update-on-mr:
     - coverage run -m pytest
     - coverage report
   only:
-    - merge_requests
+    refs:
+      - merge_requests
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
 
