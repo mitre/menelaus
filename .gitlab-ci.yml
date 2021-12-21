@@ -2,18 +2,11 @@ default:
   image: python:3.9
 
 stages:
-  - build
-  - test
   - badges
 
-# run-unit-tests:
-#   stage: test
-#   script:
-#     - python -m pip install --upgrade pip # why isn't environment persisting between stages?
-#     - pip install -r requirements.txt
-#     - coverage run -m pytest
+# why isn't environment persisting between stages?
 
-create-badges:
+update-on-mr:
   stage: badges
   script:
     - python -m pip install --upgrade pip
@@ -21,9 +14,17 @@ create-badges:
     - coverage run -m pytest
     - coverage report
   only:
-    refs:
-      - merge_requests
+    - merge_requests
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
 
+update-on-push:
+  stage: badges
+  script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+    - coverage run -m pytest
+    - coverage report
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"' # we will want one for main, eventually, too  
 

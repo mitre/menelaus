@@ -1,13 +1,13 @@
 
 |pipeline|
 
-.. |pipeline| image:: https://gitlab.mitre.org/lnicholl/molten/badges/anmol/pipeline.svg
-   :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/anmol
+.. |pipeline| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/pipeline.svg
+   :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
 
 |coverage|
 
-.. |coverage| image:: https://gitlab.mitre.org/lnicholl/molten/badges/anmol/coverage.svg
-   :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/anmol
+.. |coverage| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/coverage.svg
+   :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
 
 Notes on use
 ============
