@@ -10,7 +10,6 @@ matplotlib #matplotlib and plotly libraries are only strictly necessary for the 
 plotly
 black
 pylint
-math
 pytest
 coverage
 -e . #install current (molten) directory in editable mode
