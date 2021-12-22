@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from molten.distribution.PCA_CD import PCA_CD
+from molten.distribution.pca_cd import PCACD
 
 
 def test_repeated_pcacd():
@@ -18,7 +18,7 @@ def test_repeated_pcacd():
     # for _ in range(2):
     #     # set up pca cd and reporting
     #     status = pd.DataFrame(columns=['index', 'drift'])
-    #     pca_cd = PCA_CD(window_size = 350, delta = 0.05)
+    #     pca_cd = PCACD(window_size = 350, delta = 0.05)
     #     data = df[['var1','var2']]
     #     data = pd.DataFrame(StandardScaler().fit_transform(data))
     #     for i in range(len(df)):

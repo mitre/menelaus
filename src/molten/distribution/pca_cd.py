@@ -1,7 +1,6 @@
 import statistics
 import numpy as np
 import pandas as pd
-import math
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from molten.drift_detector import DriftDetector
@@ -102,8 +101,7 @@ class PCACD(DriftDetector):
         # Initialize parameters
         self.step = min(100, round(self.sample_period * window_size))
         self.ph_threshold = round(0.01 * window_size)
-        self.bins = math.floor(math.sqrt(self.window_size))
-
+        self.bins = int(np.floor(np.sqrt(self.window_size)))
         self.delta = delta
 
         self._drift_detection_monitor = PageHinkley(
