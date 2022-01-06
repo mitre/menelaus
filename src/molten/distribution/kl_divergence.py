@@ -1,23 +1,23 @@
 import numpy as np
 
 
-def kl_divergence(vals_p, vals_q, d_type="discrete"):
+def kl_divergence(vals_p, vals_q, discrete=True):
     """Computes Kullback-Leibler divergence between two distributions
 
     Args:
         vals_p (list): List of values from first distribution
         vals_q (list): List of values from second distribution
-        d_type (str, optional): String of either "discrete" or "continuous",
-            describing the type of distribution. Defaults to "discrete".
+        discrete (bool, optional): If True, assumes nonparametric estimation.
+         If False, assumes normal distribution for both sets. Defaults to True.
 
     Returns:
         float: Kullback-Leibler divergence
     """
 
-    if d_type == "discrete":
-        dist = sum([x * np.log(x / y) for x, y in zip(vals_p, vals_q)])
+    if discrete:
+        dist = sum([x * np.log(x / y) if x * y != 0 else 0 for x, y in zip(vals_p, vals_q)])
 
-    if d_type == "continuous":
+    else:
 
         p_mean = np.mean(vals_p)
         q_mean = np.mean(vals_q)
