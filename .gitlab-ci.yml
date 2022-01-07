@@ -1,0 +1,31 @@
+default:
+  image: python:3.9
+
+stages:
+  - badges
+
+# why isn't environment persisting between stages?
+
+update-on-mr:
+  stage: badges
+  script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+    - coverage run -m pytest
+    - coverage report
+  only:
+    refs:
+      - merge_requests
+    variables:
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+
+update-on-push:
+  stage: badges
+  script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+    - coverage run -m pytest
+    - coverage report
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"' # we will want one for main, eventually, too  
+
