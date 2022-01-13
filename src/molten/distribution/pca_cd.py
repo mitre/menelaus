@@ -1,11 +1,11 @@
 import statistics
 import numpy as np
 import pandas as pd
+import scipy.stats
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KernelDensity
 from molten.drift_detector import DriftDetector
-from molten.distribution.kl_divergence import kl_divergence
 from molten.other.page_hinkley import PageHinkley
 
 
@@ -47,14 +47,14 @@ class PCACD(DriftDetector):
     """
 
     def __init__(
-            self,
-            window_size,
-            ev_threshold=0.99,
-            delta=0.1,
-            divergence_metric="kl",
-            sample_period=0.05,
-            online_scaling=False,
-            track_state=False,
+        self,
+        window_size,
+        ev_threshold=0.99,
+        delta=0.1,
+        divergence_metric="kl",
+        sample_period=0.05,
+        online_scaling=False,
+        track_state=False,
     ):
         """
         Args:
@@ -179,15 +179,21 @@ class PCACD(DriftDetector):
                     if self.divergence_metric == "intersection":
                         # Histograms need the same bin edges so find bounds from both windows to inform range
                         lower = min(
-                            self._reference_pca_projection.iloc[:, i].append(self._test_pca_projection.iloc[:, i])
+                            self._reference_pca_projection.iloc[:, i].append(
+                                self._test_pca_projection.iloc[:, i]
+                            )
                         )
 
                         upper = max(
-                            self._reference_pca_projection.iloc[:, i].append(self._test_pca_projection.iloc[:, i])
+                            self._reference_pca_projection.iloc[:, i].append(
+                                self._test_pca_projection.iloc[:, i]
+                            )
                         )
 
                         self._density_reference[f"PC{i + 1}"] = self._build_histograms(
-                            self._reference_pca_projection.iloc[:, i], bins=self.bins, bin_range=(lower, upper)
+                            self._reference_pca_projection.iloc[:, i],
+                            bins=self.bins,
+                            bin_range=(lower, upper),
                         )
 
                     else:
@@ -222,14 +228,20 @@ class PCACD(DriftDetector):
                     if self.divergence_metric == "intersection":
                         # Histograms need the same bin edges so find bounds from both windows to inform range
                         lower = min(
-                            self._reference_pca_projection.iloc[:, i].append(self._test_pca_projection.iloc[:, i])
+                            self._reference_pca_projection.iloc[:, i].append(
+                                self._test_pca_projection.iloc[:, i]
+                            )
                         )
 
                         upper = max(
-                            self._reference_pca_projection.iloc[:, i].append(self._test_pca_projection.iloc[:, i])
+                            self._reference_pca_projection.iloc[:, i].append(
+                                self._test_pca_projection.iloc[:, i]
+                            )
                         )
                         self._density_test[f"PC{i + 1}"] = self._build_histograms(
-                            self._test_pca_projection.iloc[:, i], bins=self.bins, bin_range=(lower, upper)
+                            self._test_pca_projection.iloc[:, i],
+                            bins=self.bins,
+                            bin_range=(lower, upper),
                         )
 
                     elif self.divergence_metric == "kl":
@@ -244,28 +256,31 @@ class PCACD(DriftDetector):
 
                 if self.divergence_metric == "kl":
                     for i in range(self.num_pcs):
-                        change_scores.append(self._modified_kl_divergence(
-                            self._reference_pca_projection.iloc[:, i],
-                            self._test_pca_projection.iloc[:, i],
-                            self._density_reference[f"PC{i + 1}"],
-                            self._density_test[f"PC{i + 1}"]
-                        )
+                        change_scores.append(
+                            self._modified_kl_divergence(
+                                self._reference_pca_projection.iloc[:, i],
+                                self._test_pca_projection.iloc[:, i],
+                                self._density_reference[f"PC{i + 1}"],
+                                self._density_test[f"PC{i + 1}"],
+                            )
                         )
 
                 elif self.divergence_metric == "llh":
                     for i in range(self.num_pcs):
-                        change_scores.append(self._llh_divergence(
-                            self._density_reference[f"PC{i + 1}"],
-                            self._test_pca_projection.iloc[:, i]
-                        )
+                        change_scores.append(
+                            self._llh_divergence(
+                                self._density_reference[f"PC{i + 1}"],
+                                self._test_pca_projection.iloc[:, i],
+                            )
                         )
 
                 elif self.divergence_metric == "intersection":
                     for i in range(self.num_pcs):
-                        change_scores.append(self._intersection_divergence(
-                            self._density_reference[f"PC{i + 1}"],
-                            self._density_test[f"PC{i + 1}"]
-                        )
+                        change_scores.append(
+                            self._intersection_divergence(
+                                self._density_reference[f"PC{i + 1}"],
+                                self._density_test[f"PC{i + 1}"],
+                            )
                         )
 
                 change_score = max(change_scores)
@@ -324,11 +339,11 @@ class PCACD(DriftDetector):
 
         sample_length = len(sample)
         bandwidth = 1.06 * statistics.stdev(sample) * (sample_length ** (-1 / 5))
-        kde_object = KernelDensity(bandwidth=bandwidth, kernel='epanechnikov').fit(sample.values.reshape(-1, 1))
-        # score_samples gives log-likelihood for each point, true density values should be > 0 so exponentiate
-        density = np.exp(
-            kde_object.score_samples(sample.values.reshape(-1, 1))
+        kde_object = KernelDensity(bandwidth=bandwidth, kernel="epanechnikov").fit(
+            sample.values.reshape(-1, 1)
         )
+        # score_samples gives log-likelihood for each point, true density values should be > 0 so exponentiate
+        density = np.exp(kde_object.score_samples(sample.values.reshape(-1, 1)))
 
         return {"density": density, "object": kde_object}
 
@@ -348,10 +363,15 @@ class PCACD(DriftDetector):
         """
 
         density = np.histogram(sample, bins=bins, range=bin_range, density=True)
-        return {"bin_edges": list(density[1]), "density": list(density[0] / np.sum(density[0]))}
+        return {
+            "bin_edges": list(density[1]),
+            "density": list(density[0] / np.sum(density[0])),
+        }
 
     @classmethod
-    def _modified_kl_divergence(cls, ref_pca_projection, test_pca_projection, density_reference, density_test):
+    def _modified_kl_divergence(
+        cls, ref_pca_projection, test_pca_projection, density_reference, density_test
+    ):
         """Computes Kullback-Leibler divergence between two distributions
 
         Args:
@@ -372,11 +392,12 @@ class PCACD(DriftDetector):
         ref_estimates = np.exp(
             ref_estimator.score_samples(pca_projection.values.reshape(-1, 1))
         )
-        test_estimates = np.exp(test_estimator.score_samples(pca_projection.values.reshape(-1, 1))
-                                )
+        test_estimates = np.exp(
+            test_estimator.score_samples(pca_projection.values.reshape(-1, 1))
+        )
         kl = max(
-            kl_divergence(ref_estimates, test_estimates, discrete=True),
-            kl_divergence(test_estimates, ref_estimates, discrete=True),
+            scipy.stats.entropy(ref_estimates, test_estimates),
+            scipy.stats.entropy(test_estimates, ref_estimates),
         )
 
         return kl
@@ -395,14 +416,16 @@ class PCACD(DriftDetector):
 
         """
 
-        intersection = np.sum(np.minimum(density_reference["density"], density_test["density"]))
+        intersection = np.sum(
+            np.minimum(density_reference["density"], density_test["density"])
+        )
         divergence = 1 - intersection
 
         return divergence
 
     @staticmethod
     def _llh_divergence(density_reference, test_pca_projection):
-        """ Computes Log-Likelihood similarity between two distributions
+        """Computes Log-Likelihood similarity between two distributions
 
         Args:
             density_reference (dict): dictionary of density and object values from ref distribution
@@ -415,11 +438,16 @@ class PCACD(DriftDetector):
 
         ref_density_estimates = density_reference["density"]
         ref_estimator = density_reference["object"]
-        test_density_estimates = ref_estimator.score_samples(test_pca_projection.values.reshape(-1, 1))
+        test_density_estimates = ref_estimator.score_samples(
+            test_pca_projection.values.reshape(-1, 1)
+        )
 
         total_llh_ref = np.sum(np.log(ref_density_estimates))
         total_llh_test = np.sum(test_density_estimates)
 
-        divergence = np.abs(total_llh_test / len(ref_density_estimates) - total_llh_ref / len(test_pca_projection))
+        divergence = np.abs(
+            total_llh_test / len(ref_density_estimates)
+            - total_llh_ref / len(test_pca_projection)
+        )
 
         return divergence

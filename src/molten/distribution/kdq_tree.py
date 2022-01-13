@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
+import scipy.stats
 from molten.drift_detector import DriftDetector
-from molten.distribution.kl_divergence import kl_divergence
 
 
 class KdqTree(DriftDetector):
@@ -188,7 +188,7 @@ class KdqTree(DriftDetector):
                         for x in bootstrap_samples
                     ]
                     bootstrap_kl_distances = [
-                        kl_divergence(x[0], x[1]) for x in bootstrap_types
+                        scipy.stats.entropy(x[0], x[1]) for x in bootstrap_types
                     ]
                     bootstrap_kl_distances.sort()
 
@@ -214,7 +214,7 @@ class KdqTree(DriftDetector):
                 self._window_data["test"]["bin"].tolist(), self._alphabet
             )
 
-            dist = kl_divergence(type1, type2)
+            dist = scipy.stats.entropy(type1, type2)
 
             self._drift_tracker["dist"].append(dist)
             self._drift_tracker["critical_distance"].append(self._critical_distance)
