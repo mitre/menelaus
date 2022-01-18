@@ -31,12 +31,14 @@ Still need to work on setup.cfg to treat this as a read-only library.
 
 Docker support is currently bugged. Below describe the steps you may use to build the environment with Docker and (optionally) get into the container.
 
-.. code_block:: python
+.. code-block:: python
+
    sudo docker build -f bin/Dockerfile .        # build image
    sudo docker images                           # optionally see images
    sudo docker run -itd <image-name>            # build + start container
    sudo docker ps -a                            # optionally see containers
    sudo docker exec -it <container-name> bash   # go into container
+   
 
 
 
