@@ -25,7 +25,7 @@ def read_dir(detector, data_id, dm, ws, ev):
         of DataFrames (each DataFrame identifies drift indexes for its trial).
     """
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    dir_name = './artifacts/%s_%s_%s_%s_%s/*' % (detector, data_id, dm, str(ws), str(ev))
+    dir_name = './artifacts/%s_%s_%s_%s_%s/*' % (detector, data_id, dm, str(ws), str(int(100*ev)))
     fs = glob.glob(dir_name)
     dfs = [pd.read_csv(f, index_col=0) for f in fs]
     return dfs
