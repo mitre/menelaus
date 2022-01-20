@@ -6,7 +6,6 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 
-import molten
 from molten.distribution.pca_cd import PCACD
 
 
@@ -16,13 +15,14 @@ DATA_PATHS = {
 }
 
 
-def get_data(data_id, sample_by=None, sample_size=None, randomize=False):
+def get_data(data_id, sample_by=None, sample_size=None, drop=None, randomize=False):
     """Get dataframe.
 
     Args:
         data_id (str): Dictionary key for dataset.
         sample_by (str, optional): If not None, variable to batch/group by (e.g., year). Defaults to None.
         sample_size (int, optional): If not None, specifies batch size. Defaults to None.
+        drop (list, optional): Attribute names (str) to remove from dataframe. Defaults to None.
         randomize (bool, optional): True if seed must be fixed (e.g., no bootstrapping). Defaults to False.
 
     Returns:
@@ -30,7 +30,10 @@ def get_data(data_id, sample_by=None, sample_size=None, randomize=False):
     """
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     full_path = os.path.join(os.getcwd(), "artifacts", DATA_PATHS[data_id])
-    df = pd.read_csv(full_path)
+    if data_id == 'circle33':
+        df = pd.read_csv(full_path, usecols = [0,1,2],names = ['var1','var2','y'])
+    else:
+        df = pd.read_csv(full_path)
     if sample_by:
         df_list = [d for _, d in df.groupby([sample_by])]
         if not randomize:
@@ -38,6 +41,8 @@ def get_data(data_id, sample_by=None, sample_size=None, randomize=False):
         else:
             df_list = [d.sample(n=sample_size) for d in df_list]
         df = pd.concat(df_list).reset_index(drop=True)
+    if drop:
+        df = df.drop(drop, axis=1)
     return df
 
 
@@ -66,15 +71,15 @@ def run_pca_cd(dir_path, df, divergence_metric, window_size, ev_threshold):
         divergence_metric=divergence_metric,
         window_size=window_size,
         ev_threshold=ev_threshold,
+        online_scaling=True
     )
-    df = pd.DataFrame(StandardScaler().fit_transform(df))
 
     # update over rows, appending any observed drift to status file
     for k in range(len(df)):
         pca_cd.update(df.iloc[[k]])
         if pca_cd.drift_state:
             new_record = pd.DataFrame({"drift_loc": [k]})
-            new_record.to_csv(status_path, header=None, mode="a")
+            new_record.to_csv(status_path, header=None, mode='a')
 
     # end time, return additional information about trial run
     diff = time.time() - start
@@ -152,11 +157,13 @@ def run_trials(
 
 # if __name__ == '__main__':
 #     # specify parameter grid
-#     data_id = 'fake_wls'
-#     sample_by = 'tax_yr'
-#     sample_size = 350
+#     data_id = 'circle33' # 'fake_wls'
+#     sample_by = 300 # 'tax_yr'
+#     drop = ['y']
+#     sample_size = 300 # 300, shares meaning with window size below
+#     wss = [300]
 #     dms = ['kl', 'llh']
 #     evs = [0.99]
-#     times = 10000
-#     df = get_data(data_id, sample_by, sample_size, randomize=True)
-#     run_trials(df, data_id, times, dms, [sample_size], evs, sample_size)
+#     times = 1000
+#     df = get_data(data_id, sample_by, sample_size, drop, randomize=True) # True: bootstrapping sample_size points from each year
+#     run_trials(df, data_id, times, dms, wss, evs, sample_size)
