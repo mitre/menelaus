@@ -36,7 +36,7 @@ class PCACD(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
+            "drift" or None.
         step (int): how frequently (by number of samples), to detect drift.
             This is either 100 samples or sample_period * window_size, whichever
             is smaller.
@@ -53,8 +53,7 @@ class PCACD(DriftDetector):
         delta=0.1,
         divergence_metric="kl",
         sample_period=0.05,
-        online_scaling=False,
-        track_state=False,
+        online_scaling=True,
     ):
         """
         Args:
@@ -79,16 +78,12 @@ class PCACD(DriftDetector):
                 smaller. Default .05, or 5% of the window size.
             online_scaling (bool, optional): whether to standardize the data as
                 it comes in, using the reference window, before applying PCA.
-                Defaults to False.
-            track_state (bool, optional): whether to store the status of the
-                Page Hinkley detector every time drift is identified.
-                Defaults to False.
+                Defaults to True.
         """
         super().__init__()
         self.window_size = window_size
         self.ev_threshold = ev_threshold
         self.divergence_metric = divergence_metric
-        self.track_state = track_state
         self.sample_period = (
             sample_period  # TODO modify sample period dependent upon density estimate
         )
@@ -102,8 +97,6 @@ class PCACD(DriftDetector):
         self._drift_detection_monitor = PageHinkley(
             delta=self.delta, threshold=self.ph_threshold, burn_in=0
         )
-        if self.track_state:
-            self._drift_tracker = pd.DataFrame()
 
         self.num_pcs = None
 
@@ -293,29 +286,8 @@ class PCACD(DriftDetector):
                 if self._drift_detection_monitor.drift_state is not None:
                     self._build_reference_and_test = True
                     self.drift_state = "drift"
-                    if self.track_state:
-                        self._drift_tracker = self._drift_tracker.append(
-                            self._drift_detection_monitor.to_dataframe()
-                        )
 
         super().update()
-
-    @staticmethod
-    def _epanechnikov_kernel(x_j):
-        """Calculate the Epanechnikov kernel value for a given value x_j, for
-        use in kernel density estimation.
-
-        Args:
-            x_j: single value
-
-        Returns:
-            Epanechnikov kernel value for x_j.
-
-        """
-        if abs(x_j) <= 1:
-            return (3 / 4) * (1 - (x_j ** 2))
-        else:
-            return 0
 
     @classmethod
     def _build_kde(cls, sample):
@@ -328,15 +300,6 @@ class PCACD(DriftDetector):
             Dict with density estimates for each value and KDE object
 
         """
-
-        # sample_length = len(values)
-        # bandwidth = 1.06 * statistics.stdev(values) * (sample_length ** (-1 / 5))
-        # density = [
-        #    (1 / (sample_length * bandwidth))
-        #    * sum([cls._epanechnikov_kernel((x - x_j) / bandwidth) for x_j in values])
-        #    for x in values
-        # ]
-
         sample_length = len(sample)
         bandwidth = 1.06 * statistics.stdev(sample) * (sample_length ** (-1 / 5))
         kde_object = KernelDensity(bandwidth=bandwidth, kernel="epanechnikov").fit(
@@ -352,13 +315,13 @@ class PCACD(DriftDetector):
         """Compute the histogram density estimates for a given 1D data stream. Density estimates consist of the value of
         the pdf in each bin, normalized s.t. integral over the entire range is 1
 
-                Args:
-                    sample: 1D array in which we desire to estimate its density function
-                    bins: number of bins for estimating histograms. Equal to sqrt of cardinality of ref window
-                    bin_range: (float, float) lower and upper bound of histogram bins
+        Args:
+            sample: 1D array in which we desire to estimate its density function
+            bins: number of bins for estimating histograms. Equal to sqrt of cardinality of ref window
+            bin_range: (float, float) lower and upper bound of histogram bins
 
-                Returns:
-                    Dict of bin edges and corresponding density values (normalized s.t. they sum to 1)
+        Returns:
+            Dict of bin edges and corresponding density values (normalized s.t. they sum to 1)
 
         """
 

@@ -1,5 +1,5 @@
 *.ipynb_checkpoints*
-__pycache__
+*__pycache__*
 *.pyc
 *.egg-info
 .pytest_cache
@@ -8,7 +8,8 @@ build
 dist
 *.egg-info
 _build
-src/molten/tools/artifacts/p*
+src/molten/tools/artifacts/*
 src/molten/tools/*.ipynb*
-src/molten/tools/__pycache__
+tests/molten_tests/*.ipynb*
 *nohup*
+*.coverage

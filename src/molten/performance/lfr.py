@@ -48,7 +48,7 @@ class LinearFourRates(DriftDetector):
         detect_level=0.05,
         burn_in=50,
         num_mc=10000,
-        subsample=None,
+        subsample=1,
     ):
         """
         Args:
@@ -68,7 +68,7 @@ class LinearFourRates(DriftDetector):
             subsample (int, optional): A subsample of value n will only test for
                 drift every nth observation. Rates will still be calculated, the
                 monte carlo simulation will not be. Larger subsample value will
-                decrease the runtime. Defaults to None.
+                decrease the runtime. Defaults to 1.
         """
         super().__init__()
         self.time_decay_factor = time_decay_factor

@@ -1,46 +1,45 @@
 """All methods for testing correctness of CUSUM implementation."""
-
-import os
-import pandas as pd
 import numpy as np
-
 from molten.other.cusum import CUSUM
 
 
-def test_repeated_cusum():
-    """Test that CUSUM detects drift at same locations, multiple times."""
-    # TODO - sort out this hack for loading data
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    full_path = os.path.join(os.getcwd(), 'artifacts', 'dataCircleGSev3Sp3Train.csv')
-    df = pd.read_csv(full_path, usecols=[0,1,2], names=['var1', 'var2', 'y'])
-    # set up test (mean / std of 'Var 2' pre-drift) 
-    mean = np.mean(df.iloc[0:1000,1])
-    std = np.std(df.iloc[0:1000,1])
-    locations = None
-    # over r repetitions, results should be the same
-    for _ in range(3):
-        status = pd.DataFrame(columns=['index', 'drift'])
-        cusum = CUSUM(
-            target=mean,
-            sd_hat=std,
-            burn_in=50,
-            delta=0.005,
-            threshold=40,
-            direction=None
-        )
-        for i in range(len(df)):
-            obs = df['var2'][i]
-            cusum.update(obs)
-            status.loc[i] = [i, cusum.drift_state]
-        # test locations same
-        if not locations:
-            locations = set(status[status.drift == 'drift'].index.tolist())
+def test_no_drift():
+    """Test build / sliding with drift-less stream."""
+    cusum = CUSUM()
+    stream_size = 0
+    for _ in range(40):  # test burn-in period (30) + post-burn-in (10)
+        cusum.update(1)  # shouldn't detect drift
+        stream_size += 1
+        assert cusum.drift_state is None
+        assert len(cusum._stream) == stream_size
+        assert (
+            cusum.samples_since_reset == stream_size
+        )  # no reset til at least after burn in
+
+
+def test_with_drift():
+    """Test build / sliding with drift-y stream."""
+    cusum = CUSUM(threshold=10)
+    stream_size = 0
+    running_samples_since_reset = 0
+    for i in range(
+        75
+    ):  # wait for burn-in, induce drift + test, wait for burn-in again, induce drift + test
+        assert len(cusum._stream) == stream_size
+        stream_size += 1
+        # set drift at two locations (31st and 31st + 30 = 62nd indices), otherwise constants
+        if i != 30 and i != 61:
+            cusum.update(np.random.uniform())
+            running_samples_since_reset += 1
+            assert cusum.drift_state is None
+        elif i == 30:
+            cusum.update(100)
+            running_samples_since_reset = 0
+            assert cusum.drift_state == "drift"
+        elif i == 61:
+            cusum.threshold = 0  # arbitrarily lower parameter to induce drift
+            cusum.update(100)
+            running_samples_since_reset = 0
+            assert cusum.drift_state == "drift"
         else:
-            new_locations = set(status[status.drift == 'drift'].index.tolist())
-            assert locations == new_locations
-
-
-def test_():
-    """TODO - test some other aspect of CUSUM."""
-    pass
-
+            pass
