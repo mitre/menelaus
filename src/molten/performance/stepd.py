@@ -139,10 +139,10 @@ class STEPD(DriftDetector):
             float: the accuracy of the classifier among the last
                 self.window_size samples the detector has seen
         """
-        if self.window_size == 0:
+        if len(self._window) == 0:
             out = 0
         else:
-            out = self._s / self.window_size
+            out = self._s / len(self._window)
         return out
 
     def past_accuracy(self):
@@ -152,10 +152,10 @@ class STEPD(DriftDetector):
                 has seen before its current window, but after the last time the
                 detector was reset
         """
-        if (self.samples_since_reset - self.window_size) == 0:
+        if (self.samples_since_reset - len(self._window)) == 0:
             out = 0
         else:
-            out = self._r / (self.samples_since_reset - self.window_size)
+            out = self._r / (self.samples_since_reset - len(self._window))
         return out
 
     def overall_accuracy(self):
@@ -175,13 +175,13 @@ class STEPD(DriftDetector):
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Set self.retraining_recs to the beginning and end of the current 
-        drift/warning region. 
+        """Set self.retraining_recs to the beginning and end of the current
+        drift/warning region.
         """
         if self.retraining_recs[0] is None:
             self.retraining_recs[0], self.retraining_recs[1] = (
-                self.total_samples,
-                self.total_samples,
+                self.total_samples - 1,
+                self.total_samples - 1,
             )
         else:
             self.retraining_recs[1] += 1

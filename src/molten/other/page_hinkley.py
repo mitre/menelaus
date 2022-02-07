@@ -31,7 +31,7 @@ class PageHinkley(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
+            "drift", or None.
     """
 
     def __init__(self, delta=0.01, threshold=20, burn_in=30, direction="positive"):

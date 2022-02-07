@@ -53,7 +53,7 @@ class KdqTree(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
+            "drift" or None.
     """
 
     def __init__(
@@ -63,7 +63,6 @@ class KdqTree(DriftDetector):
         num_bootstrap_samples=500,
         gamma=0.05,
         alpha=0.01,
-        verbose=True,
     ):
         """
         Args:
@@ -78,7 +77,6 @@ class KdqTree(DriftDetector):
                 samples. Defaults to 500.
             gamma (float, optional): Persistence factor. Defaults to 0.05.
             alpha (float, optional): Achievable significance level. Defaults to 0.01.
-            verbose (bool, optional): prints progress to console. Defaults to True.
         """
         super().__init__()
         self.min_points_in_bin = min_points_in_bin
@@ -86,7 +84,6 @@ class KdqTree(DriftDetector):
         self.num_bootstrap_samples = num_bootstrap_samples
         self.gamma = gamma
         self.alpha = alpha
-        self.verbose = verbose
 
         self._build_reference_and_test = True
 
@@ -123,9 +120,6 @@ class KdqTree(DriftDetector):
 
         super().update()
 
-        if self.verbose:
-            print(f"Row Index: {next_obs.index.values[0]}")
-
         if self._build_reference_and_test:
             if len(self._window_data["reference"]) < self.window_size:
                 self._window_data["reference"] = self._window_data["reference"].append(
@@ -141,7 +135,6 @@ class KdqTree(DriftDetector):
                     self._kdq_tree_nodes = self._kdq_tree_build_nodes(
                         data_input=self._window_data["reference"],
                         min_points=self.min_points_in_bin,
-                        verbose=self.verbose,
                     )
 
                     # Merge in the bins for both the reference and test windows
@@ -220,17 +213,10 @@ class KdqTree(DriftDetector):
             self._drift_tracker["critical_distance"].append(self._critical_distance)
             self._drift_tracker["id"].append(next_obs.index.values[0])
 
-            if self.verbose:
-                print(f"Distance: {str(round(dist, 4))}")
-                print("------------------------------")
-
             if dist > self._critical_distance:
                 self._c = self._c + 1
 
                 if self._c > self.gamma * self.window_size:
-
-                    if self.verbose:
-                        print("Change detected!")
 
                     self.drift_state = "drift"
 
@@ -291,101 +277,65 @@ class KdqTree(DriftDetector):
             save_fig: (Default value = None) Saves figure using provided path.
 
         """
+        if len(self._drift_tracker["dist"]) == 0:
+            return None
+
         if id_date_df is None:
             kl_distance_ts = pd.DataFrame(
                 self._drift_tracker, index=range(len(self._drift_tracker["dist"]))
             )
-
-            with plt.style.context("fivethirtyeight"):
-                plt.figure(figsize=(20, 8))
-                plt.plot(
-                    kl_distance_ts["id"],
-                    kl_distance_ts["dist"],
-                    linestyle="-",
-                    marker=",",
-                    zorder=0,
-                    linewidth=0.85,
-                )
-                plt.plot(
-                    kl_distance_ts["id"],
-                    kl_distance_ts["critical_distance"],
-                    linestyle="--",
-                    marker=",",
-                    linewidth=1,
-                    color="goldenrod",
-                    zorder=1,
-                )
-                plt.vlines(
-                    x=kl_distance_ts.loc[
-                        kl_distance_ts.dist >= kl_distance_ts.critical_distance, :
-                    ].id,
-                    ymin=min(kl_distance_ts["dist"]),
-                    ymax=max(kl_distance_ts["critical_distance"]),
-                    linestyle="-",
-                    color="darkred",
-                    alpha=0.05,
-                    linewidth=0.5,
-                    zorder=2,
-                )
-                plt.title("Kullback-Leibler Divergence", fontsize=16, y=1.01)
-                plt.suptitle("KDQ Tree Drift Detection", fontsize=24, y=0.97)
-                plt.xlabel("Time")
-                plt.ylabel("Divergence Value")
-
-                ax_out = plt.gca()
-                ax_out.axes.yaxis.set_ticks([])
-
-                if save_fig is not None:
-                    plt.savefig(f"{save_fig}")
-
-                plt.show()
+            plot_fn = plt.plot
+            id_var = "id"
         else:
             kl_distance_ts = pd.DataFrame(
                 self._drift_tracker, index=range(len(self._drift_tracker["dist"]))
             ).merge(id_date_df, how="left", on="id")
-            with plt.style.context("fivethirtyeight"):
-                plt.figure(figsize=(20, 8))
-                plt.plot_date(
-                    kl_distance_ts.date,
-                    kl_distance_ts["dist"],
-                    linestyle="-",
-                    marker=",",
-                    zorder=0,
-                    linewidth=0.85,
-                )
-                plt.plot_date(
-                    kl_distance_ts.date,
-                    kl_distance_ts["critical_distance"],
-                    linestyle="--",
-                    marker=",",
-                    linewidth=1,
-                    color="goldenrod",
-                    zorder=1,
-                )
-                plt.vlines(
-                    x=kl_distance_ts.loc[
-                        kl_distance_ts.dist >= kl_distance_ts.critical_distance, :
-                    ].date,
-                    ymin=min(kl_distance_ts["dist"]),
-                    ymax=max(kl_distance_ts["critical_distance"]),
-                    linestyle="-",
-                    color="darkred",
-                    alpha=0.05,
-                    linewidth=0.5,
-                    zorder=2,
-                )
-                plt.title("Kullback-Leibler Divergence", fontsize=16, y=1.01)
-                plt.suptitle("KDQ Tree Drift Detection", fontsize=24, y=0.97)
-                plt.xlabel("Time")
-                plt.ylabel("Divergence Value")
+            plot_fn = plt.plot_date
+            id_var = "date"
 
-                ax_out = plt.gca()
-                ax_out.axes.yaxis.set_ticks([])
+        with plt.style.context("fivethirtyeight"):
+            plt.figure(figsize=(20, 8))
+            plot_fn(
+                kl_distance_ts[id_var],
+                kl_distance_ts["dist"],
+                linestyle="-",
+                marker=",",
+                zorder=0,
+                linewidth=0.85,
+            )
+            plot_fn(
+                kl_distance_ts[id_var],
+                kl_distance_ts["critical_distance"],
+                linestyle="--",
+                marker=",",
+                linewidth=1,
+                color="goldenrod",
+                zorder=1,
+            )
+            plt.vlines(
+                x=kl_distance_ts.loc[
+                    kl_distance_ts.dist >= kl_distance_ts.critical_distance, :
+                ][id_var],
+                ymin=min(kl_distance_ts["dist"]),
+                ymax=max(kl_distance_ts["critical_distance"]),
+                linestyle="-",
+                color="darkred",
+                alpha=0.05,
+                linewidth=0.5,
+                zorder=2,
+            )
+            plt.title("Kullback-Leibler Divergence", fontsize=16, y=1.01)
+            plt.suptitle("KDQ Tree Drift Detection", fontsize=24, y=0.97)
+            plt.xlabel("Time")
+            plt.ylabel("Divergence Value")
 
-                if save_fig is not None:
-                    plt.savefig(f"{save_fig}")
+            ax_out = plt.gca()
+            ax_out.axes.yaxis.set_ticks([])
 
-                plt.show()
+            if save_fig is not None:
+                plt.savefig(f"{save_fig}")
+
+            plt.show()
 
     def drift_location_visualization(self):
         """
@@ -409,7 +359,6 @@ class KdqTree(DriftDetector):
         """
 
         if len(self._drift_location["spatial_scan_statistic"]) == 0:
-            print("No drift detected")
             return None
 
         figs = []
@@ -609,7 +558,6 @@ class KdqTree(DriftDetector):
         min_points: int,
         max_value: int,
         min_value: int,
-        verbose=True,
     ):
         """Recursive function to create splits in a tree at a given node
 
@@ -627,16 +575,11 @@ class KdqTree(DriftDetector):
             min_points (int): Minimum number of points allowed in each bin
             max_value (int): Maximum value in the given axis
             min_value (int): Minimum value in the given axis
-            verbose: Determines if intermediate output should be printed to
-                console. Defaults to True.
 
         Returns:
             Node dictionary
 
         """
-
-        if verbose:
-            print(f"Node ID: {str(node_id)}")
 
         if data_input.shape[0] > min_points:
             # depth = depth+1
@@ -700,7 +643,6 @@ class KdqTree(DriftDetector):
                 max_value=max_next,
                 min_value=min_next,
                 min_points=min_points,
-                verbose=verbose,
             )
 
             node["right_child"] = cls._kdq_tree_splits(
@@ -713,22 +655,17 @@ class KdqTree(DriftDetector):
                 max_value=max_next,
                 min_value=min_next,
                 min_points=min_points,
-                verbose=verbose,
             )
 
             return node
 
-    def _kdq_tree_build_nodes(
-        self, data_input: pd.DataFrame, min_points=200, verbose=True
-    ):
+    def _kdq_tree_build_nodes(self, data_input: pd.DataFrame, min_points=200):
         """Build out the nodes of the kdqTree
 
         Args:
             data_input (pd.DataFrame): Set of points in data
             min_points (int): Minimum number of points allowed in each bin.
                 Default value = 200.
-            verbose: Determines if intermediate output should be printed to
-                console. Default value = True.
 
         Returns:
             Dataframe of splits in kdqTree
@@ -763,8 +700,6 @@ class KdqTree(DriftDetector):
 
         node["results"] = results
 
-        if verbose:
-            print("Building splits in kdqtree")
         nested_dict_results = self._kdq_tree_splits(
             data_input=data_input,
             original_ids=original_ids,
@@ -775,7 +710,6 @@ class KdqTree(DriftDetector):
             max_value=np.max(data_input.iloc[:, 1]),
             min_value=np.min(data_input.iloc[:, 1]),
             min_points=min_points,
-            verbose=verbose,
         )
 
         clean_results = self._nested_dict_to_dataframe(nested_dict_results)

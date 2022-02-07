@@ -1,39 +1,56 @@
 """All methods for testing correctness of Page Hinkley implementation."""
-
-import os
-import pandas as pd
-
 from molten.other.page_hinkley import PageHinkley
 
 
-def test_repeated_pagehinkley():
-    """Test that PH detects drift at same locations, multiple times."""
-    # really need to sort out this hack for loading data
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    full_path = os.path.join(os.getcwd(), "artifacts", "dataCircleGSev3Sp3Train.csv")
-    df = pd.read_csv(full_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
-    # set up test
-    delta = 0.01
-    threshold = 15
-    locations = None
-    # over r repetitions, results should be the same
-    for _ in range(3):
-        status = pd.DataFrame(columns=["index", "drift"])
-        ph = PageHinkley(
-            delta=delta, threshold=threshold, direction="negative", burn_in=30
-        )
-        for i in range(len(df)):
-            obs = df["var2"][i]
-            ph.update(next_obs=obs, obs_id=i)
-            status.loc[i] = [i, ph.drift_state]
-        # test locations same
-        if not locations:
-            locations = set(status[status.drift == "drift"].index.tolist())
-        else:
-            new_locations = set(status[status.drift == "drift"].index.tolist())
-            assert locations == new_locations
+def test_build_no_drift():
+    """Function purpose."""
+    monitor = PageHinkley()
+    for i in range(monitor.burn_in * 2):
+        # constant update
+        monitor.update(1)
+        assert monitor.drift_state is None
+        assert monitor.samples_since_reset == i + 1
 
 
-def test_():
-    """TODO - test some other aspect of Page Hinkley."""
-    pass
+def test_build_pos_drift():
+    """Function purpose"""
+    monitor = PageHinkley(burn_in=30)  # positive direction
+    stream_size = 0
+    for i in range(monitor.burn_in * 2):
+        stream_size += 1
+        # forced update
+        if i < monitor.burn_in:
+            monitor.update(1)
+            assert monitor.drift_state is None
+        elif i == monitor.burn_in:
+            monitor.update(100)
+            stream_size = 0
+            assert monitor.drift_state == "drift"
+        elif i == monitor.burn_in + 1:
+            monitor.update(1)
+            assert monitor.drift_state is None
+            assert (
+                len(monitor.to_dataframe()) == stream_size
+            )  # hack to test all reset() behavior
+
+
+def test_build_neg_drift():
+    """Function purpose"""
+    monitor = PageHinkley(burn_in=30, direction="negative")
+    stream_size = 0
+    for i in range(monitor.burn_in * 2):
+        stream_size += 1
+        # forced update
+        if i < monitor.burn_in:
+            monitor.update(1)
+            assert monitor.drift_state is None
+        elif i == monitor.burn_in:
+            monitor.update(-100)
+            stream_size = 0
+            assert monitor.drift_state == "drift"
+        elif i == monitor.burn_in + 1:
+            monitor.update(1)
+            assert monitor.drift_state is None
+            assert (
+                len(monitor.to_dataframe()) == stream_size
+            )  # hack to test all reset() behavior

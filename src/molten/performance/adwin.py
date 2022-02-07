@@ -4,8 +4,7 @@ from molten.drift_detector import DriftDetector
 
 class ADWIN(DriftDetector):
     """ADWIN is a drift detection algorithm which uses a sliding window to
-    estimate the running mean and variance of a given statistic. Note that the
-    statistic is assumed to be on the range 0 to 1.
+    estimate the running mean and variance of a given statistic.
 
     As each sample is added, ADWIN stores a running estimate (mean and variance)
     for a given statistic, calculated over a sliding window which will grow to
@@ -34,7 +33,7 @@ class ADWIN(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
+            "drift" or None.
         retraining_recs: recommended indices for retraining. If drift is detected,
             set to [beginning of ADWIN's new window, end of ADWIN's new window].
             If these are e.g. the 5th and 13th sample that ADWIN has been updated
