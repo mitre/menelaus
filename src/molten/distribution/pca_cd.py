@@ -1,4 +1,3 @@
-import statistics
 import numpy as np
 import pandas as pd
 import scipy.stats
@@ -301,7 +300,7 @@ class PCACD(DriftDetector):
 
         """
         sample_length = len(sample)
-        bandwidth = 1.06 * statistics.stdev(sample) * (sample_length ** (-1 / 5))
+        bandwidth = 1.06 * np.std(sample, ddof=1) * (sample_length ** (-1 / 5))
         kde_object = KernelDensity(bandwidth=bandwidth, kernel="epanechnikov").fit(
             sample.values.reshape(-1, 1)
         )

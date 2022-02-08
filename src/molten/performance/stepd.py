@@ -8,17 +8,17 @@ class STEPD(DriftDetector):
     accuracy, intended for an online classifier.
 
     Two windows are defined -- "recent" and "past", with corresponding
-    accuracies p_r and p_p. Roughly, the distribution of their absolute
+    accuracies `p_r` and `p_p`. Roughly, the distribution of their absolute
     difference, normalized by the accuracy of the two windows combined, T, is
     normally distributed. So, this test statistic's p-value P(T) defines the
     warning and drift regions:
-        If p_r < p_p (the classifier's accuracy on recent samples is decreased):
-            -and P(T) < alpha_warning, the detector's state is set to "warning".
-            -and P(T) < alpha_drift, the detector's state is set to "drift".
+        If `p_r` < `p_p` (the classifier's accuracy on recent samples is decreased),
+            - and P(T) < `alpha_warning`, the detector's state is set to ``"warning"``.
+            - and P(T) < `alpha_drift`, the detector's state is set to ``"drift"``.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to self.samples_since_reset) is stored in self.retraining_recs, for retraining the
-    classifier when drift occurs.
+    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``,
+    for retraining the classifier when drift occurs.
 
     STEPD is intended for use with an online classifier, which is trained on
     every new sample. That is, with each new sample, the question is not whether

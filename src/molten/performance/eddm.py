@@ -5,17 +5,18 @@ from molten.drift_detector import DriftDetector
 class EDDM(DriftDetector):
     """EDDM is a drift detection algorithm for binary classifiers which uses the
     distance between two classification errors. The running average distance
-    between two errors (dist_i) and its standard deviation (s_i) are tracked for
+    between two errors (``dist_i``) and its standard deviation (``s_i``) are tracked for
     each element i in the data stream. The maximum values for these two
     estimates are stored and used to define the warning and drift thresholds. If
     the distance and its standard deviation exceed a certain threshold, relative
     to their maxima, we assume that the distance between errors is no longer
     stationary (drift has occurred).
 
-    If (dist_i + 2 * s_i)/(dist_max + 2 * s_max) < warning_thresh,
-        the detector's state is set to "warning".
-    If (dist_i + 2 * s_i)/(dist_max + 2 *s_max) < drift_thresh,
-        the detector's state is set to "drift".
+    If ``(dist_i + 2 * s_i)/(dist_max + 2 * s_max) < warning_thresh``,
+    the detector's state is set to ``"warning"``.
+
+    If ``(dist_i + 2 * s_i)/(dist_max + 2 *s_max) < drift_thresh``,
+    the detector's state is set to ``"drift"``.
 
     The denominator approximates the 95th percentile of the distribution of the
     distance for "large" samples.

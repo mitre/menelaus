@@ -4,7 +4,6 @@ jupyter
 pandas
 numpy
 sklearn
-statistics
 scipy
 matplotlib #matplotlib and plotly libraries are only strictly necessary for the kdqTree visualization stuff
 plotly
@@ -12,4 +11,7 @@ black
 pylint
 pytest
 coverage
+sphinx #sphinx packages are only useful if the user is going to update documentation
+sphinx-rtd-theme
+sphinx-autoapi
 -e . #install current (molten) directory in editable mode

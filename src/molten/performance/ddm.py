@@ -5,16 +5,17 @@ from molten.drift_detector import DriftDetector
 class DDM(DriftDetector):
     """DDM is a drift detection algorithm which uses a binary classifier's error
     rate, which is binomially distributed. The minimum probability of an error
-    and its standard deviation (p_min, s_min) are found during training. If the
-    running estimates for element i in the stream, probability (p_i) and its
-    standard deviation (s_i), exceeds a certain threshold, then we assume that
+    and its standard deviation (``p_min``, ``s_min``) are found during training. If the
+    running estimates for element i in the stream, probability (``p_i``) and its
+    standard deviation (``s_i``), exceeds a certain threshold, then we assume that
     the distribution of the error rate is no longer stationary (drift has
     occurred).
 
-    If p_i + s_i >= p_min + self.warning_scale * s_min the detector's state is
-        set to "warning".
-    If p_i + s_i >= p_min + self.drift_scale * s_min, the
-        detector's state is set to "drift".
+    If ``p_i + s_i >= p_min + self.warning_scale * s_min`` the detector's state
+    is set to ``"warning"``.
+    
+    If ``p_i + s_i >= p_min + self.drift_scale * s_min``, the
+    detector's state is set to ``"drift"``.
 
     The index of the first sample which triggered a warning/drift state
     (relative to self.samples_since_reset) is stored in self.retraining_recs.
@@ -133,8 +134,8 @@ class DDM(DriftDetector):
         self.retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Set self.retraining_recs to the beginning and end of the current 
-        drift/warning region. 
+        """Set self.retraining_recs to the beginning and end of the current
+        drift/warning region.
         """
         if self.drift_state == "warning" and self.retraining_recs[0] is None:
             self.retraining_recs[0] = self.total_samples - 1
