@@ -25,7 +25,7 @@ class KdqTree(DriftDetector):
 
     The threshold for drift is determined using the desired alpha level, by a
     bootstrap estimate for the critical value of the K-L divergence, drawing
-    num_bootstrap_samples samples, 2*window_size times, from the reference
+    num_bootstrap_samples samples, ``2 * window_size times``, from the reference
     window.
 
     Additionally, the Kulldorff spatial scan statistic, which is a special case
@@ -353,7 +353,7 @@ class KdqTree(DriftDetector):
         path that this drift observation follows.
 
         Returns:
-          figs: a list containing multiple trees, one for each detection of
+            a list containing multiple trees, one for each detection of
             drift. It is indexed by the number of times drift has been detected,
             not the index of that observation in the original dataframe.
         """

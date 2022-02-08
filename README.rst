@@ -27,7 +27,8 @@ Still need to work on setup.cfg to treat this as a read-only library.
    conda activate molten_env
    cd ./molten/       
    conda install pip       
-   pip install -r requirements.txt
+   pip install -r requirements.txt 
+   #pip install . for read-only
 
 Docker support is currently bugged. Below describe the steps you may use to build the environment with Docker and (optionally) get into the container.
 
@@ -40,6 +41,15 @@ Docker support is currently bugged. Below describe the steps you may use to buil
    sudo docker exec -it <container-name> bash   # go into container
    
 
+
+
+- HTML documentation generation:
+
+.. code-block:: python
+
+   cd docs
+   sphinx-apidoc -M -f -o source ../src/molten #-f may not always be necessary.
+   make html
 
 
 Background

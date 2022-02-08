@@ -118,12 +118,12 @@ class LinearFourRates(DriftDetector):
         self, y_pred, y_true, *args, round_val=4, **kwargs
     ):  # pylint: disable=arguments-differ
         """Update detector with a new observation:
-            1. Updates confusion matrix (self._confusion) with new predictions
-            2. Updates the four rates
-            3. Test each rate for change over time using bounds from Monte Carlo
-                simulations
-            4. If any of the rates exceed bounds, change drift_state to either
-                "warning" or "drift"
+        1. Updates confusion matrix (self._confusion) with new predictions
+        2. Updates the four rates
+        3. Test each rate for change over time using bounds from Monte Carlo
+        simulations
+        4. If any of the rates exceed bounds, change drift_state to either
+        "warning" or "drift"
 
         Args:
             y_pred: predicted class

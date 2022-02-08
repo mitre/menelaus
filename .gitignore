@@ -4,7 +4,7 @@
 *.egg-info
 .pytest_cache
 .vscode
-build
+docs/build/*
 dist
 *.egg-info
 _build

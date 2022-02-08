@@ -16,7 +16,7 @@ class PageHinkley(DriftDetector):
     2. Increment running sum of difference between observations and mean
     3. Compute threshold & PH statistic
     4. Enter drift or warning state if PH value is outside threshold, and the
-        number of samples is greater than the burn-in requirement.
+    number of samples is greater than the burn-in requirement.
 
 
     If the threshold is too small, PH may result in many false alarms. If too
