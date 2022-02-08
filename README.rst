@@ -8,19 +8,8 @@
 .. |coverage| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/coverage.svg
    :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
 
-Notes on use
-============
-
-
-
--  packages required:
-    -  jupyter matplotlib pandas numpy sklearn statistics plotly scipy
-    -  jupyter isn’t a strict requirement for the detectors, but is necessary for Testing_Vignette2.ipynb, so it's currently included in requirements.txt
-
-The below will work to set up for development. Set up the env with conda, but install 
-with pip to avoid conda's repo nonsense. 
-Still need to work on setup.cfg to treat this as a read-only library.
-
+Installation for dev
+=========
 .. code-block:: python
 
    conda create -n molten_env
