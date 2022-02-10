@@ -67,16 +67,20 @@ class KdqTree(DriftDetector):
         """
         Args:
             window_size ([type]): the minimum number of samples required to test
-                whether drift has occurred, equivalent to "maximum number of points
-                in cell" in Dasu (2006)
+                whether drift has occurred, equivalent to "maximum number of
+                points in cell" in Dasu (2006)
             min_points_in_bin (int, optional): size of window over which kdq
                 detects drift. Defaults to 100.
             num_bootstrap_samples (int, optional): the number of bootstrap
                 samples to use to approximate the empirical distributions.
                 Equivalent to kappa in Dasu (2006). Dasu recommends 500-1000
                 samples. Defaults to 500.
-            gamma (float, optional): Persistence factor. Defaults to 0.05.
-            alpha (float, optional): Achievable significance level. Defaults to 0.01.
+            gamma (float, optional): Persistence factor. How many samples in a
+                row, as a proportion of the window size, must be in the "drift
+                region" of K-L divergence, in order for kdqTree to alarm and reset.
+                Defaults to 0.05.
+            alpha (float, optional): Achievable significance level. Defaults to
+            0.01.
         """
         super().__init__()
         self.min_points_in_bin = min_points_in_bin
