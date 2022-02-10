@@ -95,7 +95,7 @@ class ADWIN(DriftDetector):
             0  # this attribute is not scaled by the window size; use .variance
         )
         self._window_size = 0
-        self.retraining_recs = [None, None]
+        self._retraining_recs = [None, None]
 
     def update(self, new_value, *args, **kwargs):  # pylint: disable=arguments-differ
         """Update the detector with a new sample.
@@ -105,12 +105,31 @@ class ADWIN(DriftDetector):
         """
         if self.drift_state is not None:
             self.reset()  # note that the other attributes should *not* be initialized after drift
-            self.retraining_recs = [None, None]
+
         super().update()
         # add new sample to the head of the window
         self._window_size += 1
         self._add_sample(new_value)
         self._shrink_window()
+
+    def reset(self, *args, **kwargs):
+        """Initialize the detector's drift state and other relevant attributes.
+        Intended for use after drift_state == 'drift'.
+        """
+        super().reset()
+        self._initialize_retraining_recs()
+
+    def _initialize_retraining_recs(self):
+        """Sets self._retraining_recs to [None, None]."""
+        self._retraining_recs = [None, None]
+
+    @property
+    def retraining_recs(self):
+        """
+        Returns:
+            list: the current retraining recommendations
+        """
+        return self._retraining_recs
 
     def _add_sample(self, new_value):
         """Make a new bucket containing a single new sample and add it to the
@@ -239,7 +258,7 @@ class ADWIN(DriftDetector):
                             self.drift_state = "drift"
                             if self._window_size > 0:
                                 n_elements0 -= self._remove_last()
-                                self.retraining_recs = (
+                                self._retraining_recs = (
                                     self.total_samples - self._window_size,
                                     self.total_samples - 1,
                                 )

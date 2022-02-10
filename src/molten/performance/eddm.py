@@ -141,17 +141,26 @@ class EDDM(DriftDetector):
                 self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """Sets self.retraining_recs to [None, None]."""
-        self.retraining_recs = [None, None]
+        """Sets self._retraining_recs to [None, None]."""
+        self._retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Set self.retraining_recs to the beginning and end of the current
+        """Set self._retraining_recs to the beginning and end of the current
         drift/warning region.
         """
-        if self.drift_state == "warning" and self.retraining_recs[0] is None:
-            self.retraining_recs[0] = self.total_samples - 1
+        if self.drift_state == "warning" and self._retraining_recs[0] is None:
+            self._retraining_recs[0] = self.total_samples - 1
 
         if self.drift_state == "drift":
-            self.retraining_recs[1] = self.total_samples - 1
-            if self.retraining_recs[0] is None:
-                self.retraining_recs[0] = self.total_samples - 1
+            self._retraining_recs[1] = self.total_samples - 1
+            if self._retraining_recs[0] is None:
+                self._retraining_recs[0] = self.total_samples - 1
+
+
+    @property
+    def retraining_recs(self):
+        """
+        Returns:
+            list: the current retraining recommendations
+        """
+        return self._retraining_recs
