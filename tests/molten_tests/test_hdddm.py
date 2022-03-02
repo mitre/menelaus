@@ -141,10 +141,9 @@ def test_detect_batch_1_reset():
 
     assert hdddm.total_samples == 4 
     assert hdddm.samples_since_reset == 2
-    assert len(hdddm.reference) == len(test)*2
     assert len(hdddm.epsilon) == 2 #epsilon is reset
     assert hdddm.beta != None
-    assert hdddm._drift_state == None
+    assert hdddm.drift_state == None
 
 
 def test_detect_batch_2_init():
