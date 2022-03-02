@@ -1,9 +1,9 @@
+# import plotly.express as px
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import matplotlib.pyplot as plt
 import scipy.stats
 from molten.drift_detector import DriftDetector
+from molten.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
 
 class KdqTree(DriftDetector):
@@ -19,11 +19,12 @@ class KdqTree(DriftDetector):
     sequential splits along each dimension. This structure allows the
     calculation of the K-L divergence for continuous distributions, as the K-L
     divergence is defined on probability mass functions. The reference window is
-    used to construct a kdq-tree via theory of types, and the data in both the
-    reference and test window are binned into this kdq-tree. The K-L divergence
-    can then be calculated between the two windows.
+    used to construct a kdq-tree, and the data in both the reference and test
+    window are filed into it. The number of samples in each leaf of the tree is
+    an empirical distribution for either dataset; this allows us to calculate
+    the K-L divergence.
 
-    The threshold for drift is determined using the desired alpha level, by a
+    The threshold for drift is determined using the desired alpha level by a
     bootstrap estimate for the critical value of the K-L divergence, drawing
     num_bootstrap_samples samples, ``2 * window_size times``, from the reference
     window.
@@ -33,785 +34,221 @@ class KdqTree(DriftDetector):
     gives a measure of the regions of the data space which have the greatest
     divergence between the reference and test windows. This can be used to
     visualize which regions of data space have the greatest drift, implemented
-    as kdqTreeDetector.drift_visualization. Note that these statistics are
+    as kdqTreeDetector.show_spatial_scan. Note that these statistics are
     specific to the partitions of the data space by the kdq-tree, rather than
     (necessarily) the maximally different region in general.
 
     Note also that this algorithm could be used with other types of trees; the
     reference paper and this implementation use kdq-trees.
 
+    Note: the current implementation does not handle categorical data.
+
     Ref. T. Dasu, S. Krishnan, S. Venkatasubramanian, and K. Yi, “An
     information-theoretic approach to detecting changes in multidimensional
     data streams,” in Proc. Symp. the Interface of Statistics,
     Computing Science, and Applications. Citeseer, 2006, Conference
-    Proceedings, pp. 1–24.
+    Proceedings, pp. 1-24.
 
 
     Attributes:
-        total_samples (int): number of samples the drift detector has ever
-            been updated with
-        samples_since_reset (int): number of samples since the last time the
-            drift detector was reset
+        total_samples (int): number of samples/batches the drift detector has
+            ever been updated with.
+        samples_since_reset (int): number of samples/batches since the last time
+            the drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             "drift" or None.
     """
 
     def __init__(
         self,
-        window_size,
-        min_points_in_bin=100,
-        num_bootstrap_samples=500,
-        gamma=0.05,
         alpha=0.01,
+        bootstrap_samples=500,
+        count_ubound=100,
+        cutpoint_proportion_lbound=2e-10,
+        window_size=None,
+        persistence=0.05,
+        stream=True,
     ):
         """
         Args:
-            window_size ([type]): the minimum number of samples required to test
-                whether drift has occurred, equivalent to "maximum number of
-                points in cell" in Dasu (2006)
-            min_points_in_bin (int, optional): size of window over which kdq
-                detects drift. Defaults to 100.
-            num_bootstrap_samples (int, optional): the number of bootstrap
-                samples to use to approximate the empirical distributions.
-                Equivalent to kappa in Dasu (2006). Dasu recommends 500-1000
-                samples. Defaults to 500.
-            gamma (float, optional): Persistence factor. How many samples in a
-                row, as a proportion of the window size, must be in the "drift
-                region" of K-L divergence, in order for kdqTree to alarm and reset.
-                Defaults to 0.05.
             alpha (float, optional): Achievable significance level. Defaults to
-            0.01.
+                0.01.
+            bootstrap_samples (int, optional): The number of bootstrap samples
+                to use to approximate the empirical distributions. Equivalent to
+                kappa in Dasu (2006), which recommends 500-1000 samples.
+                Defaults to 500.
+            count_ubound (int, optional): An upper bound for the number of
+                samples stored in a leaf node of the kdqTree. No leaf shall
+                contain more samples than this value, unless further divisions
+                violate the cutpoint_proportion_lbound restriction. Default 100.
+            cutpoint_proportion_lbound (float, optional): A lower bound for the
+                size of the leaf nodes. No node shall have a size length smaller
+                than this proportion, relative to the original feature length.
+                Defaults to 2e-10.
+            window_size (int, optional): The minimum number of samples required
+                to test whether drift has occurred. Only meaningful if stream
+                is True. Defaults to None.
+            persistence (float, optional): Persistence factor. If stream is True,
+                how many samples in a row, as a proportion of the window size,
+                must be in the "drift region" of K-L divergence, in order for
+                kdqTree to alarm and reset. Defaults to 0.05.
+            stream (bool, optional): Whether data will be received one sample at
+                a time, vs. received in batches of arbitrary size. For stream =
+                False, the reference window is defined with the first call to
+                update() after a reset/initialization. For stream = True, new
+                samples are passed to update one at a time, and the reference
+                data is defined by window_size. Defaults to True.
         """
+        if stream is True and window_size is None:
+            raise ValueError(
+                "Streaming kdqTree's window_size must be a positive integer."
+            )
+        if window_size is not None and window_size < 1 and stream is True:
+            raise ValueError(
+                "Streaming kdqTree's window_size must be a positive integer."
+            )
         super().__init__()
-        self.min_points_in_bin = min_points_in_bin
         self.window_size = window_size
-        self.num_bootstrap_samples = num_bootstrap_samples
-        self.gamma = gamma
+        self.persistence = persistence
         self.alpha = alpha
+        self.bootstrap_samples = bootstrap_samples
+        self.count_ubound = count_ubound
+        self.cutpoint_proportion_lbound = cutpoint_proportion_lbound
+        self.stream = stream
+        self.reset()
 
-        self._build_reference_and_test = True
+    def reset(self):
+        """Initialize the detector's drift state and other relevant attributes.
+        Intended for use after drift_state == 'drift' or initialization.
+        """
+        super().reset()
+        self._ref_data = np.array([])
+        self._test_data_size = 0
+        self._kdqtree = None
+        self._critical_dist = None
+        self._drift_counter = 0  # samples consecutively in the drift region
 
-        self._kdq_tree_nodes = None
-        self._alphabet = None
-
-        self._window_data = {"reference": pd.DataFrame(), "test": pd.DataFrame()}
-        self._critical_distance = None
-
-        # Drift tracker stores relevant statistics. Dist: for each new
-        # observation for which update is called, contains KL divergence value
-        # between reference and test window. Critical distance: Contains the
-        # threshold for evaluating KL divergence value to detect drift. Only
-        # recomputed for each new reference and test window. ID: contains the
-        # index value of each new observation
-        self._drift_tracker = {"dist": [], "critical_distance": [], "id": []}
-        self._drift_location = {
-            "spatial_scan_statistic": [],
-            "kdq_tree_nodes": [],
-            "id": [],
-        }
-
-        self._c = 0
-        self._iter = 0
-
-    def update(self, next_obs, *args, **kwargs):  # pylint: disable=arguments-differ
-        """Update the detector with a new sample.
+    def update(self, ary):
+        """Update the detector with a new sample (if stream is True) or batch.
+        Constructs the reference data's kdqtree; then, when sufficient samples
+        have been received, puts the test data into the same tree; then, checks
+        divergence between the reference and test data.
 
         Args:
-            next_obs: the next observation in the stream, as a dataframe.
+            ary (numpy array): If just reset/initialized, the reference data.
+            Otherwise, a new sample to put into the test window (if streaming)
+            or a new batch of data to be compared to the reference window (if
+            not streaming).
         """
+        # TODO: validation. #17
+        # if self.stream is True and ary.ndim != 1:
+        #     raise ValueError(
+        #         "Streaming kdqTree update only takes one sample at a time."
+        #     )
         if self.drift_state == "drift":
-            super().reset()
-
+            # TODO: depends on whether we want to dump the reference window vs. automatically replacing, HDDDM-style. #59
+            self.reset()
         super().update()
 
-        if self._build_reference_and_test:
-            if len(self._window_data["reference"]) < self.window_size:
-                self._window_data["reference"] = self._window_data["reference"].append(
-                    next_obs
+        if self._kdqtree is None:  # ary is part of the new reference tree
+            self._ref_data = (np.vstack([self._ref_data, ary]) if self._ref_data.size else ary)
+
+            # check for drift if either: we're streaming and the reference
+            # window is full, or we're doing batch detection
+            if (self.stream and len(self._ref_data) == self.window_size) or not self.stream:
+                self._kdqtree = KDQTreePartitioner(
+                    count_ubound=self.count_ubound,
+                    cutpoint_proportion_lbound=self.cutpoint_proportion_lbound,
                 )
+                self._kdqtree.build(self._ref_data)
+                self._ref_data = np.array([])  # don't need it anymore
 
-            elif len(self._window_data["test"]) < self.window_size:
-                self._window_data["test"] = self._window_data["test"].append(next_obs)
+                ref_counts = self._kdqtree.leaf_counts("build")
+                self._critical_dist = self._get_critical_kld(ref_counts)
+        else:  # new test sample(s)
+            self._kdqtree.fill(ary, tree_id="test", reset=(not self.stream))
+            if self.stream:
+                self._test_data_size += (1)  # TODO after validation, should always be 1 #17
+            if not self.stream or (self._test_data_size >= self.window_size):
+                test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
+                if test_dist > self._critical_dist:
+                    if self.stream:
+                        self._drift_counter += 1
+                        if self._drift_counter > self.persistence * self.window_size:
+                            self.drift_state = "drift"
+                    else:
+                        self.drift_state = "drift"
 
-                if len(self._window_data["test"]) == self.window_size:
-                    self._build_reference_and_test = False
+    def _get_critical_kld(self, ref_counts):
+        """Find the critical value of the Kullback-Leibler divergence, using the
+        empirical distribution defined by the counts of the reference tree
+        across the leaves.
 
-                    self._kdq_tree_nodes = self._kdq_tree_build_nodes(
-                        data_input=self._window_data["reference"],
-                        min_points=self.min_points_in_bin,
-                    )
+        Args:
+            ref_counts (numpy array): The counts from the reference tree across
+                its leaves.
 
-                    # Merge in the bins for both the reference and test windows
-                    kdqbins = self._kdq_tree_build_bins(self._kdq_tree_nodes)
-                    self._window_data["reference"] = self._window_data[
-                        "reference"
-                    ].merge(kdqbins, how="left", left_index=True, right_on="id")
-                    self._window_data["reference"].set_index("id", inplace=True)
-                    self._window_data["reference"].index.name = self._window_data[
-                        "test"
-                    ].index.name
+        Returns:
+            float: the critical distance corresponding to self.alpha, the
+                achievable significance level.
+        """
+        ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
 
-                    self._alphabet = list(kdqbins.bin.unique())
-
-                    test_bins = []
-                    for i in range(len(self._window_data["test"])):
-                        test_bins.append(
-                            self._kdq_tree_binner(
-                                kdq_tree_nodes=self._kdq_tree_nodes,
-                                data_point=self._window_data["test"].iloc[[i]],
-                            )
-                        )
-                    self._window_data["test"] = self._window_data["test"].assign(
-                        bin=test_bins
-                    )
-
-                    # Build bootstrap samples from the reference window These
-                    # are used to define the critical region for the divergence
-                    # metric, given the desired alpha, by using the appropriate
-                    # percentile among calculated divergences comparing the
-                    # first half of the bootstrap samples to the second.
-                    bootstrap_samples = self._bootstrapping(
-                        self._window_data["reference"]["bin"].tolist(),
-                        2 * self.window_size,
-                        self.num_bootstrap_samples,
-                    )
-                    bootstrap_types = [
-                        [
-                            self._compute_type(x[: len(x) // 2], self._alphabet),
-                            self._compute_type(
-                                list(x[(len(x) // 2) + 1 :]), self._alphabet
-                            ),
-                        ]
-                        for x in bootstrap_samples
-                    ]
-                    bootstrap_kl_distances = [
-                        scipy.stats.entropy(x[0], x[1]) for x in bootstrap_types
-                    ]
-                    bootstrap_kl_distances.sort()
-
-                    self._critical_distance = bootstrap_kl_distances[
-                        int(np.ceil(self.num_bootstrap_samples * self.alpha))
-                    ]
-
+        if self.stream:
+            sample_size = self.window_size
         else:
-            next_obs = next_obs.assign(
-                bin=self._kdq_tree_binner(
-                    kdq_tree_nodes=self._kdq_tree_nodes, data_point=next_obs
-                )
+            sample_size = sum(ref_counts)
+
+        # TODO vectorize?
+        b_dist_pairs = []
+        bin_indices = list(range(len(ref_counts)))
+        bin_indices_df = pd.DataFrame({"leaf": bin_indices})
+        for _ in range(self.bootstrap_samples):
+            # note the maintenance of the leaf order!
+            b_sample = np.random.choice(bin_indices, size=2 * sample_size, p=ref_dist)
+            b_hist1 = np.unique(b_sample[:sample_size], return_counts=True)
+            b_hist2 = np.unique(b_sample[sample_size:], return_counts=True)
+            b_hist1 = pd.DataFrame({"leaf": b_hist1[0], "count": b_hist1[1]})
+            b_hist2 = pd.DataFrame({"leaf": b_hist2[0], "count": b_hist2[1]})
+            b_hist1 = (
+                b_hist1.merge(bin_indices_df, on="leaf", how="outer")
+                .fillna(0)
+                .sort_values(by="leaf")
             )
-
-            self._window_data["test"] = (
-                self._window_data["test"].iloc[1:, :].append(next_obs)
+            b_hist2 = (
+                b_hist2.merge(bin_indices_df, on="leaf", how="outer")
+                .fillna(0)
+                .sort_values(by="leaf")
             )
-
-            type1 = self._compute_type(
-                self._window_data["reference"]["bin"].tolist(), self._alphabet
-            )
-            type2 = self._compute_type(
-                self._window_data["test"]["bin"].tolist(), self._alphabet
-            )
-
-            dist = scipy.stats.entropy(type1, type2)
-
-            self._drift_tracker["dist"].append(dist)
-            self._drift_tracker["critical_distance"].append(self._critical_distance)
-            self._drift_tracker["id"].append(next_obs.index.values[0])
-
-            if dist > self._critical_distance:
-                self._c = self._c + 1
-
-                if self._c > self.gamma * self.window_size:
-
-                    self.drift_state = "drift"
-
-                    self._drift_location["id"].append(next_obs.index.values[0])
-
-                    kdqbins_filtered = self._kdq_tree_build_bins(
-                        self._kdq_tree_nodes[self._kdq_tree_nodes["depth"] < 9]
-                    )
-
-                    self._drift_location["spatial_scan_statistic"].append(
-                        self._kulldorff_spatial_scan_statistic(
-                            alphabet=list(kdqbins_filtered.bin.unique()),
-                            bins_w1=[
-                                x
-                                for x, y in zip(
-                                    list(kdqbins_filtered.bin),
-                                    list(kdqbins_filtered.id),
-                                )
-                                if y in self._window_data["reference"].index.tolist()
-                            ],
-                            bins_w2=[
-                                x
-                                for x, y in zip(
-                                    list(kdqbins_filtered.bin),
-                                    list(kdqbins_filtered.id),
-                                )
-                                if y in self._window_data["test"].index.tolist()
-                            ],
-                        ).sort_values(
-                            "kulldorff_spatial_scan_statistic", ascending=False
-                        )
-                    )
-
-                    self._drift_location["kdq_tree_nodes"].append(self._kdq_tree_nodes)
-
-                    self._build_reference_and_test = True
-                    self._window_data["reference"] = self._window_data["test"].drop(
-                        columns=["bin"]
-                    )
-                    self._window_data["test"] = pd.DataFrame()
-                    self._c = 0
-            else:
-                self._c = 0
-
-    def drift_visualization(self, id_date_df=None, save_fig=None):
-        """
-        Creates a time-series line plot comparing the KL divergence value (in
-        blue) to the critical region value (in gold). Vertical red lines
-        indicate when drift occurs, ranging from the minimum KL divergence value
-        to the maximum critical distance value. Default x-axis marker is
-        observation id. Plot contains streaming data - all observations for
-        which update is called.
-
-        Args:
-            id_date_df: (Default value = None) Must be a dataframe containing
-                associated dates for each data point index If provided, uses dates
-                as x-axis marker.
-            save_fig: (Default value = None) Saves figure using provided path.
-
-        """
-        if len(self._drift_tracker["dist"]) == 0:
-            return None
-
-        if id_date_df is None:
-            kl_distance_ts = pd.DataFrame(
-                self._drift_tracker, index=range(len(self._drift_tracker["dist"]))
-            )
-            plot_fn = plt.plot
-            id_var = "id"
-        else:
-            kl_distance_ts = pd.DataFrame(
-                self._drift_tracker, index=range(len(self._drift_tracker["dist"]))
-            ).merge(id_date_df, how="left", on="id")
-            plot_fn = plt.plot_date
-            id_var = "date"
-
-        with plt.style.context("fivethirtyeight"):
-            plt.figure(figsize=(20, 8))
-            plot_fn(
-                kl_distance_ts[id_var],
-                kl_distance_ts["dist"],
-                linestyle="-",
-                marker=",",
-                zorder=0,
-                linewidth=0.85,
-            )
-            plot_fn(
-                kl_distance_ts[id_var],
-                kl_distance_ts["critical_distance"],
-                linestyle="--",
-                marker=",",
-                linewidth=1,
-                color="goldenrod",
-                zorder=1,
-            )
-            plt.vlines(
-                x=kl_distance_ts.loc[
-                    kl_distance_ts.dist >= kl_distance_ts.critical_distance, :
-                ][id_var],
-                ymin=min(kl_distance_ts["dist"]),
-                ymax=max(kl_distance_ts["critical_distance"]),
-                linestyle="-",
-                color="darkred",
-                alpha=0.05,
-                linewidth=0.5,
-                zorder=2,
-            )
-            plt.title("Kullback-Leibler Divergence", fontsize=16, y=1.01)
-            plt.suptitle("KDQ Tree Drift Detection", fontsize=24, y=0.97)
-            plt.xlabel("Time")
-            plt.ylabel("Divergence Value")
-
-            ax_out = plt.gca()
-            ax_out.axes.yaxis.set_ticks([])
-
-            if save_fig is not None:
-                plt.savefig(f"{save_fig}")
-
-            plt.show()
-
-    def drift_location_visualization(self):
-        """
-        Iterates through each observation where drift has been observed and
-        builds a tree map for each one. A tree map, for the single observation
-        at which drift is identified, visualizes which features in the dataset
-        had the greatest distributional divergence (or largest spatial scan
-        statistic) measured between the current test window to the current
-        reference window. The tree is built on the reference window data.
-
-        For each drift observation, it will only visualize half of the tree.  It
-        identifies and follows the path this single drift observation traversed
-        down the tree. As it seeks to highlight the features that had a high
-        spatial scan statistic, it only shows features associated with the tree
-        path that this drift observation follows.
-
-        Returns:
-            a list containing multiple trees, one for each detection of
-            drift. It is indexed by the number of times drift has been detected,
-            not the index of that observation in the original dataframe.
-        """
-
-        if len(self._drift_location["spatial_scan_statistic"]) == 0:
-            return None
-
-        figs = []
-
-        for i in range(len(self._drift_location["spatial_scan_statistic"])):
-            spatial_scan_statistic = self._drift_location["spatial_scan_statistic"][i]
-            kdq_tree_nodes = self._drift_location["kdq_tree_nodes"][i]
-            current_id = self._drift_location["id"][i]
-
-            bin_df = pd.DataFrame(
-                columns=["kdqTree"]
-                + ["split" + str(x) for x in range(11)[1:]]
-                + ["spatial_scan_statistic"]
-            )
-            bins = spatial_scan_statistic["bin"].tolist()
-
-            # iterates through each bin for which these is a spatial scan
-            # statistic for this timestamp. Identifies path to reach each bin -
-            # necessary for visualizing tree map. Uses identified path as input
-            # parameter "path" for treemap - provides the list of features in
-            # the order that the tree map should divide the tree to reach
-            # each bin.
-            for j in range(len(bins)):
-
-                tmp_bin = bins[j]
-                tmp_statistics = spatial_scan_statistic[
-                    "kulldorff_spatial_scan_statistic"
-                ].tolist()[j]
-
-                bin_path = self._tree_parser(kdq_tree_nodes, tmp_bin)
-                nodes = ["kdqTree"] + bin_path.split(", ") + [f"Bin {tmp_bin}"]
-                if len(nodes) < 11:
-                    nodes = nodes + [None] * (11 - len(nodes))
-
-                bin_df.loc[bin_df.shape[0]] = nodes + [tmp_statistics]
-
-            bin_df_columns = bin_df.columns
-
-            # only retains non-empty splits in tree
-            for col in bin_df_columns:
-                if bin_df[[col]].isnull().all().values[0]:
-                    bin_df.drop(columns=[col], inplace=True)
-
-            figs.append(
-                px.treemap(
-                    bin_df,
-                    path=["kdqTree"]
-                    + ["split" + str(x) for x in range(bin_df.shape[1] - 2)[1:]],
-                    color="spatial_scan_statistic",
-                    color_continuous_scale="blues",
-                    title=f"Drift Location ID {current_id}",
-                )
-            )
-        return figs
-
-    @staticmethod
-    def _bootstrapping(list_input: list, sample_size: int, num_samples: int):
-        """Computes bootstrap samples from a given list of objects
-
-        Args:
-            list_input (list): List of objects to compute bootstrap samples from
-            sample_size (int): Size of sample to take for each bootsrap. Sample q/ replacement
-            num_samples (int): Number of bootstrap samples to conduct
-            list_input (list):
-            sample_size (int):
-            num_samples (int):
-
-        Returns:
-            List of bootstrap samples.
-
-        """
-
-        bootstrap_samples = []
-
-        for _ in range(num_samples):
-            bootstrap_samples.append(
-                np.random.choice(list_input, size=sample_size).tolist()
-            )
-
-        return bootstrap_samples
-
-    @staticmethod
-    def _compute_type(multiset: list, alphabet: list):
-        """Computes the type for each letter in an alphabet, according to the theory of types
-
-        Args:
-            multiset (list): Multiset of letters in alphabet
-            alphabet (list): List of all letters in alphabet
-
-        Returns:
-            The Type of multiset
-
-        """
-
-        computed_type = [
-            (multiset.count(a) + 0.5) / (len(multiset) + len(alphabet) / 2)
-            for a in alphabet
-        ]
-
-        return computed_type
-
-    @staticmethod
-    def _kdq_tree_binner(kdq_tree_nodes, data_point):
-        """Returns the bin_id that the passed data_point should be placed in
-        in the existing kdq_tree_nodes.
-
-        Args:
-            kdq_tree_nodes: the kdq-tree in which to place data_point
-            data_point: the data_point to be placed
-
-        Returns:
-            int: the ID of the selected bin, to be stapled onto the observation
-                dataframe.
-
-        """
-        next_id = 1
-        leaf_node = False
-        while not leaf_node:
-            current_id = next_id
-            row_select = kdq_tree_nodes[(kdq_tree_nodes.node_id == current_id)]
-
-            # Move to the left cut
-            next_id = 2 * row_select.node_id.values[0]
-
-            # If it is a right cut, we go to the 2*n + 1 node
-            if (
-                data_point[[row_select.axis.values[0]]].values[0]
-                > row_select.cutpoint.values[0]
-            ):
-                next_id += 1
-
-            # If this proposed next node does not exist, then we have reached a leaf node
-            # Similarly, we could check the type of node and see if it is a leaf of any type
-            if next_id not in kdq_tree_nodes.node_id.values:
-                bin_id = row_select.bin_id.values[0]
-                leaf_node = True
-
-        return bin_id
-
-    @staticmethod
-    def _kdq_tree_build_bins(clean_results):
-        """Builds kdqTree bins from nodes and splits defined in the output of
-        _kdq_tree_build_nodes()
-
-        Args: clean_results (DataFrame): Dataframe of nodes and splits produced
-            from _kdq_tree_build_nodes()
-
-        Returns: DataFrame of 2 columns - observation IDs and bin IDs
-
-        """
-        ids = []
-        bins = []
-        for col in clean_results.columns[7:]:
-            tmp_df = clean_results.loc[clean_results[col] == True, :][
-                ["depth", "bin_id", col]
-            ].sort_values(by="depth", ascending=False)
-            ids.append(col[1:])
-            bins.append(tmp_df.bin_id.tolist()[0])
-
-        kdqbins = pd.DataFrame({"id": [int(x) for x in ids], "bin": bins}).sort_values(
-            by="bin"
-        )
-
-        return kdqbins
-
-    def _nested_dict_to_dataframe(self, nested_dict):
-        """Unnests a nested node dictionary into a cleaned dataframe
-
-        Args:
-          nested_dict (dict): Nested dictionary of nodes output from kdqTreeSplits()
-
-        Returns:
-          Unnested pandas dataframe of nodes and splits
-
-        """
-
-        out = pd.DataFrame()
-
-        if isinstance(nested_dict, dict):
-            for value in nested_dict.values():
-                out = pd.concat([out, self._nested_dict_to_dataframe(value)])
-
-        elif isinstance(nested_dict, pd.DataFrame):
-            out = nested_dict
-
-        return out
-
-    @classmethod
-    def _kdq_tree_splits(
-        cls,
-        data_input: pd.DataFrame,
-        original_ids: list,
-        node: dict,
-        node_id: int,
-        depth: int,
-        axis: int,
-        min_points: int,
-        max_value: int,
-        min_value: int,
-    ):
-        """Recursive function to create splits in a tree at a given node
-
-        Args:
-            data_input (pd.DataFrame): Set of points in data
-            original_ids (list): Original list of IDs corresponding to each row of
-                data_input at the root
-            node (dict): A dictionary containing keys left_node, right_node, and
-                results
-            node_id (int): ID of current node to be included in the dataframe of
-                `results` value
-            depth (int): Current depth of the node we are creating a split at
-            axis (int): Defines the index of the column we should be making a
-                split on
-            min_points (int): Minimum number of points allowed in each bin
-            max_value (int): Maximum value in the given axis
-            min_value (int): Minimum value in the given axis
-
-        Returns:
-            Node dictionary
-
-        """
-
-        if data_input.shape[0] > min_points:
-            # depth = depth+1
-
-            # axis = ((depth - 1) % (data_input.shape[1] - 1)) + 1
-
-            cutpoint = (max_value + min_value) / 2
-
-            left_of_cutpoint = data_input.iloc[:, axis] < cutpoint
-
-            bools_df = pd.DataFrame(
-                [(x in list(data_input.index)) for x in original_ids]
-            ).transpose()
-            bools_df.columns = ["d" + str(x) for x in original_ids]
-
-            points_in_left_cell = left_of_cutpoint.sum()
-            points_in_right_cell = data_input.shape[0] - points_in_left_cell
-
-            if points_in_left_cell < min_points and points_in_right_cell < min_points:
-                node_type = "Leaf Node"
-
-            elif points_in_left_cell < min_points:
-                node_type = "Left Leaf Node"
-
-            elif points_in_right_cell < min_points:
-                node_type = "Right Leaf Node"
-
-            else:
-                node_type = "Node"
-
-            node["results"] = pd.concat(
-                [
-                    pd.DataFrame(
-                        {
-                            "node_id": node_id,
-                            "depth": depth,
-                            "axis": list(data_input.columns)[axis],
-                            "num_points": data_input.shape[0],
-                            "cutpoint": cutpoint,
-                            "type": node_type,
-                        },
-                        index=[0],
-                    ),
-                    bools_df,
-                ],
-                axis=1,
-            )
-
-            depth = depth + 1
-            axis_next = (depth % (data_input.shape[1] - 1)) + 1
-            max_next = np.max(data_input.iloc[:, axis_next])
-            min_next = np.min(data_input.iloc[:, axis_next])
-
-            node["left_child"] = cls._kdq_tree_splits(
-                data_input.loc[left_of_cutpoint, :],
-                original_ids=original_ids,
-                node=node.copy(),
-                node_id=2 * node_id,
-                depth=depth,
-                axis=axis_next,
-                max_value=max_next,
-                min_value=min_next,
-                min_points=min_points,
-            )
-
-            node["right_child"] = cls._kdq_tree_splits(
-                data_input.loc[[not x for x in left_of_cutpoint], :],
-                original_ids=original_ids,
-                node=node.copy(),
-                node_id=(2 * node_id) + 1,
-                depth=depth,
-                axis=axis_next,
-                max_value=max_next,
-                min_value=min_next,
-                min_points=min_points,
-            )
-
-            return node
-
-    def _kdq_tree_build_nodes(self, data_input: pd.DataFrame, min_points=200):
-        """Build out the nodes of the kdqTree
-
-        Args:
-            data_input (pd.DataFrame): Set of points in data
-            min_points (int): Minimum number of points allowed in each bin.
-                Default value = 200.
-
-        Returns:
-            Dataframe of splits in kdqTree
-
-        """
-
-        original_ids = list(data_input.index)
-
-        depth = 0
-        node = {"left_child": None, "right_child": None}
-
-        bools_df = pd.DataFrame([True] * data_input.shape[0]).transpose()
-        bools_df.columns = ["d" + str(x) for x in original_ids]
-
-        results = pd.concat(
-            [
-                pd.DataFrame(
-                    {
-                        "node_id": 1,
-                        "depth": 0,
-                        "axis": None,
-                        "num_points": data_input.shape[0],
-                        "cutpoint": None,
-                        "type": "Node",
-                    },
-                    index=[0],
-                ),
-                bools_df,
-            ],
-            axis=1,
-        )
-
-        node["results"] = results
-
-        nested_dict_results = self._kdq_tree_splits(
-            data_input=data_input,
-            original_ids=original_ids,
-            node=node,
-            node_id=1,
-            depth=depth,
-            axis=1,
-            max_value=np.max(data_input.iloc[:, 1]),
-            min_value=np.min(data_input.iloc[:, 1]),
-            min_points=min_points,
-        )
-
-        clean_results = self._nested_dict_to_dataframe(nested_dict_results)
-        clean_results = clean_results.sort_values("node_id").assign(
-            bin_id=range(clean_results.shape[0])
-        )
-        clean_results = clean_results[
-            clean_results.columns.tolist()[-1:] + clean_results.columns.tolist()[:-1]
-        ]
-
-        clean_results.index = range(clean_results.shape[0])
-
-        return clean_results
-
-    @staticmethod
-    def _kulldorff_spatial_scan_statistic(alphabet, bins_w1, bins_w2):
-        """Computes Kulldorf Spatial Scan Statistic between two bins in an
-        alphabet
-
-        Args:
-            alphabet (list): List of all elements in set (alphabet)
-            bins_w1 (list): List of bins comprising window 1
-            bins_w2 (list): List of bins comprising window 2
-
-        Returns:
-            DataFrame containing the input alphabet and the Kulldorf Spatial
-                Scan Statistic for each element
-
-        """
-
-        len_w1 = len(bins_w1)
-        len_w2 = len(bins_w2)
-
-        w1_in_alpha = [bins_w1.count(alpha) for alpha in alphabet]
-        w2_in_alpha = [bins_w2.count(alpha) for alpha in alphabet]
-
-        statistic = [
-            ((w1_counts + 0.5) * np.log((w1_counts + 0.5) / (w2_counts + 0.5)))
-            + (
-                (len_w1 - w1_counts + 0.5)
-                * np.log((len_w1 - w1_counts + 0.5) / (len_w2 - w2_counts + 0.5))
-            )
-            - ((len_w1 + 1) * np.log((len_w1 + 1) / (len_w2 + 1)))
-            for w1_counts, w2_counts, in zip(w1_in_alpha, w2_in_alpha)
-        ]
-
-        return pd.DataFrame(
-            {"bin": alphabet, "kulldorff_spatial_scan_statistic": statistic}
-        )
-
-    @staticmethod
-    def _tree_parser(kdq_tree_nodes, bin_id):
-        """Parse tree to bin into text
-
-        Args:
-            kdq_tree_nodes (pd.DataFrame): Dataframe of kdqTree nodes
-            bin_id (int): ID of the bin to which we should parse the tree
-
-        Returns:
-            String of text that follows path from root to bin
-
-        """
-
-        node_ids = [
-            kdq_tree_nodes[kdq_tree_nodes.bin_id == bin_id]["node_id"].tolist()[0]
-        ]
-
-        not_root = True
-        tmp_id = node_ids[0]
-
-        while not_root:
-            if tmp_id % 2 == 0:
-                tmp_id = tmp_id // 2
-                operator = "<"
-            else:
-                tmp_id = (tmp_id - 1) // 2
-                operator = ">"
-
-            node_ids.append(tmp_id)
-
-            if tmp_id == 1:
-                not_root = False
-
-        split_string = ""
-        for node_id in node_ids[::-1]:
-            tmp_row = kdq_tree_nodes[kdq_tree_nodes.node_id == node_id]
-
-            if node_id % 2 == 0:
-                operator = "<"
-            else:
-                operator = ">"
-
-            split_string = (
-                split_string
-                + f"{tmp_row['axis'].tolist()[0]} {operator} \
-                    {round(tmp_row['cutpoint'].tolist()[0],2)}, "
-            )
-
-        split_string = split_string[:-2]
-
-        return split_string
+            b_hist1 = KDQTreePartitioner._distn_from_counts(b_hist1["count"])
+            b_hist2 = KDQTreePartitioner._distn_from_counts(b_hist2["count"])
+            b_dist_pairs.append([b_hist1, b_hist2])
+
+        critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
+        return np.quantile(critical_distances, 1 - self.alpha, interpolation="nearest")
+
+    # def show_spatial_scan(self, ary):
+    # TODO: doc me
+    #     # visualize the tree
+    #     # the arguments are kind of a problem: do we want to compare the
+    #     # reference tree to a test array, or do we want to spit out a
+    #     # visualization for the stored counts[0]:counts[1] or counts[0]:counts[3], ...
+    #     # I vote against the latter. Depends on undecided things, either way.
+
+    #     ref_counts, test_counts, tree_struct = self._kdqtree.build(
+    #         ary, spill_stucture=True
+    #     )
+
+    #     n_ref = sum(ref_counts)
+    #     n_test = sum(test_counts)
+    #     counts = np.array([ref_counts, test_counts])
+
+    #     # get KSS
+    #     out = counts.apply(
+    #         lambda x: x[0] * np.log(x[0] / x[1])
+    #         + (n_ref - x[0]) * np.log((n_ref - x[0]) / (n_test - x[1]))
+    #         - n_ref * np.log(n_ref / n_test)
+    #     )
+
+    #     # return miracle(out, tree_struct)  # to make a plotly plot
+    #     return None
