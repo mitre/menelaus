@@ -12,9 +12,7 @@ def test_no_drift():
         stream_size += 1
         assert cusum.drift_state is None
         assert len(cusum._stream) == stream_size
-        assert (
-            cusum.samples_since_reset == stream_size
-        )  # no reset til at least after burn in
+        assert (cusum.samples_since_reset == stream_size)  # no reset til at least after burn in
 
 
 def test_with_drift():
@@ -22,9 +20,8 @@ def test_with_drift():
     cusum = CUSUM(threshold=10)
     stream_size = 0
     running_samples_since_reset = 0
-    for i in range(
-        75
-    ):  # wait for burn-in, induce drift + test, wait for burn-in again, induce drift + test
+    # wait for burn-in, induce drift, test, wait for burn-in again, induce drift, test
+    for i in range(75):  
         assert len(cusum._stream) == stream_size
         stream_size += 1
         # set drift at two locations (31st and 31st + 30 = 62nd indices), otherwise constants

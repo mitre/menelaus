@@ -8,7 +8,9 @@ docs/build/*
 dist
 *.egg-info
 _build
-src/molten/tools/artifacts/*
+src/molten/partitioners/*.ipynb*
+src/molten/partitioners/*.png*
+src/molten/tools/artifacts/p*
 src/molten/tools/*.ipynb*
 tests/molten_tests/*.ipynb*
 *nohup*
