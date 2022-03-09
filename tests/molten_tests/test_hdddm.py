@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from molten.distribution.hdddm import HDDDM
+from molten.data_drift.hdddm import HDDDM
 
 def test_stdev():
     """ Test statistic = 'stdev' parameter vs 'tstat' method"""

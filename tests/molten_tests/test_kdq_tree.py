@@ -3,7 +3,7 @@ import copy
 import pytest
 import numpy as np
 import pandas as pd
-from molten.distribution.kdq_tree import KdqTree
+from molten.data_drift.kdq_tree import KdqTree
 
 # TODO: visualization
 # TODO: batch mode

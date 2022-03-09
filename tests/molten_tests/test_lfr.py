@@ -1,6 +1,6 @@
 """Module for checking correctness of LFR"""
 import numpy as np
-from molten.performance.lfr import LinearFourRates
+from molten.concept_drift.lfr import LinearFourRates
 
 
 def test_build_no_drift():

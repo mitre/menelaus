@@ -1,6 +1,6 @@
 """All methods for testing correctness of CUSUM implementation."""
 import numpy as np
-from molten.other.cusum import CUSUM
+from molten.change_detection.cusum import CUSUM
 
 
 def test_no_drift():

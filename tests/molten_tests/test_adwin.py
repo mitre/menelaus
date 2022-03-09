@@ -1,6 +1,6 @@
 """Methods for checking simple behaviors of ADWIN."""
 import pytest
-from molten.performance.adwin import ADWIN
+from molten.concept_drift.adwin import ADWIN
 
 
 def test_compression():

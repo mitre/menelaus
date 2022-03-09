@@ -6,7 +6,7 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 
-from molten.distribution.pca_cd import PCACD
+from molten.data_drift.pca_cd import PCACD
 
 
 DATA_PATHS = {

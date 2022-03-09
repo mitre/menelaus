@@ -1,7 +1,7 @@
 """Methods for testing <logical flow> of PCA-CD."""
 import pandas as pd
 import numpy as np
-from molten.distribution.pca_cd import PCACD
+from molten.data_drift.pca_cd import PCACD
 
 
 def test_build_no_drift():
