@@ -1,4 +1,4 @@
-from molten.performance.stepd import STEPD
+from molten.concept_drift.stepd import STEPD
 
 
 def test_warning():

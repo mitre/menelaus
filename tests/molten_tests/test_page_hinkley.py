@@ -1,5 +1,5 @@
 """All methods for testing correctness of Page Hinkley implementation."""
-from molten.other.page_hinkley import PageHinkley
+from molten.change_detection.page_hinkley import PageHinkley
 
 
 def test_build_no_drift():

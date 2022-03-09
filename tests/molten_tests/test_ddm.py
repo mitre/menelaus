@@ -1,5 +1,5 @@
 """Methods for testing correctness of DDM."""
-from molten.performance.ddm import DDM
+from molten.concept_drift.ddm import DDM
 
 
 def test_drift():
