@@ -1,4 +1,3 @@
-# import plotly.express as px
 import pandas as pd
 import numpy as np
 import scipy.stats
@@ -33,21 +32,22 @@ class KdqTree(DriftDetector):
     of the KL-divergence, can be calculated at each node of the kdq-tree, which
     gives a measure of the regions of the data space which have the greatest
     divergence between the reference and test windows. This can be used to
-    visualize which regions of data space have the greatest drift, implemented
-    as kdqTreeDetector.show_spatial_scan. Note that these statistics are
-    specific to the partitions of the data space by the kdq-tree, rather than
-    (necessarily) the maximally different region in general.
+    visualize which regions of data space have the greatest drift. Note that
+    these statistics are specific to the partitions of the data space by the
+    kdq-tree, rather than (necessarily) the maximally different region in
+    general. KSS is made available via to_plotly_dataframe, which produces
+    output structured for use with plotly.express.treemap.
 
-    Note also that this algorithm could be used with other types of trees; the
+    Note that this algorithm could be used with other types of trees; the
     reference paper and this implementation use kdq-trees.
 
-    Note: the current implementation does not handle categorical data.
+    Note that the current implementation does not explicitly handle categorical
+    data.
 
     Ref. T. Dasu, S. Krishnan, S. Venkatasubramanian, and K. Yi, “An
-    information-theoretic approach to detecting changes in multidimensional
-    data streams,” in Proc. Symp. the Interface of Statistics,
-    Computing Science, and Applications. Citeseer, 2006, Conference
-    Proceedings, pp. 1-24.
+    information-theoretic approach to detecting changes in multidimensional data
+    streams,” in Proc. Symp. the Interface of Statistics, Computing Science, and
+    Applications. Citeseer, 2006, Conference Proceedings, pp. 1-24.
 
 
     Attributes:
@@ -151,11 +151,15 @@ class KdqTree(DriftDetector):
         super().update()
 
         if self._kdqtree is None:  # ary is part of the new reference tree
-            self._ref_data = (np.vstack([self._ref_data, ary]) if self._ref_data.size else ary)
+            self._ref_data = (
+                np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
+            )
 
             # check for drift if either: we're streaming and the reference
             # window is full, or we're doing batch detection
-            if (self.stream and len(self._ref_data) == self.window_size) or not self.stream:
+            if (
+                self.stream and len(self._ref_data) == self.window_size
+            ) or not self.stream:
                 self._kdqtree = KDQTreePartitioner(
                     count_ubound=self.count_ubound,
                     cutpoint_proportion_lbound=self.cutpoint_proportion_lbound,
@@ -168,7 +172,9 @@ class KdqTree(DriftDetector):
         else:  # new test sample(s)
             self._kdqtree.fill(ary, tree_id="test", reset=(not self.stream))
             if self.stream:
-                self._test_data_size += (1)  # TODO after validation, should always be 1 #17
+                self._test_data_size += (
+                    1  # TODO after validation, should always be 1 #17
+                )
             if not self.stream or (self._test_data_size >= self.window_size):
                 test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
                 if test_dist > self._critical_dist:
@@ -227,28 +233,33 @@ class KdqTree(DriftDetector):
         critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
         return np.quantile(critical_distances, 1 - self.alpha, interpolation="nearest")
 
-    # def show_spatial_scan(self, ary):
-    # TODO: doc me
-    #     # visualize the tree
-    #     # the arguments are kind of a problem: do we want to compare the
-    #     # reference tree to a test array, or do we want to spit out a
-    #     # visualization for the stored counts[0]:counts[1] or counts[0]:counts[3], ...
-    #     # I vote against the latter. Depends on undecided things, either way.
+    def to_plotly_dataframe(self, tree_id1="build", tree_id2="test", max_depth=None):
+        """Generates a dataframe containing information about the kdqTree's structure
+        and some node characteristics, intended for use with plotly.
 
-    #     ref_counts, test_counts, tree_struct = self._kdqtree.build(
-    #         ary, spill_stucture=True
-    #     )
+        Args:
+            tree_id1 (str, optional): Reference tree. If tree_id2 is not specified,
+                the only tree described. Defaults to "build".
+            tree_id2 (str, optional): Test tree. If this is specified, the
+                dataframe will also contain information about the difference
+                between counts in each node for the reference vs. Test tree.
+                Defaults to None.
+            max_depth (int, optional): Depth in the tree to which to recurse. Defaults to None.
 
-    #     n_ref = sum(ref_counts)
-    #     n_test = sum(test_counts)
-    #     counts = np.array([ref_counts, test_counts])
-
-    #     # get KSS
-    #     out = counts.apply(
-    #         lambda x: x[0] * np.log(x[0] / x[1])
-    #         + (n_ref - x[0]) * np.log((n_ref - x[0]) / (n_test - x[1]))
-    #         - n_ref * np.log(n_ref / n_test)
-    #     )
-
-    #     # return miracle(out, tree_struct)  # to make a plotly plot
-    #     return None
+        Returns:
+            pd.DataFrame: A dataframe where each row corresponds to a node, and
+                each column contains some information:
+            name: a label corresponding to which feature this split is on
+            idx: a unique ID for the node, to pass to plotly.express.treemap's
+                id argument
+            parent_idx: the ID of the node's parent
+            cell_count: how many samples are in this node in the reference tree.
+            depth: how deep the node is in the tree
+            count_diff: if tree_id2 is specified, the change in counts from the
+                reference tree.
+            kss: the Kulldorff Spatial Scan Statistic for this node, defined as
+                the KL-divergence for this node between the reference and test
+                trees, using the individual node and all other nodes combined as the
+                bins for the distributions.
+        """
+        return self._kdqtree.to_plotly_dataframe(tree_id1, tree_id2, max_depth)

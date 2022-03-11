@@ -5,7 +5,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KernelDensity
 from molten.drift_detector import DriftDetector
-from molten.other.page_hinkley import PageHinkley
+from molten.change_detection.page_hinkley import PageHinkley
 
 
 class PCACD(DriftDetector):

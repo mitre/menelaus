@@ -83,17 +83,11 @@ def test_validation():
     # TODO: validation on update()
 
 
-# def test_tree_visualization(kdq_det_stream):
-#     """Placeholder, only to execute the code without erroring out. Evaluating
-#     correctness on this would be complicated, if only due to the way it's stored.
-
-#     For now, just confirms that the tree visualization doesn't break midway, and
-#     that it returns a single drift index.
-
-#     Args:
-#         kdq_det_stream : kdqTree object from fixture_kdq_det_stream
-#     """
-#     det = KdqTree(window_size=200)
-#     assert det.drift_location_visualization() is None
-#     out = kdq_det_stream.drift_location_visualization()
-#     assert len(out) == 1
+def test_viz_dataframe(kdq_det_batch):
+    plot_df = kdq_det_batch.to_plotly_dataframe()
+    assert plot_df.shape[0] > 0
+    # another one where checking the contents would be quite elaborate, but we can at least
+    # ensure the structure is correct
+    assert set(plot_df.columns) == set(
+        ["name", "idx", "parent_idx", "cell_count", "depth", "count_diff", "kss"]
+    )
