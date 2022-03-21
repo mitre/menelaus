@@ -40,6 +40,7 @@ class LinearFourRates(DriftDetector):
             indicates an abrupt change.
 
     """
+    input_type = "stream"
 
     def __init__(
         self,

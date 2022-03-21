@@ -1,33 +1,52 @@
-class DriftDetector:
-    """Base class for MOLTEN drift detectors."""
+from abc import ABC, abstractmethod
+
+
+class DriftDetector(ABC):
+    """Base class for MOLTEN drift detectors.
+    A DriftDetector object implements the update() and reset() methods and calls
+    the super() methods to initialize and update the attributes below.
+
+    Generally, a DriftDetector is instantiated, then repeatedly passed new data
+    via ``update``. At each ``update`` step, its ``drift_state`` will reflect
+    whether drift has been detected or almost been detected. After the
+    detector's state is set to ``"drift"``, ``update`` calls ``reset`` to
+    re-initialize the relevant attributes.
+
+    """
 
     def __init__(self, *args, **kwargs):
         """
         Attributes:
-            total_samples (int): number of samples the drift detector has ever
-                been updated with
-            samples_since_reset (int): number of samples since the last time the
-                drift detector was reset
+            total_samples (int): number of samples/batches the drift detector
+                has ever been updated with
+            samples_since_reset (int): number of samples/batches since the last
+                time the drift detector was reset
             drift_state (str): detector's current drift state. Can take values
                 "drift", "warning", or None.
+            input_type (str): the type of input the detector accepts, either
+                "batch", with multiple samples in one call to update(), or
+                "stream", with one sample per call to update().
         """
         super().__init__()
         self.total_samples = 0
         self.samples_since_reset = 0
         self._drift_state = None
+        self._input_type = None
 
+    @abstractmethod
     def update(self, *args, **kwargs):
-        """Update the detector with a new sample."""
+        """Update the detector with a new sample or batch."""
         self.total_samples += 1
         self.samples_since_reset += 1
 
+    @abstractmethod
     def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after drift_state == 'drift'."""
         self.samples_since_reset = (
             0  # number of elements the detector has been updated with since last reset
         )
-        self._drift_state = None
+        self.drift_state = None
 
     @property
     def drift_state(self):
@@ -54,3 +73,12 @@ class DriftDetector:
             )
         else:
             self._drift_state = value
+
+    @property
+    @abstractmethod
+    def input_type(self):
+        """
+        Returns:
+            str: detector's input type, with values "batch" or "stream".
+        """
+        return self._input_type

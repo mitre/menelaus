@@ -47,7 +47,7 @@ def fixture_kdq_det_batch():
     """
     np.random.seed(123)
     in_df = np.random.sample((10, NUM_FEATURES))
-    det = KdqTree(stream=False, count_ubound=1, bootstrap_samples=10)
+    det = KdqTree(input_type="batch", count_ubound=1, bootstrap_samples=10)
     det.update(in_df)
     det.update(in_df)
     det.update(50 * in_df)
@@ -77,9 +77,9 @@ def test_reset_batch(kdq_det_batch):
 
 def test_validation():
     with pytest.raises(ValueError) as _:
-        det = KdqTree(window_size=None, stream=True)
+        det = KdqTree(window_size=None, input_type="stream")
     with pytest.raises(ValueError) as _:
-        det = KdqTree(window_size=-5, stream=True)
+        det = KdqTree(window_size=-5, input_type="stream")
     # TODO: validation on update()
 
 

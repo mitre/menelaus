@@ -41,6 +41,7 @@ class EDDM(DriftDetector):
             abrupt change.
             Resets when self.drift_state returns to None (no drift nor warning).
     """
+    input_type = "stream"
 
     def __init__(self, n_threshold=30, warning_thresh=0.95, drift_thresh=0.9):
         """

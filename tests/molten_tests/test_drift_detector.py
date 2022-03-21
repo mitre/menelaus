@@ -1,11 +1,11 @@
 """Module for checking behavior of DriftDetector."""
-from molten.drift_detector import DriftDetector
+from molten.concept_drift import DDM
 import pytest
 
 
 def test_validation():
     """Confirm that bad drift_state values raise ValueErrors."""
-    det = DriftDetector()
+    det = DDM()
     with pytest.raises(ValueError) as _:
         det.drift_state = "balloon"
 

@@ -41,6 +41,7 @@ class STEPD(DriftDetector):
         drift_state (str): detector's current drift state. Can take values
             "drift", "warning", or None.
     """
+    input_type = "stream"
 
     def __init__(self, window_size=30, alpha_warning=0.05, alpha_drift=0.003):
         """

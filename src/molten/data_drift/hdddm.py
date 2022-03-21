@@ -126,6 +126,7 @@ class HDDDM(DriftDetector):
             thresholds (dict): For each batch seen (key), stores the Beta thresholds between test and
                 reference batch (value). Useful for visualizing drift detection statistics.
     """
+    input_type = "batch"
 
     def __init__(
         self, 
