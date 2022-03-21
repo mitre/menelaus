@@ -42,6 +42,7 @@ class DDM(DriftDetector):
             The latter should cause caution, as it indicates an abrupt change.
             Resets when to [None, None] after drift is detected.
     """
+    input_type = "stream"
 
     def __init__(self, n_threshold=30, warning_scale=2, drift_scale=3):
         """

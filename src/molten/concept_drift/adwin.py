@@ -40,7 +40,8 @@ class ADWIN(DriftDetector):
             with, the values with be [4, 12].
 
     """
-
+    input_type = "stream"
+    
     def __init__(
         self,
         delta=0.002,

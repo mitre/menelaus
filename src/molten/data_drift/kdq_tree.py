@@ -59,6 +59,8 @@ class KdqTree(DriftDetector):
             "drift" or None.
     """
 
+    input_type = None
+
     def __init__(
         self,
         alpha=0.01,
@@ -67,7 +69,7 @@ class KdqTree(DriftDetector):
         cutpoint_proportion_lbound=2e-10,
         window_size=None,
         persistence=0.05,
-        stream=True,
+        input_type="stream",
     ):
         """
         Args:
@@ -92,29 +94,30 @@ class KdqTree(DriftDetector):
                 how many samples in a row, as a proportion of the window size,
                 must be in the "drift region" of K-L divergence, in order for
                 kdqTree to alarm and reset. Defaults to 0.05.
-            stream (bool, optional): Whether data will be received one sample at
-                a time, vs. received in batches of arbitrary size. For stream =
-                False, the reference window is defined with the first call to
-                update() after a reset/initialization. For stream = True, new
-                samples are passed to update one at a time, and the reference
-                data is defined by window_size. Defaults to True.
+            input_type (str, optional): Whether data will be received one sample
+                at a time, vs. received in batches of arbitrary size. For
+                input_type == "batch", the reference window is defined with the
+                first call to update() after a reset/initialization. For
+                input_type == "stream", new samples are passed to update one at
+                a time, and the reference data is defined by window_size.
+                Defaults to "stream".
         """
-        if stream is True and window_size is None:
+        if input_type == "stream" and window_size is None:
             raise ValueError(
                 "Streaming kdqTree's window_size must be a positive integer."
             )
-        if window_size is not None and window_size < 1 and stream is True:
+        if window_size is not None and window_size < 1 and input_type == "stream":
             raise ValueError(
                 "Streaming kdqTree's window_size must be a positive integer."
             )
         super().__init__()
+        self.input_type = input_type
         self.window_size = window_size
         self.persistence = persistence
         self.alpha = alpha
         self.bootstrap_samples = bootstrap_samples
         self.count_ubound = count_ubound
         self.cutpoint_proportion_lbound = cutpoint_proportion_lbound
-        self.stream = stream
         self.reset()
 
     def reset(self):
@@ -129,7 +132,7 @@ class KdqTree(DriftDetector):
         self._drift_counter = 0  # samples consecutively in the drift region
 
     def update(self, ary):
-        """Update the detector with a new sample (if stream is True) or batch.
+        """Update the detector with a new sample (if input_type is "stream") or batch.
         Constructs the reference data's kdqtree; then, when sufficient samples
         have been received, puts the test data into the same tree; then, checks
         divergence between the reference and test data.
@@ -141,7 +144,7 @@ class KdqTree(DriftDetector):
             not streaming).
         """
         # TODO: validation. #17
-        # if self.stream is True and ary.ndim != 1:
+        # if self.input_type == "stream" and ary.ndim != 1:
         #     raise ValueError(
         #         "Streaming kdqTree update only takes one sample at a time."
         #     )
@@ -158,8 +161,8 @@ class KdqTree(DriftDetector):
             # check for drift if either: we're streaming and the reference
             # window is full, or we're doing batch detection
             if (
-                self.stream and len(self._ref_data) == self.window_size
-            ) or not self.stream:
+                self.input_type == "stream" and len(self._ref_data) == self.window_size
+            ) or self.input_type == "batch":
                 self._kdqtree = KDQTreePartitioner(
                     count_ubound=self.count_ubound,
                     cutpoint_proportion_lbound=self.cutpoint_proportion_lbound,
@@ -170,15 +173,15 @@ class KdqTree(DriftDetector):
                 ref_counts = self._kdqtree.leaf_counts("build")
                 self._critical_dist = self._get_critical_kld(ref_counts)
         else:  # new test sample(s)
-            self._kdqtree.fill(ary, tree_id="test", reset=(not self.stream))
-            if self.stream:
+            self._kdqtree.fill(ary, tree_id="test", reset=(self.input_type == "batch"))
+            if self.input_type == "stream":
                 self._test_data_size += (
                     1  # TODO after validation, should always be 1 #17
                 )
-            if not self.stream or (self._test_data_size >= self.window_size):
+            if self.input_type == "batch" or (self._test_data_size >= self.window_size):
                 test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
                 if test_dist > self._critical_dist:
-                    if self.stream:
+                    if self.input_type == "stream":
                         self._drift_counter += 1
                         if self._drift_counter > self.persistence * self.window_size:
                             self.drift_state = "drift"
@@ -200,7 +203,7 @@ class KdqTree(DriftDetector):
         """
         ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
 
-        if self.stream:
+        if self.input_type == "stream":
             sample_size = self.window_size
         else:
             sample_size = sum(ref_counts)

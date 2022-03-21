@@ -20,6 +20,7 @@ class CUSUM(DriftDetector):
         drift_state (str): detector's current drift state. Can take values
             "drift" or None.
     """
+    input_type = "stream"
 
     def __init__(
         self,

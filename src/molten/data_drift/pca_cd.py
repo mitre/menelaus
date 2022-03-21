@@ -45,6 +45,8 @@ class PCACD(DriftDetector):
             the specified ev_threshold parameter.
     """
 
+    input_type = "batch"
+
     def __init__(
         self,
         window_size,
@@ -287,6 +289,12 @@ class PCACD(DriftDetector):
                     self.drift_state = "drift"
 
         super().update()
+
+    def reset(self, *args, **kwargs):
+        """Initialize the detector's drift state and other relevant attributes.
+        Intended for use after drift_state == 'drift'.
+        """
+        super().reset()
 
     @classmethod
     def _build_kde(cls, sample):

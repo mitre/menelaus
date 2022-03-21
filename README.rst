@@ -8,16 +8,16 @@
 .. |coverage| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/coverage.svg
    :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
 
-Installation for dev
+Installation from local repo
 =========
+
+Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
+
 .. code-block:: python
 
-   conda create -n molten_env
-   conda activate molten_env
-   cd ./molten/       
-   conda install pip       
-   pip install -r requirements.txt 
-   #pip install . for read-only
+   cd ./molten/
+   pip install . #for read-only
+   pip install -e .[dev] #to allow editing, running tests, generating docs, etc.
 
 Docker support is currently bugged. Below describe the steps you may use to build the environment with Docker and (optionally) get into the container.
 
@@ -32,7 +32,7 @@ Docker support is currently bugged. Below describe the steps you may use to buil
 
 
 
-- HTML documentation generation:
+- HTML documentation generation, if installing via molten[dev] as above:
 
 .. code-block:: python
 

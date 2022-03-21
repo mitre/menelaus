@@ -1,4 +1,2 @@
-# from .DDM import DDM
-# from .drift_detector import drift_detector
-# from .EDDM import EDDM
-# from .STEPD import STEPD
+from molten.change_detection.page_hinkley import PageHinkley
+from molten.change_detection.cusum import CUSUM
