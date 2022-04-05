@@ -17,3 +17,4 @@ tests/molten_tests/*.ipynb*
 *nohup*
 *.coverage
 *.DS_Store
+.idea/
