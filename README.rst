@@ -44,7 +44,7 @@ Docker support is currently bugged. Below describe the steps you may use to buil
 Background
 ==========
 
-Concept drift is an established phenomenon in machine learning (ML) and
+Concept drift's an established phenomenon in machine learning (ML) and
 predictive analytics in which the performance of a model changes over
 time. There is very little published work on effectively integrating
 drift detection in the clinical space. However, standards of care,
