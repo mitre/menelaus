@@ -5,7 +5,7 @@
 # 1) add a persistent drift (never reverting back to ref for one var)
 # 2) add an extra year between true drift
 # 3) make change in variance more dramatic
-# 4) add categorical variable (1-7) filing status
+# 4) add categorical variable (1-7) 
 
 # 2022-02-14 updates: add correlation change where marginals stay the same
 

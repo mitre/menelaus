@@ -18,3 +18,4 @@ tests/molten_tests/*.ipynb*
 *.coverage
 *.DS_Store
 .idea/
+*.png
