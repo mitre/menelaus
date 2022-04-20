@@ -17,11 +17,11 @@ class ADWIN(DriftDetector):
 
     The running estimates in each subwindow are maintained by storing summaries
     of the elements in "buckets," which, in this implementation, are themselves
-    stored in the bucket_row_list attribute, whose total size scales with the
-    max_buckets parameter.
+    stored in the ``bucket_row_list`` attribute, whose total size scales with the
+    ``max_buckets`` parameter.
 
     When drift occurs, the index of the element at the beginning of ADWIN's new
-    window is stored in self.retraining_recs.
+    window is stored in ``self.retraining_recs``.
 
     Ref. A. Bifet and R. Gavalda, "Learning from time-changing data with
     adaptive windowing." in Proc. 2007 SIAM Int. Conf. Data Mining, vol. 7.
@@ -33,15 +33,12 @@ class ADWIN(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift" or None.
-        retraining_recs: recommended indices for retraining. If drift is detected,
-            set to [beginning of ADWIN's new window, end of ADWIN's new window].
-            If these are e.g. the 5th and 13th sample that ADWIN has been updated
-            with, the values with be [4, 12].
+            ``"drift"`` or ``None``.
 
     """
-    input_type = "stream"
-    
+
+    _input_type = "stream"
+
     def __init__(
         self,
         delta=0.002,
@@ -55,24 +52,24 @@ class ADWIN(DriftDetector):
 
         Args:
             delta (float, optional): confidence value on on 0 to 1. ADWIN will
-                incorrectly detect drift with at most probability delta, and
-                correctly detect drift with at least probability 1 - delta.
+                incorrectly detect drift with at most probability ``delta``, and
+                correctly detect drift with at least probability ``1 - delta``.
                 Defaults to 0.002.
             max_buckets (int, optional): the maximum number of buckets to
                 maintain in each BucketRow. Corresponds to the "M" parameter in
                 Bifet 2006. Defaults to 5.
             new_sample_thresh (int, optional): the drift detection procedure
-                will run every new_sample_thresh samples, not in between.
+                will run every ``new_sample_thresh samples``, not in between.
                 Defaults to 32.
             window_size_thresh (int, optional): the minimum number of samples in
                 the window required to check for drift. Defaults to 10.
             subwindow_size_thresh (int, optional): the minimum number of samples
                 in each subwindow reqired to check it for drift. Defaults to 5.
             conservative_bound (bool, optional): whether to assume a 'large
-                enough' sample when constructing drift cutoff. Defaults to False.
+                enough' sample when constructing drift cutoff. Defaults to ``False``.
 
         Raises:
-            ValueError: If ADWIN.delta is not on the range 0 to 1.
+            ValueError: If ``ADWIN.delta`` is not on the range 0 to 1.
         """
         super().__init__()
         self.delta = delta
@@ -98,7 +95,7 @@ class ADWIN(DriftDetector):
         self._window_size = 0
         self._retraining_recs = [None, None]
 
-    def update(self, new_value, *args, **kwargs):  # pylint: disable=arguments-differ
+    def update(self, new_value):
         """Update the detector with a new sample.
 
         Args:
@@ -113,20 +110,24 @@ class ADWIN(DriftDetector):
         self._add_sample(new_value)
         self._shrink_window()
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
         self._initialize_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """Sets self._retraining_recs to [None, None]."""
+        """Sets ``self._retraining_recs`` to ``[None, None]``."""
         self._retraining_recs = [None, None]
 
     @property
     def retraining_recs(self):
-        """
+        """Recommended indices for retraining. If drift is detected,
+        set to ``[beginning of ADWIN's new window, end of ADWIN's new window]``.
+        If these are e.g. the 5th and 13th sample that ADWIN has been updated
+        with, the values with be ``[4, 12]``.
+
         Returns:
             list: the current retraining recommendations
         """
@@ -134,10 +135,10 @@ class ADWIN(DriftDetector):
 
     def _add_sample(self, new_value):
         """Make a new bucket containing a single new sample and add it to the
-        BucketList. Compress any BucketRows which have reached maximum size.
+        ``BucketList``. Compress any ``BucketRows`` which have reached maximum size.
 
         Args:
-            new_value: new value to be added to the BucketList.
+            new_value: new value to be added to the ``BucketList``.
 
         """
         # this new bucket should have only one member, so 0 variance.
@@ -156,8 +157,8 @@ class ADWIN(DriftDetector):
         self._compress_buckets()
 
     def _compress_buckets(self):
-        """Traverse ADWIN.bucket_row_list, merging the oldest buckets when we
-        find that a given BucketRow is full."""
+        """Traverse ``ADWIN.bucket_row_list``, merging the oldest buckets when we
+        find that a given ``BucketRow`` is full."""
         curr_bucket_row = self._bucket_row_list.head
         list_position = 0
 
@@ -205,7 +206,7 @@ class ADWIN(DriftDetector):
         """Check whether all subwindows (the empty set vs. the whole window,
         then the oldest element vs all others, then the oldest two vs all
         others, then ...) satisfy the drift threshold. If not, reduce the window
-        size and set the drift_state to "drift."
+        size and set the ``drift_state`` to ``"drift"``.
         """
         if (
             self.total_samples % self.new_sample_thresh == 0
@@ -270,9 +271,9 @@ class ADWIN(DriftDetector):
                     list_pos -= 1
 
     def _check_epsilon(self, n_elements0, total0, n_elements1, total1):
-        """Calculate epsilon_cut given the size and totals of two windows
+        """Calculate ``epsilon_cut`` given the size and totals of two windows
         (equation 3.1 from Bifet 2006). If the difference between the estimated
-        mean of the two windows (defined by n_elements*, total*) is greater
+        mean of the two windows (defined by ``n_elements*``, ``total*``) is greater
         than the calculated threshold, it indicates that drift has occurred.
 
 
@@ -316,7 +317,7 @@ class ADWIN(DriftDetector):
         return np.absolute(window_diff) > eps_cut
 
     def _remove_last(self):
-        """Drop the oldest bucket from the tail of bucket_row_list.
+        """Drop the oldest bucket from the tail of ``bucket_row_list``.
 
         Returns:
             int: the number of elements removed after discarding the bucket
@@ -365,14 +366,14 @@ class ADWIN(DriftDetector):
 
 
 class _BucketRowList:
-    """Doubly-linked list for use by ADWIN. max_buckets corresponds to the "M"
-    parameter from Bifet 2006. At each update step, if the BucketRows are at
-    overflow, their oldest buckets will be moved into the next largest BucketRow
-    by ADWIN._compress_buckets. So, the tail of the bucket_row_list will be the
+    """Doubly-linked list for use by ADWIN. ``max_buckets`` corresponds to the "M"
+    parameter from Bifet 2006. At each update step, if the ``BucketRows`` are at
+    overflow, their oldest buckets will be moved into the next largest ``BucketRow``
+    by ``ADWIN._compress_buckets``. So, the tail of the ``bucket_row_list`` will be the
     oldest elements.
 
-    Note that each BucketRow only stores estimates related to 2^i elements in
-    each bucket: so, each position in BucketRowList.head's arrays corresponds to
+    Note that each ``BucketRow`` only stores estimates related to 2^i elements in
+    each bucket: so, each position in ``BucketRowList.head``'s arrays corresponds to
     2^0 = 1 elements; those for the next correspond to 2^1 = 2 elements; etc.
     """
 
@@ -385,7 +386,7 @@ class _BucketRowList:
         self.append_head()
 
     def append_head(self):
-        """Add an empty BucketRow to the head of the list."""
+        """Add an empty ``BucketRow`` to the head of the list."""
         new_head = _BucketRow(self.max_buckets, next_bucket=self.head)
         if self.head is not None:
             self.head.prev = new_head
@@ -395,7 +396,7 @@ class _BucketRowList:
         self.size += 1
 
     def append_tail(self):
-        """Add an empty BucketRow to the tail of the list."""
+        """Add an empty ``BucketRow`` to the tail of the list."""
         self.tail = _BucketRow(self.max_buckets, prev=self.tail)
         if self.head is None:  # somehow we've removed all the other buckets
             self.head = self.tail

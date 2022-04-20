@@ -21,18 +21,39 @@ The algorithms contained within this package were identified through a comprehen
 MOLTEN implements drift detectors for both streaming and batch data. In a streaming setting, data is arriving continuously and is processed one observation at a time. Streaming detectors process the data with each new observation that arrives and are intended for use cases in which instant analytical results are desired. In a batch setting, information is collected over a period of time. Once the predetermined set is "filled", data is fed into and processed by the drift detection algorithm as a single batch. Within a batch, there is no meaningful ordering of the data with respect to time. Batch algorithms are typically used when it is more important to process large volumes of information simultaneously, where the speed of results after receiving data is of less concern.
 
 
-Installation from local repo
-=========
+Installation
+============================
 
 Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
 
 .. code-block:: python
 
    cd ./molten/
-   pip install . #for read-only
-   pip install -e .[dev] #to allow editing, running tests, generating docs, etc.
+   
+   #for read-only:
+   pip install . 
 
-Docker support is currently bugged. Below describe the steps you may use to build the environment with Docker and (optionally) get into the container.
+   #to allow editing, running tests, generating docs, etc.
+   pip install -e .[dev] 
+
+Testing and Documentation
+============================
+
+After installation using the ``[dev]`` option above, unit tests can be run and 
+and html documentation can be generated.
+
+Unit tests can be run with the command ``pytest``. By default, a coverage 
+report with highlighting will be generated in ``htmlcov/index.html``. These
+default settings are specified in ``setup.cfg`` under ``[tool:pytest]``.
+
+HTML documentation can be generated at ``molten/docs/build/html/index.html`` with:
+
+.. code-block:: python
+
+   cd docs
+   sphinx-apidoc -M --templatedir source/templates -f -o source ../src/molten && make clean && make html
+
+Docker support is currently bugged. Below describes the steps you may use to build the environment with Docker and (optionally) get into the container.
 
 .. code-block:: python
 
@@ -42,15 +63,5 @@ Docker support is currently bugged. Below describe the steps you may use to buil
    sudo docker ps -a                            # optionally see containers
    sudo docker exec -it <container-name> bash   # go into container
    
-
-
-
-- HTML documentation generation, if installing via molten[dev] as above:
-
-.. code-block:: python
-
-   cd docs
-   sphinx-apidoc -M -f -o source ../src/molten #-f may not always be necessary.
-   make html
 
 

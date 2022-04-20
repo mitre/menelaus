@@ -3,9 +3,17 @@ MOLTEN
 .. include:: ../../README.rst
 
 .. toctree::
-   :maxdepth: 3
-   
-   autoapi/molten/index
+   :hidden:
+
+   Home <self>
+
+
+Package structure
+==================================
+.. toctree::
+   :maxdepth: 5
+
+   molten
 
 Indices and tables
 ==================

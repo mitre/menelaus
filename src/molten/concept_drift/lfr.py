@@ -32,15 +32,10 @@ class LinearFourRates(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
-        retraining_recs: recommends indexes between first warning and drift for
-            retraining. Resets during return to normal state after each detection
-            of drift. If no warning alarms, recommendation is from current drift
-            -> current drift. Urge caution when retraining as this situation
-            indicates an abrupt change.
-
+            ``"drift"``, ``"warning"``, or ``None``.
     """
-    input_type = "stream"
+
+    _input_type = "stream"
 
     def __init__(
         self,
@@ -98,9 +93,9 @@ class LinearFourRates(DriftDetector):
         )  # dictionary of test statistics for P at each index
         self._initialize_retraining_recs()
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
         self._p_table = {0: {"tpr": 0.5, "tnr": 0.5, "ppv": 0.5, "npv": 0.5}}
@@ -115,22 +110,24 @@ class LinearFourRates(DriftDetector):
         }
         self._initialize_retraining_recs()
 
-    def update(
-        self, y_pred, y_true, *args, round_val=4, **kwargs
-    ):  # pylint: disable=arguments-differ
+    def update(self, y_pred, y_true, *args, round_val=4, **kwargs):
         """Update detector with a new observation:
-        1. Updates confusion matrix (self._confusion) with new predictions
-        2. Updates the four rates
-        3. Test each rate for change over time using bounds from Monte Carlo
-        simulations
-        4. If any of the rates exceed bounds, change drift_state to either
-        "warning" or "drift"
+
+        #. Updates confusion matrix (``self._confusion``) with new predictions
+
+        #. Updates the four rates
+
+        #. Test each rate for change over time using bounds from Monte Carlo
+           simulations
+
+        #. If any of the rates exceed bounds, change ``drift_state`` to either
+           ``"warning"`` or ``"drift"``
 
         Args:
             y_pred: predicted class
             y_true: actual class
             round_val: number of decimal points the estimate rate is rounded to
-                when stored in bounds dictionary. The greater the round_val, the
+                when stored in bounds dictionary. The greater the ``round_val``, the
                 more precise the bounds dictionary will be, and the longer the
                 runtime. (Default value = 4)
         """
@@ -144,8 +141,8 @@ class LinearFourRates(DriftDetector):
         old_confusion = self._confusion.copy()
         self._confusion[yhat_t][y_t] += 1
 
-        old_rates = self.get_four_rates(old_confusion)
-        new_rates = self.get_four_rates(self._confusion)
+        old_rates = self._get_four_rates(old_confusion)
+        new_rates = self._get_four_rates(self._confusion)
 
         # init next index for test stats
         self._r_stat.update(
@@ -193,7 +190,7 @@ class LinearFourRates(DriftDetector):
 
             self._p_table[self.samples_since_reset][rate] = new_rates[rate]
             self._r_stat[self.samples_since_reset][rate] = new_r_stat
-            self._denominators[rate + "_N"] = self.get_four_denominators(
+            self._denominators[rate + "_N"] = self._get_four_denominators(
                 self._confusion
             )[rate + "_N"]
 
@@ -206,7 +203,7 @@ class LinearFourRates(DriftDetector):
                 r_est_rate = round(est_rate, round_val)
                 r_n = round(curr_n, round_val)
 
-                bound_dict = self.update_bounds_dict(est_rate, curr_n, r_est_rate, r_n)
+                bound_dict = self._update_bounds_dict(est_rate, curr_n, r_est_rate, r_n)
 
                 lb_warn = bound_dict["lb_warn"]
                 ub_warn = bound_dict["ub_warn"]
@@ -234,11 +231,11 @@ class LinearFourRates(DriftDetector):
             self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """Sets self._retraining_recs to [None, None]."""
+        """Sets ``self._retraining_recs`` to ``[None, None]``."""
         self._retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Set self._retraining_recs to the beginning and end of the current
+        """Set ``self._retraining_recs`` to the beginning and end of the current
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
@@ -250,7 +247,7 @@ class LinearFourRates(DriftDetector):
                 self._retraining_recs[0] = self.total_samples - 1
 
     @staticmethod
-    def get_four_rates(confusion):
+    def _get_four_rates(confusion):
         """Takes a confusion matrix and returns a dictionary with TPR, TNR, PPV,
         NPV.
 
@@ -270,7 +267,7 @@ class LinearFourRates(DriftDetector):
         return result
 
     @staticmethod
-    def get_four_denominators(confusion):
+    def _get_four_denominators(confusion):
         """Takes a confusion matrix and returns a dictionary with denominators
         for TPR, TNR, PPV, NPV.
 
@@ -289,8 +286,8 @@ class LinearFourRates(DriftDetector):
         result["npv_N"] = tn + fn
         return result
 
-    def update_bounds_dict(self, est_rate, denom, r_est_rate, r_n):
-        """Checks if combination of rounded est_rate and N has been seen before.
+    def _update_bounds_dict(self, est_rate, denom, r_est_rate, r_n):
+        """Checks if combination of rounded ``est_rate`` and N has been seen before.
         If yes, reuse the bounds estimates. If no, simulate new bounds estimates
         and maintain in sorted bound dictionary. This method calculates Monte
         Carlo simulations using exact rates but stores results using rounded
@@ -299,14 +296,14 @@ class LinearFourRates(DriftDetector):
         Args:
             est_rate: empirical estimate of rate (P)
             denom: denominator of rate
-            r_est_rate: rounded est_rate
+            r_est_rate: rounded ``est_rate``
             r_n: rounded denom
 
         Returns:
             dict: dictionary storing the bounds from MonteCarlo simulation for
                 each rate for previously seen pairs of estimated empirical rate
                 and denom (time steps) with the structure:
-                    {rate: {N_1: bound1, N_2: bound2, ...}}
+                {rate: {N_1: bound1, N_2: bound2, ...}}
         """
         if r_est_rate in self._bounds:
             denom_dict = self._bounds[r_est_rate]
@@ -314,12 +311,12 @@ class LinearFourRates(DriftDetector):
             if r_n in denom_dict:
                 bound_dict = denom_dict[r_n]
             else:
-                bound_dict = self.sim_bounds(est_rate, denom)
+                bound_dict = self._sim_bounds(est_rate, denom)
                 denom_dict[r_n] = bound_dict
                 denom_dict = dict(sorted(denom_dict.items()))
                 self._bounds[r_est_rate] = denom_dict
         else:
-            bound_dict = self.sim_bounds(est_rate, denom)
+            bound_dict = self._sim_bounds(est_rate, denom)
 
             denom_dict = {r_n: bound_dict}
             self._bounds[r_est_rate] = denom_dict
@@ -327,7 +324,7 @@ class LinearFourRates(DriftDetector):
 
         return bound_dict
 
-    def sim_bounds(self, est_rate, denom):
+    def _sim_bounds(self, est_rate, denom):
         """Takes an estimated rate and number of time steps denom and returns
         dictionary of lower and upper bounds for its empirical distribution.
 
@@ -336,8 +333,8 @@ class LinearFourRates(DriftDetector):
             denom: denominator of rate
 
         Returns:
-            dict: dictionary with keys ['lb_warn', 'ub_warn', 'lb_detect',
-                'ub_detect'] corresponding to the lower and upper bounds at
+            dict: dictionary with keys ``['lb_warn', 'ub_warn', 'lb_detect',
+                'ub_detect']`` corresponding to the lower and upper bounds at
                 the respective thresholds
 
 
@@ -360,7 +357,7 @@ class LinearFourRates(DriftDetector):
 
             Args:
               vec: vector to re-weight by result of bernoulli trials
-              eta: time decay factor (see self.time_decay_factor)
+              eta: time decay factor (see ``self.time_decay_factor``)
               est_rate: current estimated rate
               denom: current denominator for the rate
 
@@ -390,7 +387,12 @@ class LinearFourRates(DriftDetector):
 
     @property
     def retraining_recs(self):
-        """
+        """Recommended indices between the first warning and drift for
+        retraining. Resets during return to normal state after each detection
+        of drift. If no warning fires, recommendation is from current drift
+        -> current drift. In this case, caution is urged when retraining, as
+        this situation indicates an abrupt change.
+
         Returns:
             list: the current retraining recommendations
         """

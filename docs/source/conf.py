@@ -32,22 +32,15 @@ release = "0.0.0"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
-    # "sphinx.ext.autosummary",
-    "autoapi.extension",
+    "sphinx.ext.viewcode",
 ]
 
-autoapi_type = "python"
-autoapi_dirs = ["../../src/"]
-autoapi_ignore = ["*/tools/*", "*drift_detector*"]
-autoapi_options = [
-    "members",
-    "undoc-members",
-    # "private-members",
-    "show-inheritance",
-    "show-module-summary",
-    "special-members",
-    "imported-members",
-]
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": False,
+    "private-members": False,
+    "special-members": "__init__",
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -63,7 +56,22 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "custom_theme"
+html_theme_path = ["."]
+html_sidebars = {
+    "**": ["fulltoc.html", "relations.html", "sourcelink.html", "searchbox.html"]
+}
+html_theme_options = {
+    "navigation_depth": 5,
+    "collapse_navigation": False,
+    # "collapse": False,
+}
+
+# enable this to increase the screen width according to _static/custom.css
+# it's a little awkward-looking, though.
+# html_css_files = [
+#     "custom.css",
+# ]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
