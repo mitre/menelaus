@@ -8,16 +8,15 @@ class PageHinkley(DriftDetector):
     the running Page Hinkley (PH) statistic are incremented with each
     observation. The PH stat monitors how far the current observation is from
     the running mean of all previously encountered observations, while weighting
-    it by a sensitivity parameter delta.The detector alarms when the difference
+    it by a sensitivity parameter delta. The detector alarms when the difference
     between the maximum or minimum PH statistic encountered is larger than the
     cumulative PH statistic certain threshold (xi).
 
-    1. Increment mean with next observations
-    2. Increment running sum of difference between observations and mean
-    3. Compute threshold & PH statistic
-    4. Enter drift or warning state if PH value is outside threshold, and the
-    number of samples is greater than the burn-in requirement.
-
+    #. Increment mean with next observations
+    #. Increment running sum of difference between observations and mean
+    #. Compute threshold & PH statistic
+    #. Enter drift or warning state if PH value is outside threshold, and the
+       number of samples is greater than the burn-in requirement.
 
     If the threshold is too small, PH may result in many false alarms. If too
     large, the PH test will be more robust, but may miss true drift.
@@ -31,9 +30,10 @@ class PageHinkley(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", or None.
+            ``"drift"``, or ``None``.
     """
-    input_type = "stream"
+
+    _input_type = "stream"
 
     def __init__(self, delta=0.01, threshold=20, burn_in=30, direction="positive"):
         """
@@ -41,19 +41,21 @@ class PageHinkley(DriftDetector):
             delta (float, optional): Minimum amplitude of change in data needed
                 to sound alarm. Defaults to 0.01.
             threshold (int, optional): Threshold for sounding alarm. Corresponds with
-                PH lambda. As suggested in PCA-CD, Qahtan (2015)
+                PH lambda. As suggested in PCA-CD, Qahtan (2015).
             recommends setting to 1% of an appropriate window size for the
                 dataset. Defaults to 20.
             burn_in (int, optional): Minimum number of data points required to
                 be seen before declaring drift. Defaults to 30.
             direction (str, optional):
-                If 'positive', drift is only detected for an upward change in
-                    mean, when the cumulative PH statistic differs from the
-                    minimum PH statistic significantly.
-                If 'negative', drift is only detected for a downward change in
-                    mean, when the max PH statistic differs from the cumulative
-                    PH statistic significantly.
-                Defaults to 'positive'.
+
+                * If ``'positive'``, drift is only detected for an upward change in
+                  mean, when the cumulative PH statistic differs from the
+                  minimum PH statistic significantly.
+                * If ``'negative'``, drift is only detected for a downward change in
+                  mean, when the max PH statistic differs from the cumulative
+                  PH statistic significantly.
+
+                Defaults to ``'positive'``.
         """
         super().__init__()
 
@@ -79,14 +81,12 @@ class PageHinkley(DriftDetector):
         self._mins = []
         self._means = []
 
-    def update(
-        self, next_obs, *args, obs_id=None, **kwargs
-    ):  # pylint: disable=arguments-differ
+    def update(self, next_obs, *args, obs_id=None, **kwargs):
         """Update the detector with a new sample.
 
         Args:
-          next_obs: new sample
-          obs_id: index of new sample to store in dataframe. Defaults to None.
+          next_obs: The value of the new sample.
+          obs_id: Index of new sample to store in dataframe. Defaults to ``None``.
         """
         if self.drift_state == "drift":
             self.reset()
@@ -123,9 +123,9 @@ class PageHinkley(DriftDetector):
         self._mins.append(self._min)
         self._means.append(self._mean)
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
         self._max = 0

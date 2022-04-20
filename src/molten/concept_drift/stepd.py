@@ -8,13 +8,16 @@ class STEPD(DriftDetector):
     accuracy, intended for an online classifier.
 
     Two windows are defined -- "recent" and "past", with corresponding
-    accuracies `p_r` and `p_p`. Roughly, the distribution of their absolute
+    accuracies ``p_r`` and ```p_p```. Roughly, the distribution of their absolute
     difference, normalized by the accuracy of the two windows combined, T, is
     normally distributed. So, this test statistic's p-value P(T) defines the
-    warning and drift regions:
-        If `p_r` < `p_p` (the classifier's accuracy on recent samples is decreased),
-            - and P(T) < `alpha_warning`, the detector's state is set to ``"warning"``.
-            - and P(T) < `alpha_drift`, the detector's state is set to ``"drift"``.
+    warning and drift regions.
+
+    If ``p_r`` < ``p_p`` (the classifier's accuracy on recent samples is decreased):
+
+    * and P(T) < ``alpha_warning``, the detector's state is set to ``"warning"``.
+
+    * and P(T) < ``alpha_drift``, the detector's state is set to ``"drift"``.
 
     The index of the first sample which triggered a warning/drift state
     (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``,
@@ -39,9 +42,10 @@ class STEPD(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
+            ``"drift"``, ``"warning"``, or ``None``.
     """
-    input_type = "stream"
+
+    _input_type = "stream"
 
     def __init__(self, window_size=30, alpha_warning=0.05, alpha_drift=0.003):
         """
@@ -63,9 +67,9 @@ class STEPD(DriftDetector):
         self._test_p = None
         self._initialize_retraining_recs()
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
         self._s, self._r = 0, 0
@@ -74,9 +78,7 @@ class STEPD(DriftDetector):
         self._test_p = None
         self._initialize_retraining_recs()
 
-    def update(
-        self, y_pred, y_true, *args, **kwargs
-    ):  # pylint: disable=arguments-differ
+    def update(self, y_pred, y_true):
         """Update the detector with a new sample.
 
         Args:
@@ -138,7 +140,7 @@ class STEPD(DriftDetector):
         """
         Returns:
             float: the accuracy of the classifier among the last
-                self.window_size samples the detector has seen
+            ``self.window_size`` samples the detector has seen
         """
         if len(self._window) == 0:
             out = 0
@@ -150,8 +152,8 @@ class STEPD(DriftDetector):
         """
         Returns:
             float: the accuracy of the classifier among the samples the detector
-                has seen before its current window, but after the last time the
-                detector was reset
+            has seen before its current window, but after the last time the
+            detector was reset
         """
         if (self.samples_since_reset - len(self._window)) == 0:
             out = 0
@@ -163,7 +165,7 @@ class STEPD(DriftDetector):
         """
         Returns:
             float: the accuracy of the classifier among the samples the detector
-                has seen since the detector was last reset
+            has seen since the detector was last reset
         """
         if self.samples_since_reset == 0:
             out = 0
@@ -172,11 +174,11 @@ class STEPD(DriftDetector):
         return out
 
     def _initialize_retraining_recs(self):
-        """Sets self._retraining_recs to [None, None]."""
+        """Sets `self._retraining_recs` to ``[None, None]``."""
         self._retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Set self._retraining_recs to the beginning and end of the current
+        """Set ``self._retraining_recs`` to the beginning and end of the current
         drift/warning region.
         """
         if self._retraining_recs[0] is None:

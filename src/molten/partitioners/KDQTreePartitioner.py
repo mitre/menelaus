@@ -5,44 +5,53 @@ import scipy.stats
 
 class KDQTreePartitioner:
     """This class encapsulates a KDQ Tree for partitioning data which runs
-    through drift detection algorithms, as described by Dasu et. al.
-    (2006).
+    through drift detection algorithms, as described by Dasu et. al. (2006).
 
-    The general algorithm to build a tree does so until a stop condition:
-    - identify axis to split upon
-    - identify midpoint at axis
-    - split into lower/upper halves using midpoint
-    - recursively split sub-trees
+    The general algorithm to build a tree performs until a stop condition:
+
+        * Identify axis to split upon.
+        * Identify midpoint at axis.
+        * Split into lower/upper halves using midpoint.
+        * Recursively split sub-trees.
 
     This class can be used to build a tree, 'fill' a tree (send new
     data to be forcibly partitioned according to an existing build),
     access leaf nodes, and perform visualization / printing. There
     are also convenience functions to calculate distances between
-    a build and fill tree.
+    a built and filled tree.
 
     Attributes:
-    count_ubound (int): upper bound of count of data points to be
-        partitioned into any one cell
-    cutpoint_proportion_lbound (float): minimum proportion of all
-        features' range values that any constructed cell size must satisfy
+        count_ubound (int): upper bound of count of data points to be
+            partitioned into any one cell
+        cutpoint_proportion_lbound (float): min. proportion of all features'
+            range values that any constructed cell size must satisfy
+        node (KDQTreeNode): reference to root node of build tree
+        leaves (list(KDQTreeNode)): list of leaf nodes of build tree
     """
 
     def __init__(self, count_ubound=200, cutpoint_proportion_lbound=0.25):
+        """
+        Args:
+            count_ubound (int, optional): upper bound of count of data points to be
+                partitioned into any one cell. Default ``200``.
+            cutpoint_proportion_lbound (float, optional): min. proportion of all features'
+                range values that any constructed cell size must satisfy.
+                Default ``0.25``.
+        """
         self.count_ubound = count_ubound
         self.cutpoint_proportion_lbound = cutpoint_proportion_lbound
         self.node = None
         self.leaves = []
 
     def build(self, data):
-        """
-        Creates a new kdqTree by partitioning the data into square nodes in
+        """Creates a new kdqTree by partitioning the data into square nodes in
         the feature-space.
 
         Args:
             data (numpy.array): data to be partitioned
 
         Returns:
-            KDQTreeNode: the root node of the tree
+            KDQTreeNode: root node of constructed KDQ-Tree
 
         >>> # TODO - write a short but nice doctest using below as a guide
         >>> import numpy as np
@@ -59,18 +68,18 @@ class KDQTreePartitioner:
             int(self.cutpoint_proportion_lbound * np.ptp(data[:, axis]))
             for axis in range(m)
         ]
-        self.node = KDQTreeNode.build(data, self.count_ubound, min_cutpoint_sizes, self.leaves)
+        self.node = KDQTreeNode.build(
+            data, self.count_ubound, min_cutpoint_sizes, self.leaves
+        )
         return self.node
 
     def reset(self, value=0, tree_id="build"):
         """Sets the counts for the given tree_id to the given value.
 
         Args:
-            value (int, optional): Value to be written for each node. Defaults
-            to 0.
-            tree_id (str, optional): Identifier for the set of counts to be
-            overwritten. Defaults to "build".
-
+            value (int, optional): value to be written for each node. Default ``0``.
+            tree_id (str, optional): identifier for set of counts to be overwritten. Default ``'build'``. 
+        
         >>> # TODO - write a short but nice doctest
         """
         KDQTreeNode.reset(self.node, value=value, tree_id=tree_id)
@@ -80,15 +89,13 @@ class KDQTreePartitioner:
         structure. Its counts will be added to those for the tree_id index.
 
         Args:
-            data (numpy.array): new sample to be partitioned
-            tree_id (str): index for the counts found for this data to be
-                stored/added to
-            reset (bool, optional): if True, the counts for this tree_id will be
-                overwritten with new ones calculated from the current sample.
-                Otherwise, the counts will be added to. Defaults to False.
+            data (numpy.array): new data to be partitioned
+            tree_id (str): identifier for new data counts to be stored
+            reset (bool, optional): if ``True``, counts for this ``tree_id`` will be
+                overwritten with ones calculated from current sample, else added. Default ``False``
 
         Returns:
-            KDQTreeNode: root node of the tree.
+            KDQTreeNode: root node of KDQ-Tree
 
         >>> # TODO - write a short but nice doctest
         """
@@ -98,19 +105,21 @@ class KDQTreePartitioner:
         return self.node
 
     def leaf_counts(self, tree_id):
-        """Return the counts for each leaf of the tree at tree_id.
+        """Return the counts for each leaf of the tree at ``tree_id``.
 
         Args:
-            tree_id (str): tree_id for which to return counts
-
+            tree_id (str): identifier of tree for which to return counts
+        
         Returns:
-            list: list of counts
+            list: list of counts at leaves of KDQ-Tree
 
         >>> # TODO - write a short but nice doctest
         """
         ret = None
         if self.leaves:
-            ret = [leaf.num_samples_in_compared_subtrees[tree_id] for leaf in self.leaves]
+            ret = [
+                leaf.num_samples_in_compared_subtrees[tree_id] for leaf in self.leaves
+            ]
         return ret
 
     def kl_distance(self, tree_id1, tree_id2):
@@ -119,11 +128,11 @@ class KDQTreePartitioner:
         tree_id1.
 
         Args:
-            tree_id1 (str): the reference tree
-            tree_id2 (str): the comparison tree
+            tree_id1 (str): identifier for reference tree
+            tree_id2 (str): identifier for comparison tree
 
         Returns:
-            float: the Kullback-Leibler divergence
+            float: Kullback-Leibler divergence among trees
 
         >>> # TODO - write a short but nice doctest
         """
@@ -141,10 +150,10 @@ class KDQTreePartitioner:
         the bins (here, indices in the counts array), using Dasu's correction.
 
         Args:
-            counts (array): an array of counts
+            counts (numpy.array): array of counts
 
         Returns:
-            hist: an array of frequencies
+            numpy.array: array of frequencies
 
         >>> # TODO - write a short but nice doctest
         """
@@ -155,37 +164,34 @@ class KDQTreePartitioner:
 
     def to_plotly_dataframe(self, tree_id1="build", tree_id2=None, max_depth=None):
         """Generates a dataframe containing information about the kdqTree's structure
-        and some node characteristics, intended for use with plotly.
+        and some node characteristics, intended for use with plotly. DataFrame columns
+        capture:
+
+            * ``name``, a label corresponding to which feature this split is on.
+            * ``idx``, a unique ID for the node, to pass to ``plotly.express.treemap``'s ``id`` argument.
+            * ``parent_idx``, the ID of the node's parent.
+            * ``cell_count``, how many samples are in this node in the reference tree.
+            * ``depth``, how deep the node is in the tree.
+            * ``count_diff``, if ``tree_id2`` is specified, the change in counts from the reference tree.
+            * ``kss``, the Kulldorff Spatial Scan Statistic for this node, defined as
+              the KL-divergence for this node between the reference and test
+              trees, using the individual node and all other nodes combined as the
+              bins for the distributions.
 
         Args:
-            tree_id1 (str, optional): Reference tree. If tree_id2 is not specified,
-                the only tree described. Defaults to "build".
-            tree_id2 (str, optional): Test tree. If this is specified, the
-                dataframe will also contain information about the difference
-                between counts in each node for the reference vs. Test tree.
-                Defaults to None.
-            max_depth (int, optional): Depth in the tree to which to recurse. Defaults to None.
+            tree_id1 (str): identifier for reference tree. Default ``'build'``
+            tree_id2 (str): identifier for test tree. Default ``None``.
+            max_depth (int, optional): tree depth up to which the method recurses. Default ``None``.
 
         Returns:
-            pd.DataFrame: A dataframe where each row corresponds to a node, and
-                each column contains some information:
-            name: a label corresponding to which feature this split is on
-            idx: a unique ID for the node, to pass to plotly.express.treemap's
-                id argument
-            parent_idx: the ID of the node's parent
-            cell_count: how many samples are in this node in the reference tree.
-            depth: how deep the node is in the tree
-            count_diff: if tree_id2 is specified, the change in counts from the
-                reference tree.
-            kss: the Kulldorff Spatial Scan Statistic for this node, defined as
-                the KL-divergence for this node between the reference and test
-                trees, using the individual node and all other nodes combined as the
-                bins for the distributions.
+            pandas.DataFrame: where each row represents a node
 
         >>> # TODO - write a short but nice doctest
         """
         arr = []
-        KDQTreeNode.as_flattened_array(self.node, tree_id1=tree_id1, tree_id2=tree_id2, output=arr)
+        KDQTreeNode.as_flattened_array(
+            self.node, tree_id1=tree_id1, tree_id2=tree_id2, output=arr
+        )
         df = pd.DataFrame.from_dict(arr)
         if max_depth:
             df = df[df.depth <= max_depth]
@@ -199,7 +205,9 @@ class KDQTreePartitioner:
             )
             test_max = kss_counts["node_count_test"].max()
             ref_max = kss_counts["node_count_ref"].max()
-            df["kss"] = kss_counts.apply(KDQTreePartitioner._calculate_kss, args=(ref_max, test_max), axis=1)
+            df["kss"] = kss_counts.apply(
+                KDQTreePartitioner._calculate_kss, args=(ref_max, test_max), axis=1
+            )
         return df
 
     @staticmethod
@@ -211,15 +219,12 @@ class KDQTreePartitioner:
         the Kullback-Leibler divergence from the test to the reference.
 
         Args:
-            df (pd.DataFrame): single-row dataframe containing test and
-                reference counts
-            ref_max (int): total samples in the reference sample, i.e. the
-                reference count at the root node
-            test_max (int): total samples in the test sample, i.e. the test
-                count at the root node
+            df (pandas.DataFrame): single-row dataframe containing test and reference counts
+            ref_max (int): total number of observations in reference sample
+            test_max (int): total number of observations in test sample
 
         Returns:
-            float: the KSS from the test data to the reference data
+            float: KSS from test data to reference data
 
         >>> # TODO - write a short but nice doctest
         """
@@ -235,31 +240,40 @@ class KDQTreePartitioner:
 class KDQTreeNode:
     """This class represents a node in the KDQ Tree data structure described above.
     Its static methods provide the engine for recursively building, filling,
-    and output-ing trees.
+    and displaying trees.
 
-    Build / fill trees are identified by a fill tree. During initialization,
-    a node typically takes num_samples_in_compared_subtrees (among other values
-    needed for building), which is a dict.
+    Build / fill trees are identified by a tree ID. During initialization,
+    a node typically takes ``num_samples_in_compared_subtrees`` (among other values
+    needed for building), which is a ``dict`` containing counts for each tree ID.
 
-    Each node stores as a value this dict the number of data points contained
-    within itself and its subtrees. A 'tree_id' key identifies which build
-    those counts are associated with (e.g., the first call to build() stores
-    counts in the node.num_samples_in_compared_subtrees['build'] by default).
-    Subsequent calls to fill() with new data store additional counts for the node,
+    Each node stores the number of data points contained within itself and its
+    subtrees as a value in this ``dict``. A ``tree_id`` key identifies which build
+    those counts are associated with (e.g., the first call to ``build()`` stores
+    counts in the ``node.num_samples_in_compared_subtrees['build']`` by default).
+    Subsequent calls to ``fill()`` with new data store additional counts for the node,
     according to the ID the user passes in.
 
     Attributes:
-    num_samples_in_compared subtrees (dict): number of counts for some ID
-        tree_id, contained within node and its children
-    axis (int): axis at which to build / fill (for recursive construction)
-    midpoint_at_axis (float): midpoint at provided axis
-    left (KDQTreeNode): left child
-    right (KDQTreeNode): right child
-
-    >>> # TODO - write a short but nice doctest
+        num_samples_in_compared_subtrees (dict): number of data points, by tree ID,
+            contained within node and its children
+        axis (int): axis at which to build/fill (for recursive construction)
+        midpoint_at_axis (float): midpoint at provided axis
+        left (KDQTreeNode): left child
+        right (KDQTreeNode): right child
     """
 
-    def __init__(self, num_samples_in_compared_subtrees, axis, midpoint_at_axis, left, right):
+    def __init__(
+        self, num_samples_in_compared_subtrees, axis, midpoint_at_axis, left, right
+    ):
+        """
+        Args:
+            num_samples_in_compared_subtrees (dict): number of data points, by tree ID,
+                contained within node and its children
+            axis (int): axis at which to build/fill (for recursive construction)
+            midpoint_at_axis (float): midpoint at provided axis
+            left (KDQTreeNode): left child
+            right (KDQTreeNode): right child
+        """
         self.num_samples_in_compared_subtrees = num_samples_in_compared_subtrees
         self.axis = axis
         self.midpoint_at_axis = midpoint_at_axis
@@ -272,18 +286,14 @@ class KDQTreeNode:
         the feature-space.
 
         Args:
-            data (numpy.array): input data to be partitioned
-            count_ubound (int): upper bound of count of data points to be
-        partitioned into any one cell
-            min_cutpoint_sizes (float): minimum size of the features that a
-            leaf can have
-            leaves (list): a list of leaf nodes in the tree
-            depth (int, optional): current depth of the tree. Defaults to 0.
+            data (numpy.array): data to be partitioned
+            count_ubound (int): upper bound of count of points to be put into any 1 cell
+            min_cutpoint_sizes (list): minimum sizes of features that a leaf can have
+            leaves (list): list of leaf nodes
+            depth (int, optional): current depth of tree. Default ``0``.
 
-        Returns:
-            KDQTreeNode: root node of the tree
-
-        >>> # TODO - write a short but nice doctest
+        Returns:    
+            KDQTreeNode: root node of tree
         """
         n, m = data.shape
         if n == 0 or m == 0:
@@ -307,27 +317,27 @@ class KDQTreeNode:
             {"build": total_points},
             axis=axis,
             midpoint_at_axis=midpoint_at_axis,
-            left=KDQTreeNode.build(lower_data, count_ubound, min_cutpoint_sizes, leaves, depth + 1),
-            right=KDQTreeNode.build(upper_data, count_ubound, min_cutpoint_sizes, leaves, depth + 1),
+            left=KDQTreeNode.build(
+                lower_data, count_ubound, min_cutpoint_sizes, leaves, depth + 1
+            ),
+            right=KDQTreeNode.build(
+                upper_data, count_ubound, min_cutpoint_sizes, leaves, depth + 1
+            ),
         )
         return node
 
     @staticmethod
     def fill(data, node, count_ubound, tree_id, reset=False):
         """For a new sample, partition it according to the pre-existing subtree
-        rooted at node. Its counts will be added to those for the tree_id index.
+        rooted at node. Its counts will be added to those for the ``tree_id`` index.
 
         Args:
-            data (numpy.array): new sample to be partitioned
+            data (numpy.array): new data to be partitioned into existing tree
             node (KDQTreeNode): current node
-            count_ubound (int): upper bound of count of data points to be
-                partitioned into any one cell
-            tree_id (str): index for the counts for this sample to be added to
-            reset (bool, optional): if True, the counts for this tree_id will be
-                overwritten with new ones calculated from the current sample.
-                Otherwise, the counts will be added to. Defaults to False.
-
-        >>> # TODO - write a short but nice doctest
+            count_ubound (int): upper bound of points in any one cell
+            tree_id (str): identifier for new data counts to be stored
+            reset (bool, optional): if ``True``, counts for this ``tree_id`` will be overwritten with
+                ones calculated from current sample, else added. Default ``False``.
         """
         # case: no more nodes
         if node is None:
@@ -358,15 +368,13 @@ class KDQTreeNode:
 
     @staticmethod
     def reset(node, value, tree_id):
-        """For the subtree rooted at node, set the counts for tree_id equal to
-        value.
+        """For the subtree rooted at ``node``, set the counts for ``tree_id`` equal to
+        ``value``.
 
         Args:
             node (KDQTreeNode): root of subtree
             value (int): value to set counts to
-            tree_id (str): identifier for sample
-
-        >>> # TODO - write a short but nice doctest
+            tree_id (str): identifier for tree
         """
         if node:
             node.num_samples_in_compared_subtrees[tree_id] = value
@@ -379,10 +387,10 @@ class KDQTreeNode:
 
         Args:
             node (KDQTreeNode): root node of desired subtree
-            tree_id (str, optional): Identifier for desired sample counts.
-                Defaults to "build".
+            tree_id (str, optional): identifier for desired subtree. Default ``build``.
 
-        >>> # TODO - write a short but nice doctest
+        >>> 2 # TODO - write a short but nice doctest
+        2
         """
         # TODO - to avoid a recursive printing problem, this prints rather than storing an ongoing output string
         if node:
@@ -390,30 +398,30 @@ class KDQTreeNode:
             if node.left:
                 print(f"\tleft: {node.left.num_samples_in_compared_subtrees[tree_id]}")
             if node.right:
-                print(f"\tright: {node.right.num_samples_in_compared_subtrees[tree_id]}")
+                print(
+                    f"\tright: {node.right.num_samples_in_compared_subtrees[tree_id]}"
+                )
             KDQTreeNode.as_text(node.left, tree_id)
             KDQTreeNode.as_text(node.right, tree_id)
 
     @staticmethod
-    def as_flattened_array(node, tree_id1, tree_id2, output=[], name="kdqTree", parent_idx=None, depth=0):
+    def as_flattened_array(
+        node, tree_id1, tree_id2, output=[], name="kdqTree", parent_idx=None, depth=0
+    ):
         """Generates a list containing dicts with information about each node's
         structure for the tree rooted at node.
 
         Args:
             node (KDQTreeNode): root node of desired subtree
-            tree_id1 (str): Reference tree. If tree_id2 is not specified, the
-                only tree described.
-            tree_id2 (str): Test tree. If this is specified, the dataframe will
-                also contain information about the difference between counts
-                in each node for the reference vs. the test tree.
-            output (list, optional): list of dictionaries containing information
-                about each node. Defaults to [].
-            name (str, optional): Name of the root node. Defaults to "kdqTree".
-            parent_idx (int, optional): Unique ID (within this list) for the
-                parent of the node. Defaults to None.
-            depth (int, optional): Current depth of the subtree. Defaults to 0.
+            tree_id1 (str): identifier for reference tree
+            tree_id2 (str): identifier for test tree
+            output (list, optional): list of dictionaries containing information about each node. Default ``[]``.
+            name (str): name of root node. Default ``'kdqTree'``.
+            parent_idx (int, optional): unique ID for parent of current node. Default ``None``.
+            depth (int, optional): depth of current subtree. Default ``0``.
 
-        >>> # TODO - write a short but nice doctest
+        >>> 2 # TODO - write a short but nice doctest
+        2
         """
         if node and (tree_id1 in node.num_samples_in_compared_subtrees.keys()):
             # basic plotting features

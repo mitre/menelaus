@@ -18,9 +18,10 @@ class CUSUM(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift" or None.
+            ``"drift"`` or ``None``.
     """
-    input_type = "stream"
+
+    _input_type = "stream"
 
     def __init__(
         self,
@@ -34,23 +35,24 @@ class CUSUM(DriftDetector):
         """
         Args:
             target (float, optional): Known mean of stream (e.g. validation
-                accuracy). If None, will be inferred from observations in the
-                burn-in window. Defaults to None.
+                accuracy). If ``None``, will be inferred from observations in the
+                burn-in window. Defaults to ``None``.
             sd_hat (float, optional): Known standard deviation of stream (e.g.
-                SD of validation accuracy). If None, will be inferred from
-                observations in the burn-in window. Defaults to None.
+                SD of validation accuracy). If ``None``, will be inferred from
+                observations in the burn-in window. Defaults to ``None``.
             burn_in (int, optional): Length of the burn-in period, during which
                 time no alarms will sound. Defaults to 30.
             delta (float, optional): The amount of "slack" in the CUSUM test
                 statistic. Defaults to 0.005.
             threshold (int, optional): The threshold at which the CUSUM test
                 statistic is evaluated against. Defaults to 50.
-            direction (str, optional): If 'positive', drift is only considered
-                when the stream drifts in the positive direction.
-                If 'negative', drift is only considered when the stream drifts
-                    in the negative direction.
-                If None, alarms to drift in either the positive or negative
-                    direction. Defaults to None.
+            direction (str, optional):
+                * If ``'positive'``, drift is only considered when the stream drifts
+                  in the positive direction.
+                * If ``'negative'``, drift is only considered when the stream drifts
+                  in the negative direction.
+                * If ``None``, alarms to drift in either the positive or negative
+                  direction. Defaults to ``None``.
         """
         super().__init__()
         self.target = target
@@ -64,16 +66,16 @@ class CUSUM(DriftDetector):
         self._lower_bound = [0]
         self._stream = []
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         # make last upper and lower bound = 0
         super().reset()
         self._upper_bound = [0]
         self._lower_bound = [0]
 
-    def update(self, next_obs, *args, **kwargs):  # pylint: disable=arguments-differ
+    def update(self, next_obs):
         """Update the detector with a new sample.
 
         Args:

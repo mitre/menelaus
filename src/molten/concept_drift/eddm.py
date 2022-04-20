@@ -22,7 +22,7 @@ class EDDM(DriftDetector):
     distance for "large" samples.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to self.samples_since_reset) is stored in self.retraining_recs.
+    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``.
 
     Ref. M. Baena-Garcia, J. del Campo-avila, R. Fidalgo, a. Bifet, R. gavalda,
     and R. Morales-Bueno, "Early drift detection method," in Proc. 4th Int.
@@ -34,14 +34,10 @@ class EDDM(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
-        retraining_recs: recommended indices for retraining. Usually
-            [first warning index, drift index]. If no warning state occurs, this
-            will instead be [drift index, drift index] -- this indicates an
-            abrupt change.
-            Resets when self.drift_state returns to None (no drift nor warning).
+            ``"drift"``, ``"warning"``, or ``None``.
     """
-    input_type = "stream"
+
+    _input_type = "stream"
 
     def __init__(self, n_threshold=30, warning_thresh=0.95, drift_thresh=0.9):
         """
@@ -65,9 +61,9 @@ class EDDM(DriftDetector):
         self._test_statistic = None
         self._initialize_retraining_recs()
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
         self._n_errors = 0
@@ -79,9 +75,7 @@ class EDDM(DriftDetector):
         self._test_statistic = None
         self._initialize_retraining_recs()
 
-    def update(
-        self, y_pred, y_true, *args, **kwargs
-    ):  # pylint: disable=arguments-differ
+    def update(self, y_pred, y_true):
         """Update the detector with a new sample.
 
         Args:
@@ -142,11 +136,11 @@ class EDDM(DriftDetector):
                 self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """Sets self._retraining_recs to [None, None]."""
+        """Sets ``self._retraining_recs`` to ``[None, None]``."""
         self._retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Set self._retraining_recs to the beginning and end of the current
+        """Set ``self._retraining_recs`` to the beginning and end of the current
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
@@ -157,10 +151,13 @@ class EDDM(DriftDetector):
             if self._retraining_recs[0] is None:
                 self._retraining_recs[0] = self.total_samples - 1
 
-
     @property
     def retraining_recs(self):
-        """
+        """Recommended indices for retraining. Usually ``[first warning index,
+        drift index]``. If no warning state occurs, this will instead be
+        ``[drift index, drift index]`` -- this indicates an abrupt change.
+        Resets when ``self.drift_state`` returns to ``None`` (no drift nor warning).
+
         Returns:
             list: the current retraining recommendations
         """

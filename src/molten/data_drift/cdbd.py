@@ -20,8 +20,8 @@ class CDBD(HistogramDensityMethod):
         * Beta: the adaptive threshold adapted at each time stamp. It is based
           on the mean of Epsilon plus the scaled standard deviation of Epsilon.
           The scale applied to the standard deviation is determined by the
-          "statistic" parameter. It is either the number of standard deviations
-          deemed significant ("stdev") or the t-statistic ("tstat").
+          ``statistic`` parameter. It is either the number of standard deviations
+          deemed significant (``"stdev"``) or the t-statistic (``"tstat"``).
 
     CDBD operates by:
 
@@ -51,7 +51,7 @@ class CDBD(HistogramDensityMethod):
                 been updated with.
             samples_since_reset (int): number of batches since the last drift
                 detection. drift_state (str): detector's current drift state.
-                Can take values "drift", "warning", or None.
+                Can take values ``"drift"``, ``"warning"``, or ``None``.
             Epsilon (list): stores Epsilon values since the last drift detection.
             reference_n (int): number of samples in reference batch.
             total_epsilon (int): stores running sum of Epsilon values until
@@ -67,18 +67,17 @@ class CDBD(HistogramDensityMethod):
                 value between the current and previous test and reference
                 batches (value). Useful for visualizing drift detection
                 statistics. Does not store the bootstrapped estimate of Epsilon,
-                if used
+                if used.
             thresholds (dict): For each batch seen (key), stores the Beta
                 thresholds between test and reference batch (value). Useful for
                 visualizing drift detection statistics.
 
     Ref. Lindstrom, P., Mac Namee, B., Delany, S. J., 2013. Drift detection
-        using uncertainty distribution divergence. Evolving Systems 4 (1),
-        13–25.
+    using uncertainty distribution divergence. Evolving Systems 4 (1), 13–25.
 
     """
 
-    input_type = "batch"
+    _input_type = "batch"
 
     def __init__(
         self,
@@ -97,31 +96,31 @@ class CDBD(HistogramDensityMethod):
                 Defaults to 1.
 
                 * if detect_batch = 1 - HDDDM can detect drift on the first test
-                  batch passed to the update method
+                  batch passed to the update method.
 
                 * if detect_batch = 2 - HDDDM can detect drift on the second test
-                  batch passed to the update method
+                  batch passed to the update method.
 
                 * if detect_batch = 3 - HDDDM can detect drift on the third test
-                  batch passed to the update method
+                  batch passed to the update method.
 
-            statistic (str): statistical method used to compute adaptive threshold. Defaults to "tstat"
+            statistic (str): statistical method used to compute adaptive threshold. Defaults to ``"tstat"``
 
-                * "tstat" - t-statistic with desired significance level and
+                * ``"tstat"`` - t-statistic with desired significance level and
                   degrees of freedom = 2 for hypothesis testing on two
-                  populations
+                  populations.
 
-                * "stdev" - uses number of standard deviations deemed
-                  significant to compute threshold
+                * ``"stdev"`` - uses number of standard deviations deemed
+                  significant to compute threshold.
 
             significance (float): statistical significance used to identify
                 adaptive threshold. Defaults to 0.05.
 
-                * if statistic = "tstat" - statistical significance of
-                  t-statistic, e.g. .05 for 95% significance level
+                * if statistic = ``"tstat"`` - statistical significance of
+                  t-statistic, e.g. .05 for 95% significance level.
 
-                * if statistic = "stdev" - number of standard deviations of
-                  change around the mean accepted
+                * if statistic = ``"stdev"`` - number of standard deviations of
+                  change around the mean accepted.
 
             subsets (int): the number of subsets of reference data to take to
                 compute initial estimate of Epsilon.
@@ -144,7 +143,7 @@ class CDBD(HistogramDensityMethod):
         )
 
         # Ensure only being used with 1 variable in reference
-        if self.num_features != 1:
+        if self._num_features != 1:
             raise ValueError("CDBD should only be used to monitor 1 variable")
 
     def update(self, test_batch):
@@ -161,3 +160,12 @@ class CDBD(HistogramDensityMethod):
             raise ValueError("CDBD should only be used to monitor 1 variable")
 
         super().update(test_batch)
+
+    def reset(self):
+        """
+        Initialize relevant attributes to original values, to ensure information
+        only stored from samples_since_reset (lambda) onwards. Intended for use
+        after ``drift_state == 'drift'``.
+        """
+        # This is here to make sphinx behave.
+        super().reset()

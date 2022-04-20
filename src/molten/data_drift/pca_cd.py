@@ -15,7 +15,7 @@ class PCACD(DriftDetector):
     principal components.
 
     First, principal components are built from the reference window - the
-    initial window_size samples. New samples from the test window, of the same
+    initial ``window_size`` samples. New samples from the test window, of the same
     width, are projected onto these principal components. The divergence metric
     is calculated on these scores for the reference and test windows; if this
     metric diverges enough, then we consider drift to have occurred. This
@@ -35,17 +35,17 @@ class PCACD(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift" or None.
+            ``"drift"`` or ``None``.
         step (int): how frequently (by number of samples), to detect drift.
-            This is either 100 samples or sample_period * window_size, whichever
+            This is either 100 samples or ``sample_period * window_size``, whichever
             is smaller.
         ph_threshold (float): threshold parameter for the internal Page-Hinkley
-            detector. Takes the value of .01 * window_size.
+            detector. Takes the value of ``.01 * window_size``.
         num_pcs (int): the number of principal components being used to meet
-            the specified ev_threshold parameter.
+            the specified ``ev_threshold`` parameter.
     """
 
-    input_type = "batch"
+    _input_type = "batch"
 
     def __init__(
         self,
@@ -58,9 +58,9 @@ class PCACD(DriftDetector):
     ):
         """
         Args:
-            window_size (int): size of the reference window. Note that PCA_CD
+            window_size (int): size of the reference window. Note that ``PCA_CD``
                 will only try to detect drift periodically, either every 100
-                observations or 5% of the window_size, whichever is smaller.
+                observations or 5% of the ``window_size``, whichever is smaller.
             ev_threshold (float, optional): Threshold for percent explained
                 variance required when selecting number of principal components.
                 Defaults to 0.99.
@@ -68,18 +68,25 @@ class PCACD(DriftDetector):
                 amplitude of change in data needed to sound alarm. Defaults to 0.1.
             divergence_metric (str, optional): divergence metric when comparing
                 the two distributions when detecting drift. Defaults to "kl".
-                    "kl" - modified Kullback-Leibler divergence, uses kernel density estimation with Epanechnikov
-                    kernel
-                    "llh" - log-likelihood, uses kernel density estimation with Epanechnikov kernel
-                    "intersection" - intersection area under the curves for the
-                    estimated density functions, uses histograms to estimate densities of windows. A discontinuous,
-                    less accurate estimate that should only be used when efficiency is of concern.
+
+                * "kl" - modified Kullback-Leibler divergence, uses kernel
+                  density estimation with Epanechnikov kernel
+
+                * "llh" - log-likelihood, uses kernel density estimation with
+                  Epanechnikov kernel
+
+                * "intersection" - intersection area under the curves for the
+                  estimated density functions, uses histograms to estimate
+                  densities of windows. A discontinuous, less accurate
+                  estimate that should only be used when efficiency is of
+                  concern.
+
             sample_period (float, optional): how often to check for drift. This
-                is 100 samples or sample_period * window_size, whichever is
+                is 100 samples or ``sample_period * window_size``, whichever is
                 smaller. Default .05, or 5% of the window size.
             online_scaling (bool, optional): whether to standardize the data as
                 it comes in, using the reference window, before applying PCA.
-                Defaults to True.
+                Defaults to ``True``.
         """
         super().__init__()
         self.window_size = window_size
@@ -114,11 +121,11 @@ class PCACD(DriftDetector):
         self._density_reference = {}
         self._change_score = [0]
 
-    def update(self, next_obs, *args, **kwargs):  # pylint: disable=arguments-differ
+    def update(self, next_obs):
         """Update the detector with a new observation.
 
         Args:
-            next_obs: next observation, as a pandas Series
+            next_obs: next observation, as a ``pandas`` ``Series``
         """
 
         if self._build_reference_and_test:
@@ -290,9 +297,9 @@ class PCACD(DriftDetector):
 
         super().update()
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
 

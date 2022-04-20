@@ -18,7 +18,7 @@ class DDM(DriftDetector):
     detector's state is set to ``"drift"``.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to self.samples_since_reset) is stored in self.retraining_recs.
+    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``.
 
     Ref. J. Gama, P. Medas, G. Castillo, and P. Rodrigues, "Learning with drift
     detection," in Proc. 17th Brazilian Symp. Artificial Intelligence, ser.
@@ -31,18 +31,14 @@ class DDM(DriftDetector):
         samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
-            "drift", "warning", or None.
+            ``"drift"``, ``"warning"``, or ``None``.
         n_threshold: the minimum number of samples required to test whether
             drift has occurred
         warning_scale: defines the threshold over which to enter the warning state.
         drift_scale: defines the threshold over which to enter the drift state.
-        retraining_recs: indices of the first and last recommended training
-            samples. A list of length 2, containing [warning index, drift index].
-            If no warning occurs, this will instead be [drift index, drift index].
-            The latter should cause caution, as it indicates an abrupt change.
-            Resets when to [None, None] after drift is detected.
     """
-    input_type = "stream"
+
+    _input_type = "stream"
 
     def __init__(self, n_threshold=30, warning_scale=2, drift_scale=3):
         """
@@ -65,9 +61,9 @@ class DDM(DriftDetector):
         self._error_std_min = float("inf")
         self._initialize_retraining_recs()
 
-    def reset(self, *args, **kwargs):
+    def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after drift_state == 'drift'.
+        Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
         self._error_rate = 0
@@ -76,9 +72,7 @@ class DDM(DriftDetector):
         self._error_std_min = float("inf")
         self._initialize_retraining_recs()
 
-    def update(
-        self, y_pred, y_true, *args, **kwargs
-    ):  # pylint: disable=arguments-differ
+    def update(self, y_pred, y_true):
         """Update the detector with a new sample.
 
         Args:
@@ -131,11 +125,11 @@ class DDM(DriftDetector):
             self._increment_retraining_recs()
 
     def _initialize_retraining_recs(self):
-        """Sets self._retraining_recs to [None, None]."""
+        """Sets ``self._retraining_recs`` to ``[None, None]``."""
         self._retraining_recs = [None, None]
 
     def _increment_retraining_recs(self):
-        """Set self._retraining_recs to the beginning and end of the current
+        """Set ``self._retraining_recs`` to the beginning and end of the current
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
@@ -148,7 +142,12 @@ class DDM(DriftDetector):
 
     @property
     def retraining_recs(self):
-        """
+        """Indices of the first and last recommended training samples. A list
+        of length 2, containing ``[warning index, drift index]``. If no warning
+        occurs, this will instead be ``[drift index, drift index]``. The latter
+        should cause caution, as it indicates an abrupt change. Resets when to
+        ``[None, None]`` after drift is detected.
+
         Returns:
             list: the current retraining recommendations
         """
