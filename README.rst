@@ -10,7 +10,7 @@
 Background
 ==========
 
-Mendelaus implements algorithms for the purposes of drift detection. Drift
+Menelaus implements algorithms for the purposes of drift detection. Drift
 detection is a branch of machine learning focused on the real-time detection of
 unforeseen shifts in data. The relationships between variables in a dataset are
 sensitive and rarely static and can be affected by changes in both internal and
@@ -29,13 +29,13 @@ to the users thereof. The aim of this package is to enable monitoring of data
 and machine learning models. 
  
 The algorithms contained within this package were identified through a
-comprehensive literature survey. Mendelaus' aim was to implement drift detection
+comprehensive literature survey. Menelaus' aim was to implement drift detection
 algorithms that cover a diverse range of statistical methodology. Of the
 algorithms identified, all are able to identify when drift is occurring; some
 can highlight suspicious regions of the dataspace in which drift is more
 significant; and others can also provide model retraining recommendations. 
  
-Mendelaus implements drift detectors for both streaming and batch data. In a
+Menelaus implements drift detectors for both streaming and batch data. In a
 streaming setting, data is arriving continuously and is processed one
 observation at a time. Streaming detectors process the data with each new
 observation that arrives and are intended for use cases in which instant
@@ -51,7 +51,7 @@ is of less concern.
 Detector List
 ============================
 
-Mendelaus implements the following drift detectors.
+Menelaus implements the following drift detectors.
 
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
 | Type              | Detector                                                       | Abbreviation  | Streaming  | Batch  |
@@ -117,7 +117,7 @@ Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
 
 .. code-block:: python
 
-   cd ./mendelaus/
+   cd ./menelaus/
    
    #for read-only:
    pip install . 
@@ -125,12 +125,12 @@ Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
    #to allow editing, running tests, generating docs, etc.
    pip install -e .[dev] 
 
-Mendelaus will generally work with Python 3.7 or higher; more specific version
+Menelaus will generally work with Python 3.7 or higher; more specific version
 testing is in the works.
 
 Getting Started
 ============================
-Each detector implements the API defined by ``mendelaus.drift_detector``: they
+Each detector implements the API defined by ``menelaus.drift_detector``: they
 have an ``update`` method which allows new data to be passed, a ``drift_state``
 attribute which tells the user whether drift has been detected, and a ``reset``
 method (generally called automatically by ``update``) which clears the
@@ -141,7 +141,7 @@ Generally, the workflow for using a detector, given some data, is as follows:
 
 .. code-block:: python
 
-   from mendelaus.concept_drift import ADWIN
+   from menelaus.concept_drift import ADWIN
    df = pd.read_csv('example.csv')
    detector = ADWIN()
    for i, row in df.iterrows():
@@ -152,7 +152,8 @@ Generally, the workflow for using a detector, given some data, is as follows:
 For this example, because ADWIN is a concept drift detector, it requires both a
 predicted value (``y_predicted``) and a true value (``y_true``), at each update
 step. Note that this requirement is not true for the detectors in other modules.
-More detailed examples may be found in the ``examples`` directory.
+More detailed examples, including code for visualizating drift locations, may be
+found in the ``examples`` directory.
 
 
 
@@ -166,12 +167,12 @@ Unit tests can be run with the command ``pytest``. By default, a coverage
 report with highlighting will be generated in ``htmlcov/index.html``. These
 default settings are specified in ``setup.cfg`` under ``[tool:pytest]``.
 
-HTML documentation can be generated at ``mendelaus/docs/build/html/index.html`` with:
+HTML documentation can be generated at ``menelaus/docs/build/html/index.html`` with:
 
 .. code-block:: python
 
    cd docs
-   sphinx-apidoc -M --templatedir source/templates -f -o source ../src/mendelaus && make clean && make html
+   sphinx-apidoc -M --templatedir source/templates -f -o source ../src/menelaus && make clean && make html
 
 
 

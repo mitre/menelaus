@@ -1,4 +1,4 @@
-Mendelaus
+Menelaus
 ==================================
 .. include:: ../../README.rst
 
@@ -13,7 +13,7 @@ Package structure
 .. toctree::
    :maxdepth: 5
 
-   mendelaus
+   menelaus
 
 Indices and tables
 ==================
