@@ -1,4 +1,4 @@
-MOLTEN
+Mendelaus
 ==================================
 .. include:: ../../README.rst
 
@@ -13,7 +13,7 @@ Package structure
 .. toctree::
    :maxdepth: 5
 
-   molten
+   mendelaus
 
 Indices and tables
 ==================

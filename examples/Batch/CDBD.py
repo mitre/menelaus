@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from molten.data_drift.cdbd import CDBD
+from mendelaus.data_drift.cdbd import CDBD
 
 """ 
 
@@ -12,7 +12,7 @@ CDBD Example
 This file details how to setup, run, and produce plots for CDBD. This script
 monitors the feature "confidence", simulated confidence scores output by a
 classifier. Drift occurs in 2018 and persists through 2021. See
-src/molten/tools/artifacts/README_example_data.txt for more info.
+src/mendelaus/tools/artifacts/README_example_data.txt for more info.
 
 CDBD must be setup and run with batches of data containing 1 variable. 
 
@@ -24,7 +24,7 @@ Plots include: - A line plot visualizing test statistics for detection of drift
 
 # Import data
 data = pd.read_csv(
-    os.path.join("src", "molten", "tools", "artifacts", "example_data.csv"),
+    os.path.join("src", "mendelaus", "tools", "artifacts", "example_data.csv"),
     index_col="id",
 )
 

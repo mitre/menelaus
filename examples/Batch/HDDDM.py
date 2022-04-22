@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from molten.data_drift.hdddm import HDDDM
+from mendelaus.data_drift.hdddm import HDDDM
 
 
 """ 
@@ -12,7 +12,7 @@ HDDDM Example
 This file details how to setup, run, and produce plots for HDDDM, using both
 numeric and categorical data. Drift occurs in 2009, 2012, 2015, 2018, and 2021.
 Drift in 2018 persists through 2021. See
-src/molten/tools/artifacts/README_example_data.txt for more info.
+src/mendelaus/tools/artifacts/README_example_data.txt for more info.
 
 HDDDM must be setup and run with batches of data. 
 
@@ -28,7 +28,7 @@ Plots include:
 
 # Import data
 data = pd.read_csv(
-    os.path.join("src", "molten", "tools", "artifacts", "example_data.csv"),
+    os.path.join("src", "mendelaus", "tools", "artifacts", "example_data.csv"),
     index_col="id",
 )
 
