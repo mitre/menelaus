@@ -10,9 +10,9 @@ update-on-mr:
   stage: badges
   script:
     - python -m pip install --upgrade pip
-    - pip install -r requirements.txt
-    - coverage run -m pytest
-    - coverage report
+    - pip install -e .[dev]
+    - pytest --cov=src/ --cov-report term
+    - coverage report -m
   only:
     refs:
       - merge_requests
@@ -23,9 +23,9 @@ update-on-push:
   stage: badges
   script:
     - python -m pip install --upgrade pip
-    - pip install -r requirements.txt
-    - coverage run -m pytest
-    - coverage report
+    - pip install -e .[dev]
+    - pytest --cov=src/ --cov-report term
+    - coverage report -m
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"' # we will want one for main, eventually, too  
 
