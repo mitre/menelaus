@@ -1,3 +1,9 @@
-.wy-nav-content {
+/* enable this to increase the screen width. it's a little awkward-looking, though. */
+/* .wy-nav-content {
     max-width: 70% !important;
+} */
+
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: normal;
 }

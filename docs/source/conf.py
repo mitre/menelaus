@@ -13,14 +13,14 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../src/molten"))
+sys.path.insert(0, os.path.abspath("../src/mendelaus"))
 
 
 # -- Project information -----------------------------------------------------
 
-project = "molten"
-copyright = "2022, Austin Downing, India Lindsay, Kodie McNamara, Leigh Nicholl, Thomas Schill, Anmol Srivastava"
-author = "Austin Downing, India Lindsay, Kodie McNamara, Leigh Nicholl, Thomas Schill, Anmol Srivastava"
+project = "mendelaus"
+copyright = "2020-2022 The MITRE Corporation"
+author = "Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Austin Downing"
 release = "0.0.0"
 
 
@@ -67,11 +67,9 @@ html_theme_options = {
     # "collapse": False,
 }
 
-# enable this to increase the screen width according to _static/custom.css
-# it's a little awkward-looking, though.
-# html_css_files = [
-#     "custom.css",
-# ]
+html_css_files = [
+    "custom.css",
+]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
