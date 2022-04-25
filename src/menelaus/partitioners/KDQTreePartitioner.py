@@ -78,8 +78,8 @@ class KDQTreePartitioner:
 
         Args:
             value (int, optional): value to be written for each node. Default ``0``.
-            tree_id (str, optional): identifier for set of counts to be overwritten. Default ``'build'``. 
-        
+            tree_id (str, optional): identifier for set of counts to be overwritten. Default ``'build'``.
+
         >>> # TODO - write a short but nice doctest
         """
         KDQTreeNode.reset(self.node, value=value, tree_id=tree_id)
@@ -109,7 +109,7 @@ class KDQTreePartitioner:
 
         Args:
             tree_id (str): identifier of tree for which to return counts
-        
+
         Returns:
             list: list of counts at leaves of KDQ-Tree
 
@@ -136,7 +136,8 @@ class KDQTreePartitioner:
 
         >>> # TODO - write a short but nice doctest
         """
-        assert self.leaves is not None
+        if self.leaves is None:
+            return None
         counts1 = self.leaf_counts(tree_id1)
         counts2 = self.leaf_counts(tree_id2)
         hist1 = KDQTreePartitioner._distn_from_counts(counts1)
@@ -292,7 +293,7 @@ class KDQTreeNode:
             leaves (list): list of leaf nodes
             depth (int, optional): current depth of tree. Default ``0``.
 
-        Returns:    
+        Returns:
             KDQTreeNode: root node of tree
         """
         n, m = data.shape
