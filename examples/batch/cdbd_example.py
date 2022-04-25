@@ -1,10 +1,3 @@
-import os
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from menelaus.data_drift.cdbd import CDBD
-
 """ 
 
 CDBD Example
@@ -19,6 +12,13 @@ CDBD must be setup and run with batches of data containing 1 variable.
 Plots include: - A line plot visualizing test statistics for detection of drift
 
 """
+
+import os
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from menelaus.data_drift.cdbd import CDBD
 
 ## Setup ##
 
@@ -78,4 +78,4 @@ plt.axhline(y=0, color="orange", linestyle="dashed")
 # occurring in 2019, one year late. It alerts to a false alarm in 2012.
 
 # plt.show()
-plt.savefig("CDBD_test_statistics.png")
+plt.savefig("example_CDBD_test_statistics.png")

@@ -3,7 +3,7 @@ from menelaus.drift_detector import DriftDetector
 
 
 class PageHinkley(DriftDetector):
-    """Page-Hinkley is a univariate concept drift detection algorithm, designed
+    """Page-Hinkley is a univariate change detection algorithm, designed
     to detect changes in a sequential Gaussian signal. Both the running mean and
     the running Page Hinkley (PH) statistic are incremented with each
     observation. The PH stat monitors how far the current observation is from
@@ -41,9 +41,9 @@ class PageHinkley(DriftDetector):
             delta (float, optional): Minimum amplitude of change in data needed
                 to sound alarm. Defaults to 0.01.
             threshold (int, optional): Threshold for sounding alarm. Corresponds with
-                PH lambda. As suggested in PCA-CD, Qahtan (2015).
-            recommends setting to 1% of an appropriate window size for the
-                dataset. Defaults to 20.
+                PH lambda. As suggested in PCA-CD, Qahtan (2015) recommends
+                setting to 1% of an appropriate window size for the dataset.
+                Defaults to 20.
             burn_in (int, optional): Minimum number of data points required to
                 be seen before declaring drift. Defaults to 30.
             direction (str, optional):

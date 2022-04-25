@@ -3,8 +3,9 @@ from menelaus.drift_detector import DriftDetector
 
 
 class ADWIN(DriftDetector):
-    """ADWIN is a drift detection algorithm which uses a sliding window to
-    estimate the running mean and variance of a given statistic.
+    """ADWIN (ADaptive WINdowing) is a drift detection algorithm which uses a
+    sliding window to estimate the running mean and variance of a given
+    statistic.
 
     As each sample is added, ADWIN stores a running estimate (mean and variance)
     for a given statistic, calculated over a sliding window which will grow to

@@ -141,6 +141,7 @@ Generally, the workflow for using a detector, given some data, is as follows:
 
 .. code-block:: python
 
+   import pandas as pd
    from menelaus.concept_drift import ADWIN
    df = pd.read_csv('example.csv')
    detector = ADWIN()
@@ -153,8 +154,7 @@ For this example, because ADWIN is a concept drift detector, it requires both a
 predicted value (``y_predicted``) and a true value (``y_true``), at each update
 step. Note that this requirement is not true for the detectors in other modules.
 More detailed examples, including code for visualizating drift locations, may be
-found in the ``examples`` directory.
-
+found in the ``examples`` directory, as stand-alone python scripts.
 
 
 Testing and Documentation

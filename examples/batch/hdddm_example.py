@@ -1,10 +1,3 @@
-import os
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from menelaus.data_drift.hdddm import HDDDM
-
-
 """ 
 
 HDDDM Example
@@ -23,6 +16,12 @@ Plots include:
   year's test batch with the greatest Hellinger distance from the reference
   batch.
 """
+
+import os
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from menelaus.data_drift.hdddm import HDDDM
 
 ## Setup ##
 
@@ -80,7 +79,7 @@ for _, t in enumerate(plot_data.loc[plot_data["Detected Drift"] == "drift"]["Yea
     )
 plt.legend()
 plt.axhline(y=0, color="orange", linestyle="dashed")
-plt.savefig("HDDDM_test_statistics.png")
+plt.savefig("example_HDDDM_test_statistics.png")
 
 ## Plot Heatmap ##
 
@@ -119,4 +118,4 @@ ax.set(xlabel="Years", ylabel="Features")
 ax.collections[0].colorbar.set_label("Difference in Hellinger Distance")
 ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
 # plt.show()
-plt.savefig("HDDDM_feature_heatmap.png")
+plt.savefig("example_HDDDM_feature_heatmap.png")
