@@ -13,12 +13,12 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../src/mendelaus"))
+sys.path.insert(0, os.path.abspath("../src/menelaus"))
 
 
 # -- Project information -----------------------------------------------------
 
-project = "mendelaus"
+project = "menelaus"
 copyright = "2020-2022 The MITRE Corporation"
 author = "Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Austin Downing"
 release = "0.0.0"
