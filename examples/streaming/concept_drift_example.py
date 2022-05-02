@@ -10,7 +10,7 @@ Circle is a synthetic data source, where drift occurs in both var1, var2, and th
 conditional distributions P(y|var1) and P(y|var2). The drift occurs from index 
 1000 to 1250, and affects 66% of the sample.
 
-These detectors are generally be applied to the true class and predicted class 
+These detectors are generally to be applied to the true class and predicted class 
 from a particular model. ADWIN is an exception in that it could also be used to 
 monitor an arbitrary real-valued feature. So, each of the summary plots displays 
 the running accuracy of the classifier alongside the drift detector's output.
@@ -24,8 +24,6 @@ NOTE: The LinearFourRates example has a relatively long runtime, roughly 5 minut
 
 """
 
-# TODO: step back through the stuff and use STEPD's form for the loop to avoid
-# confusing training_size manipulations
 
 import os
 import pandas as pd
