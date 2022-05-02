@@ -1,6 +1,8 @@
-import pandas as pd
 import numpy as np
 import scipy.stats
+from pandas import DataFrame  # more efficient for later for loop
+from numpy import unique
+from numpy.random import choice
 from menelaus.drift_detector import DriftDetector
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
@@ -59,7 +61,7 @@ class KdqTree(DriftDetector):
             ``"drift"`` or ``None``.
     """
 
-    _input_type = None
+    input_type = None
 
     def __init__(
         self,
@@ -111,7 +113,7 @@ class KdqTree(DriftDetector):
                 "Streaming kdqTree's window_size must be a positive integer."
             )
         super().__init__()
-        self._input_type = input_type
+        self.input_type = input_type
         self.window_size = window_size
         self.persistence = persistence
         self.alpha = alpha
@@ -144,7 +146,7 @@ class KdqTree(DriftDetector):
             not streaming).
         """
         # TODO: validation. #17
-        # if self._input_type == "stream" and ary.ndim != 1:
+        # if self.input_type == "stream" and ary.ndim != 1:
         #     raise ValueError(
         #         "Streaming kdqTree update only takes one sample at a time."
         #     )
@@ -161,8 +163,8 @@ class KdqTree(DriftDetector):
             # check for drift if either: we're streaming and the reference
             # window is full, or we're doing batch detection
             if (
-                self._input_type == "stream" and len(self._ref_data) == self.window_size
-            ) or self._input_type == "batch":
+                self.input_type == "stream" and len(self._ref_data) == self.window_size
+            ) or self.input_type == "batch":
                 self._kdqtree = KDQTreePartitioner(
                     count_ubound=self.count_ubound,
                     cutpoint_proportion_lbound=self.cutpoint_proportion_lbound,
@@ -173,17 +175,15 @@ class KdqTree(DriftDetector):
                 ref_counts = self._kdqtree.leaf_counts("build")
                 self._critical_dist = self._get_critical_kld(ref_counts)
         else:  # new test sample(s)
-            self._kdqtree.fill(ary, tree_id="test", reset=(self._input_type == "batch"))
-            if self._input_type == "stream":
+            self._kdqtree.fill(ary, tree_id="test", reset=(self.input_type == "batch"))
+            if self.input_type == "stream":
                 self._test_data_size += (
                     1  # TODO after validation, should always be 1 #17
                 )
-            if self._input_type == "batch" or (
-                self._test_data_size >= self.window_size
-            ):
+            if self.input_type == "batch" or (self._test_data_size >= self.window_size):
                 test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
                 if test_dist > self._critical_dist:
-                    if self._input_type == "stream":
+                    if self.input_type == "stream":
                         self._drift_counter += 1
                         if self._drift_counter > self.persistence * self.window_size:
                             self.drift_state = "drift"
@@ -205,7 +205,7 @@ class KdqTree(DriftDetector):
         """
         ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
 
-        if self._input_type == "stream":
+        if self.input_type == "stream":
             sample_size = self.window_size
         else:
             sample_size = sum(ref_counts)
@@ -213,14 +213,14 @@ class KdqTree(DriftDetector):
         # TODO vectorize?
         b_dist_pairs = []
         bin_indices = list(range(len(ref_counts)))
-        bin_indices_df = pd.DataFrame({"leaf": bin_indices})
+        bin_indices_df = DataFrame({"leaf": bin_indices})
         for _ in range(self.bootstrap_samples):
             # note the maintenance of the leaf order!
-            b_sample = np.random.choice(bin_indices, size=2 * sample_size, p=ref_dist)
-            b_hist1 = np.unique(b_sample[:sample_size], return_counts=True)
-            b_hist2 = np.unique(b_sample[sample_size:], return_counts=True)
-            b_hist1 = pd.DataFrame({"leaf": b_hist1[0], "count": b_hist1[1]})
-            b_hist2 = pd.DataFrame({"leaf": b_hist2[0], "count": b_hist2[1]})
+            b_sample = choice(bin_indices, size=2 * sample_size, p=ref_dist)
+            b_hist1 = unique(b_sample[:sample_size], return_counts=True)
+            b_hist2 = unique(b_sample[sample_size:], return_counts=True)
+            b_hist1 = DataFrame({"leaf": b_hist1[0], "count": b_hist1[1]})
+            b_hist2 = DataFrame({"leaf": b_hist2[0], "count": b_hist2[1]})
             b_hist1 = (
                 b_hist1.merge(bin_indices_df, on="leaf", how="outer")
                 .fillna(0)

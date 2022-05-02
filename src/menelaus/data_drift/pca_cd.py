@@ -45,7 +45,7 @@ class PCACD(DriftDetector):
             the specified ``ev_threshold`` parameter.
     """
 
-    _input_type = "batch"
+    input_type = "batch"
 
     def __init__(
         self,

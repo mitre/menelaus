@@ -38,7 +38,7 @@ class DDM(DriftDetector):
         drift_scale: defines the threshold over which to enter the drift state.
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(self, n_threshold=30, warning_scale=2, drift_scale=3):
         """

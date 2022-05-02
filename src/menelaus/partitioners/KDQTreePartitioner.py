@@ -44,7 +44,8 @@ class KDQTreePartitioner:
         self.leaves = []
 
     def build(self, data):
-        """Creates a new kdqTree by partitioning the data into square nodes in
+        """
+        Creates a new kdqTree by partitioning the data into square nodes in
         the feature-space.
 
         Args:
@@ -100,7 +101,7 @@ class KDQTreePartitioner:
         >>> # TODO - write a short but nice doctest
         """
         if self.node is None or len(data.shape) <= 1:
-            return None
+            return None  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
         KDQTreeNode.fill(data, self.node, self.count_ubound, tree_id, reset)
         return self.node
 
@@ -136,8 +137,8 @@ class KDQTreePartitioner:
 
         >>> # TODO - write a short but nice doctest
         """
-        if self.leaves is None:
-            return None
+        if self.leaves == []:
+            return None  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
         counts1 = self.leaf_counts(tree_id1)
         counts2 = self.leaf_counts(tree_id2)
         hist1 = KDQTreePartitioner._distn_from_counts(counts1)
@@ -342,7 +343,7 @@ class KDQTreeNode:
         """
         # case: no more nodes
         if node is None:
-            return
+            return  # this line shows as dead to coverage statistics, but that should be a bug, since otherwise this function wouldn't terminate
         n = data.shape[0]
         axis = node.axis
         # basically, matches the return Node(n, None) case above (see next # TODO)

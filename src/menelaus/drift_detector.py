@@ -72,7 +72,7 @@ class DriftDetector(ABC):
 
     @property
     @abstractmethod
-    def _input_type(self):
+    def input_type(self):
         """The type of input the detector accepts, either ``"batch"``, with multiple
         samples in one call to update(), or ``"stream"``, with one sample per call
         to update().

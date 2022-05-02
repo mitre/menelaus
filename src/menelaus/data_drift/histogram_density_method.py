@@ -146,7 +146,7 @@ class HistogramDensityMethod(DriftDetector):
             drift detection statistics.
     """
 
-    _input_type = "batch"
+    input_type = "batch"
 
     def __init__(
         self,
