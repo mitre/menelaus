@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
-from menelaus.drift_detector import DriftDetector
 import scipy.stats
+from menelaus.drift_detector import DriftDetector
+from scipy.spatial.distance import jensenshannon
+
 
 
 class HistogramDensityMethod(DriftDetector):
@@ -18,8 +20,9 @@ class HistogramDensityMethod(DriftDetector):
               normalized, squared differences in frequency counts for each bin
               between reference and test datasets, averaged across all features.
 
-            * KL divergence (if called via CDBD): the Kullback-Leibler
-              Divergence (KLD) measure.
+            * KL divergence (if called via CDBD): Jensen-Shannon distances, a
+              symmetric and bounded measure based upon Kullback-Leibler
+              Divergence
 
         * Epsilon: the differences in Hellinger distances between sets
           of reference and test batches.
@@ -257,6 +260,7 @@ class HistogramDensityMethod(DriftDetector):
         self.reference_density = self._build_histograms(self.reference, mins, maxes)
         test_density = self._build_histograms(test_batch, mins, maxes)
 
+
         # Hellinger distances
         if self.divergence == "H":
 
@@ -271,6 +275,7 @@ class HistogramDensityMethod(DriftDetector):
             )
             feature_distances = [0]
             self.feature_epsilons = [0]
+
 
         self.distances[self.total_samples] = self.current_distance
 
@@ -513,7 +518,7 @@ class HistogramDensityMethod(DriftDetector):
                     distances.append(
                         self._KL_divergence(bootstraps[df_indx], bootstraps[j])
                     )
-                    # TODO test that this returns something
+                    
 
                 j += 1
 
@@ -531,10 +536,9 @@ class HistogramDensityMethod(DriftDetector):
 
     def _KL_divergence(self, reference_density, test_density):
         """
-        Computes KL divergence between reference and test histograms, for a
-        univariate classifier-derived statistic. Uses max KL from KL calculated
-        in both directions to have a symmetric distance.
-
+        Computes Jensen Shannon (JS) divergence between reference and test
+        histograms, for a univariate classifier-derived statistic. JS is a
+        bounded, symmetric form of KL divergence.
 
         Args:
             reference_density (list): Output of _build_histograms on reference
@@ -542,16 +546,11 @@ class HistogramDensityMethod(DriftDetector):
             test_density (list): Output of _build_histograms on test batch.
 
         Returns:
-            Maximum KL divergence between reference and test batches
+            JS divergence between reference and test batches
 
         """
 
-        reference_density = reference_density[0]
-        test_density = test_density[0]
+        js = jensenshannon(reference_density[0], test_density[0])
 
-        max_kl = max(
-            scipy.stats.entropy(reference_density, test_density),
-            scipy.stats.entropy(test_density, reference_density),
-        )
+        return js
 
-        return max_kl
