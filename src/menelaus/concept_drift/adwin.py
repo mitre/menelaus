@@ -1,4 +1,11 @@
-import numpy as np  # maybe only import power
+from numpy import (
+    power,
+    log,
+    sqrt,
+    absolute,
+    empty_like,
+    zeros,
+)  # most of these get called within loops (or an outer loop on the detector) so this is more efficient
 from menelaus.drift_detector import DriftDetector
 
 
@@ -38,7 +45,7 @@ class ADWIN(DriftDetector):
 
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(
         self,
@@ -174,7 +181,7 @@ class ADWIN(DriftDetector):
                 # take the first two buckets in this row and combine them the
                 # number of elements stored in a bucket is 2^(position in the
                 # list)
-                n_elements = np.power(2, list_position)
+                n_elements = power(2, list_position)
                 mean1 = curr_bucket_row.bucket_totals[0] / n_elements
                 mean2 = curr_bucket_row.bucket_totals[1] / n_elements
                 new_total = (
@@ -199,7 +206,7 @@ class ADWIN(DriftDetector):
                     break
             else:
                 # similarly, if the first bucket isn't full, neither are any others
-                break
+                break  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
             curr_bucket_row = curr_bucket_row.next_bucket
             list_position += 1
 
@@ -233,7 +240,7 @@ class ADWIN(DriftDetector):
                 # window0 adds oldest elements first: tail of the BucketRowList,
                 # front of the BucketRow arrays
                 while (not exit_shrink) and (curr_bucket_row is not None):
-                    n_increment = np.power(2, list_pos)
+                    n_increment = power(2, list_pos)
                     for bucket_index in range(curr_bucket_row.bucket_count):
                         n_elements0 += n_increment
                         n_elements1 -= n_increment
@@ -268,7 +275,7 @@ class ADWIN(DriftDetector):
                                 exit_shrink = True
                                 break
 
-                    curr_bucket_row = curr_bucket_row.prev
+                    curr_bucket_row = curr_bucket_row.prev_bucket
                     list_pos -= 1
 
     def _check_epsilon(self, n_elements0, total0, n_elements1, total1):
@@ -302,20 +309,20 @@ class ADWIN(DriftDetector):
 
         if not self.conservative_bound:
             # form below is under normality assumption for 'large' window sizes
-            delta_prime_den = np.log(
-                2 * np.log(n_elements) / self.delta
+            delta_prime_den = log(
+                2 * log(n_elements) / self.delta
             )  # noted in Bifet as sufficient in practice vs. delta/n
             eps_cut = (
-                np.sqrt((2 * n_harmonic) * variance * delta_prime_den)
+                sqrt((2 * n_harmonic) * variance * delta_prime_den)
                 + 1.0 * (2 / 3) * n_harmonic * delta_prime_den
             )
         else:
-            delta_prime_den = np.log(4 * np.log(n_elements) / self.delta)
-            eps_cut = np.sqrt(
+            delta_prime_den = log(4 * log(n_elements) / self.delta)
+            eps_cut = sqrt(
                 (0.5 * n_harmonic) * delta_prime_den
             )  # for "totally rigorous performance guarantees"
 
-        return np.absolute(window_diff) > eps_cut
+        return absolute(window_diff) > eps_cut
 
     def _remove_last(self):
         """Drop the oldest bucket from the tail of ``bucket_row_list``.
@@ -325,7 +332,7 @@ class ADWIN(DriftDetector):
 
         """
         curr_bucket_row = self._bucket_row_list.tail
-        n_curr = np.power(2, (self._bucket_row_list.size - 1))
+        n_curr = power(2, (self._bucket_row_list.size - 1))
         self._window_size -= n_curr
         self._curr_total -= curr_bucket_row.bucket_totals[0]
         mean_curr = curr_bucket_row.bucket_totals[0] / n_curr
@@ -390,7 +397,7 @@ class _BucketRowList:
         """Add an empty ``BucketRow`` to the head of the list."""
         new_head = _BucketRow(self.max_buckets, next_bucket=self.head)
         if self.head is not None:
-            self.head.prev = new_head
+            self.head.prev_bucket = new_head
         self.head = new_head
         if self.tail is None:
             self.tail = self.head
@@ -398,14 +405,14 @@ class _BucketRowList:
 
     def append_tail(self):
         """Add an empty ``BucketRow`` to the tail of the list."""
-        self.tail = _BucketRow(self.max_buckets, prev=self.tail)
+        self.tail = _BucketRow(self.max_buckets, prev_bucket=self.tail)
         if self.head is None:  # somehow we've removed all the other buckets
             self.head = self.tail
         self.size += 1
 
     def remove_tail(self):
         """Remove the last BucketRow from the tail of the BucketRowList."""
-        self.tail = self.tail.prev
+        self.tail = self.tail.prev_bucket
         if self.tail is None:
             self.head = None
         else:
@@ -419,33 +426,33 @@ class _BucketRow:
     particular size in reverse order: the oldest bucket is at index 0.
     """
 
-    def __init__(self, max_buckets, prev=None, next_bucket=None):
+    def __init__(self, max_buckets, prev_bucket=None, next_bucket=None):
         """
         Args:
             max_buckets (int): maximum allowed buckets in this row
-            prev (_BucketRow, optional): prior BucketRow in the BucketRowList.
+            prev_bucket (_BucketRow, optional): prior BucketRow in the BucketRowList.
                 Defaults to None.
             next_bucket (_BucketRow, optional): next BucketRow in the BucketRowList.
                 Defaults to None.
 
         Attributes:
             bucket_count (int): the number of buckets currently in this row
-            bucket_totals (np.array): estimated total for each bucket
-            bucket_variances (np.array): estimated variance for each bucket
+            bucket_totals (numpy.array): estimated total for each bucket
+            bucket_variances (numpy.array): estimated variance for each bucket
         """
         super().__init__()
         self.bucket_count = 0
         self.max_buckets = max_buckets
-        self.bucket_totals = np.zeros(self.max_buckets + 1, dtype=float)
-        self.bucket_variances = np.zeros(self.max_buckets + 1, dtype=float)
+        self.bucket_totals = zeros(self.max_buckets + 1, dtype=float)
+        self.bucket_variances = zeros(self.max_buckets + 1, dtype=float)
 
         # maintain the linked list
-        self.prev = prev
+        self.prev_bucket = prev_bucket
         self.next_bucket = next_bucket
         if next_bucket is not None:
-            next_bucket.prev = self
-        if self.prev is not None:
-            prev.next_bucket = self
+            next_bucket.prev_bucket = self
+        if self.prev_bucket is not None:
+            prev_bucket.next_bucket = self
 
     def add_bucket(self, total, variance):
         """Add a new bucket to the end of this BucketRow with total and variance.
@@ -482,7 +489,7 @@ class _BucketRow:
 
         """
         num = num * -1
-        result = np.empty_like(arr)
+        result = empty_like(arr)
         result[num:] = fill_value
         result[:num] = arr[-num:]
         return result

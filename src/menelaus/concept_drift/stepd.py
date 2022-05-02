@@ -45,7 +45,7 @@ class STEPD(DriftDetector):
             ``"drift"``, ``"warning"``, or ``None``.
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(self, window_size=30, alpha_warning=0.05, alpha_drift=0.003):
         """
@@ -87,7 +87,6 @@ class STEPD(DriftDetector):
         """
         if self.drift_state == "drift":
             self.reset()
-            self._initialize_retraining_recs()
 
         super().update()
         classifier_result = int(y_pred == y_true)

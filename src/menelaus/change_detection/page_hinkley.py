@@ -33,7 +33,7 @@ class PageHinkley(DriftDetector):
             ``"drift"``, or ``None``.
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(self, delta=0.01, threshold=20, burn_in=30, direction="positive"):
         """

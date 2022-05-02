@@ -1,6 +1,8 @@
+import io
+import sys
 import numpy as np
 import scipy.stats
-from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
+from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner, KDQTreeNode
 
 
 def test_build_empty():
@@ -11,10 +13,14 @@ def test_build_empty():
     assert root is None
     assert kp.node is None
     assert kp.leaves == []
+    assert kp.kl_distance("foo", "bar") is None
+    assert kp.fill(tree_id="foo", data=np.array([1, 1])) is None
     root = kp.build(empty_array_nested)
     assert root is None
     assert kp.node is None
     assert kp.leaves == []
+    assert kp.kl_distance("foo", "bar") is None
+    assert kp.fill(tree_id="foo", data=np.array([1, 1])) is None
 
 
 def test_build_single():
@@ -172,3 +178,38 @@ def test_to_plotly_dataframe():
     assert set(df_plot.columns) == set(
         ["name", "idx", "parent_idx", "cell_count", "depth", "count_diff", "kss"]
     )
+
+
+def test_as_text():
+    # very basic check for consistent behavior
+    kp = KDQTreePartitioner(count_ubound=2, cutpoint_proportion_lbound=0.1)
+
+    # capture the print output
+    output = io.StringIO()
+    sys.stdout = output
+
+    data = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]])
+    root = kp.build(data)
+    KDQTreeNode.as_text(root)
+    output.getvalue()
+    assert output.getvalue().count("subtree") == 7
+
+    output = io.StringIO()
+    sys.stdout = output
+    data = np.array([])
+    root = kp.build(data)
+    KDQTreeNode.as_text(root)
+    assert output.getvalue() == ""
+
+
+def test_missing_tree_flattened_array():
+    # given a tree_id which is not present in the tree, make sure its counts are
+    # being treated as 0 everywhere
+    kp = KDQTreePartitioner(count_ubound=2, cutpoint_proportion_lbound=0.1)
+    data = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]])
+    root = kp.build(data)
+    out = []
+    KDQTreeNode.as_flattened_array(
+        root, tree_id1="build", tree_id2="garbage", output=out
+    )
+    assert all([guy["count_diff"] <= 0 for guy in out])
