@@ -74,7 +74,7 @@ Menelaus implements the following drift detectors.
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
 | Data drift        | Hellinger Distance Drift Detection Method                      | HDDDM         |            | x      |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Data drift        | kdq-tree Detection Method                                      | KdqTree       | x          | x      |
+| Data drift        | kdq-Tree Detection Method                                      | kdq-Tree      | x          | x      |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
 | Data drift        | PCA-Based Change Detection                                     | PCA-CD        | x          |        |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
@@ -102,8 +102,8 @@ Background section:
 * Batch, in which the data has no meaningful ordering with respect to time, and
   the goal is comparing two datasets as a whole.
 
-Additionally, the library implements a kdq-tree partitioner, for support of the
-kdq-tree Detection Method. This data structure partitions a given feature space,
+Additionally, the library implements a kdq-Tree partitioner, for support of the
+kdq-Tree Detection Method. This data structure partitions a given feature space,
 then maintains a count of the number of samples from the given dataset that fall
 into each section of that partition. More details are given in the respective
 module.
