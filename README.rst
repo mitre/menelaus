@@ -180,5 +180,5 @@ HTML documentation can be generated at ``menelaus/docs/build/html/index.html`` w
 Copyright
 ============================
 | Authors: Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Austin Downing.
-| Copyright 2020-2022 The MITRE Corporation.
-| Approved for Public Release; Distribution Unlimited. Case Number (TBD).
+| ©2022 The MITRE Corporation. ALL RIGHTS RESERVED
+| Approved for Public Release; Distribution Unlimited. Public Release Case Number 22-0244.
