@@ -52,12 +52,12 @@ def test_retraining_recs():
     # should enter drift region after this sample
     total_samples += 1
     det.update(y_pred=1, y_true=1)
-    assert det.retraining_recs == [warning_ix, total_samples - 1]
+    assert det.retraining_recs.size == 2 and det.retraining_recs[0] == warning_ix and det.retraining_recs[1] == total_samples - 1
 
     # should reset the detector and retraining recs
     total_samples += 1
     det.update(y_pred=1, y_true=1)
-    assert det.retraining_recs == [None, None]
+    assert det.retraining_recs.size == 2 and det.retraining_recs[0] == None and det.retraining_recs[1] == None
 
 
 def test_accuracies():
