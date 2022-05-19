@@ -1,5 +1,8 @@
 """
-Data Drift examples
+
+Data Drift Examples
+   1. PCA-Based Change Detection (PCA-CD)
+   2. KDQ-Tree Detection Method
 -------------------------
 
 These examples show how to set up, run, and produce output from detectors in the 
@@ -42,7 +45,6 @@ df = pd.read_csv(
 # PCA-CD is a drift detector that transforms the passed data into its
 # principal components, then watches the transformed data for signs of drift
 # by monitoring the KL-divergence via the Page-Hinkley algorithm.
-#
 
 pca_cd = PCACD(window_size=50, divergence_metric="intersection")
 
@@ -93,6 +95,7 @@ ylims = min(status.var1.min(), status.var2.min()), max(
 )
 plt.ylim(ylims)
 
+# Draw red lines that indicate where drift was detected
 plt.vlines(
     x=status.loc[status["drift_detected"] == "drift"]["index"],
     ymin=ylims[0],
@@ -100,6 +103,7 @@ plt.vlines(
     label="Drift Detected",
     color="red",
 )
+
 plt.legend()
 
 # PCA-CD detects this very abrupt drift within a few samples of its induction.
@@ -156,6 +160,7 @@ plt.ylim(ylims)
 drift_start, drift_end = 1000, 1250
 plt.axvspan(drift_start, drift_end, alpha=0.5, label="Drift Induction Window")
 
+# Draw red lines that indicate where drift was detected
 plt.vlines(
     x=status.loc[status["drift_detected"] == "drift"]["index"],
     ymin=ylims[0],
@@ -163,6 +168,7 @@ plt.vlines(
     label="Drift Detected",
     color="red",
 )
+
 plt.legend()
 
 

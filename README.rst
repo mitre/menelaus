@@ -11,18 +11,18 @@ Background
 ==========
 
 Menelaus implements algorithms for the purposes of drift detection. Drift
-detection is a branch of machine learning focused on the real-time detection of
+detection is a branch of machine learning focused on the detection of
 unforeseen shifts in data. The relationships between variables in a dataset are
-sensitive and rarely static and can be affected by changes in both internal and
-external factors. These factors include changes in data collection techniques,
-population demographics, and external protocols. 
+rarely static and can be affected by changes in both internal and external
+factors, e.g. changes in data collection techniques, external protocols, and/or 
+population demographics.
  
-When drift occurs, the data to which a model is being applied can differ
-statistically from the data the model was trained on. This may lead to a
-decrease in both the discrimination and calibration of a deployed machine
-learning model or even of a rule-based system learned on the data. The goal of
-drift detection algorithms is to detect a change in either a model's error rate
-or in the distribution of features within a dataset. 
+When drift occurs, the data to which a model is applied can differ statistically
+from the data the model was trained on. This may lead to a decrease in the
+discrimination or calibration of a deployed model, or a decrease in the
+performance of even a simple rule-based system built for the original data. The
+goal of drift detection algorithms is to detect a change in either a model's
+error rate or in the distribution of features within a dataset. 
  
 Both undetected changes in data and undetected model underperformance pose risks
 to the users thereof. The aim of this package is to enable monitoring of data
@@ -47,6 +47,11 @@ algorithms are typically used when it is more important to process large volumes
 of information simultaneously, where the speed of results after receiving data
 is of less concern.
 
+In The Odyssey, Menelaus seeks a secret known by the shapeshifter Proteus.
+Menelaus holds Proteus down as he takes the form of a lion, a serpent, water,
+and so on. Eventually, Proteus relents, and Menelaus gains the answers he
+sought. Accordingly, this library provides tools to keep hold of the truth even 
+as the data might shift.
 
 Detector List
 ============================

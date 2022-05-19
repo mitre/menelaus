@@ -1,5 +1,6 @@
 """
-Partitioner Plot example
+
+Partitioner Plot Example
 -------------------------
 
 This example shows how to visualize the tree-based partitioning performed by 
@@ -12,15 +13,18 @@ partition. The two datasets can then be compared.
 This partitioner is used within the library within ``data_drift.kdq_tree``, 
 where the reference data is used to build the partition, and the test data is 
 then divided by that partition, in order to compare the two distributions.
+
 """
 
 import numpy as np
 import plotly.express as px
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner, KDQTreeNode
 
+
 ################################################################################
-################################ Basic plot ####################################
+################################ Basic Plot ####################################
 ################################################################################
+
 # Create some data and build the tree.
 data = np.random.randint(0, 10, (20, 3))
 kp = KDQTreePartitioner(count_ubound=8)
@@ -50,7 +54,7 @@ fig.update_traces(root_color="lightgrey")
 # fig.show()
 fig.write_html(f"example_partitioner_lots_basic_plot.html")
 
-############## Filter by depth
+############## Filter by depth ##############
 kp = KDQTreePartitioner(count_ubound=25)
 df = np.random.sample([50, 3])
 df2 = np.random.sample([50, 3])
@@ -74,6 +78,7 @@ fig.write_html(f"example_partitioner_lots_basic_plot_depth.html")
 ################################################################################
 ################################# Modifications ################################
 ################################################################################
+
 # Count differences between builds can be accessed.
 # This can be used to modify the display.
 kp = KDQTreePartitioner(count_ubound=25)
@@ -97,7 +102,7 @@ fig.update_traces(root_color="lightgrey")
 fig.write_html(f"example_partitioner_lots_modifications1_count.html")
 
 
-############## Display additional information
+############## Display additional information ##############
 fig = px.treemap(
     data_frame=df_plot,
     names="name",
@@ -112,7 +117,7 @@ fig.update_traces(
 fig.write_html(f"example_partitioner_lots_modifications2_path.html")
 
 
-##### Access the plot and color using the Kulldorff Spatial Scan Statistic (KSS)
+##### Access the plot and color using the Kulldorff Spatial Scan Statistic (KSS) #####
 # Higher values of KSS indicate that a given region of the data space has
 # greater divergence between two "builds" of data.
 fig = px.treemap(
@@ -128,7 +133,7 @@ fig.update_traces(root_color="lightgrey")
 fig.write_html(f"example_partitioner_lots_modifications3_kss.html")
 
 
-############# Outline the cells according to the direction of change in counts
+############# Outline the cells according to the direction of change in counts #############
 df_plot.loc[df_plot.count_diff < 0, "count_dir"] = "red"
 df_plot.loc[df_plot.count_diff == 0, "count_dir"] = "lightgrey"
 df_plot.loc[df_plot.count_diff > 0, "count_dir"] = "green"
@@ -171,7 +176,7 @@ df_plot.loc[df_plot.count_diff < 0, "count_dir"] = "red"
 df_plot.loc[df_plot.count_diff == 0, "count_dir"] = "lightgrey"
 df_plot.loc[df_plot.count_diff > 0, "count_dir"] = "green"
 
-############# Sunburst plot
+############# Sunburst Plot #############
 fig = px.sunburst(
     data_frame=df_plot,
     names="name",
@@ -188,7 +193,7 @@ fig.update_traces(
 fig.write_html(f"example_partitioner_lots_alternatives_sunburst.html")
 
 
-############# Icicle plot
+############# Icicle Plot #############
 fig = px.icicle(
     data_frame=df_plot,
     names="name",
