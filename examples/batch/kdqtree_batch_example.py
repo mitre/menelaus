@@ -1,8 +1,9 @@
 """
-kdqTree example (batch setting)
+
+kdq-Tree Example (batch setting)
 ----------------------------
 
-This example shows up how to set up, run, and produce output from the kdqTree
+This example shows up how to set up, run, and produce output from the kdq-Tree
 detector, specifically in the batch data setting. The parameters aren't 
 necessarily tuned for best performance, just notional.
 
@@ -21,10 +22,13 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 from menelaus.data_drift.kdq_tree import KdqTree
 
-# kdqTree does use bootstrapping to define its critical thresholds, so setting
+
+# kdq-Tree does use bootstrapping to define its critical thresholds, so setting
 # the seed is important to reproduce exact behavior.
 np.random.seed(123)
 
+# Import data
+# assumes the script is being run from the root directory.
 df_orig = pd.read_csv(
     os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
     index_col="id",
@@ -38,7 +42,7 @@ df = pd.concat([df_orig, pd.get_dummies(df_orig.cat, prefix="cat")], axis=1)
 drift_years = df.groupby("year")["drift"].apply(lambda x: x.unique()[0]).reset_index()
 
 # Because the drift in 2009, 2012, and 2016 is intermittent - it reverts
-# back to the prior distribution in the subsequent year, we should also detect
+# back to the prior distribution in the subsequent year - we should also detect
 # drift in 2010, 2013, and 2016. So:
 drift_years.loc[drift_years["year"].isin([2010, 2013, 2016]), "drift"] = True
 

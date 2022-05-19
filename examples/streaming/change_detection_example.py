@@ -1,5 +1,8 @@
 """
-Change Detection examples
+
+Change Detection Examples
+   1. Page-Hinkley (PH)
+   2. Cumulative Sum Test (CUSUM)
 -------------------------
 
 These examples show how to set up, run, and produce output from detectors in the 
@@ -12,6 +15,7 @@ conditional distributions P(y|var1) and P(y|var2). The drift occurs from index
 
 These change detectors can be applied to any given single variable; below, 
 they are applied to var2.
+
 """
 
 import os

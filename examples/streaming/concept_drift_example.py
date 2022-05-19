@@ -1,5 +1,11 @@
 """
-Concept Drift examples
+
+Concept Drift Examples
+   1. Linear Four Rates (LFR)
+   2. ADaptive WINdowing (ADWIN) 
+   3. Drift Detection Method (DDM)
+   4. Early Drift Detection Method (EDDM)
+   5. Statistical Test of Equal Proportions to Detect Concept Drift (STEPD)
 -------------------------
 
 These examples show how to set up, run, and produce output from detectors in the 
@@ -20,7 +26,6 @@ more similar to each other -- i.e., data that seems to be part of the same
 concept, which could be used to retrain a model.
 
 NOTE: The LinearFourRates example has a relatively long runtime, roughly 5 minutes.
-
 
 """
 
@@ -113,7 +118,7 @@ for i in range(training_size, len(df)):
     n += 1
 
 plt.figure(figsize=(20, 5))
-plt.scatter("index", "accuracy", data=status)
+plt.scatter("index", "accuracy", data=status, label="Accuracy")
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -125,6 +130,7 @@ plt.ylim(ylims)
 
 plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
 
+# Draw red lines that indicate where drift was detected
 plt.vlines(
     x=status.loc[status["drift_detected"] == "drift"]["index"],
     ymin=ylims[0],
@@ -133,6 +139,7 @@ plt.vlines(
     color="red",
 )
 
+# Draw orange lines that indicate where warnings of drift were provided
 plt.vlines(
     x=status.loc[status["drift_detected"] == "warning"]["index"],
     ymin=ylims[0],
@@ -142,7 +149,7 @@ plt.vlines(
     alpha=0.3,
 )
 
-# Draw lines that indicate the retraining windows.
+# Create a list of lines that indicate the retraining windows.
 # Space them evenly, vertically.
 rec_list = pd.DataFrame(rec_list)
 rec_list["y_val"] = np.linspace(
@@ -151,6 +158,7 @@ rec_list["y_val"] = np.linspace(
     num=len(rec_list),
 )
 
+# Draw green lines that indicate where retraining occurred
 plt.hlines(
     y=rec_list["y_val"],
     xmin=rec_list[0],
@@ -159,7 +167,7 @@ plt.hlines(
     label="Retraining Windows",
 )
 
-plt.legend(["Drift Induction Window", "Accuracy", "Drift"])
+plt.legend()
 # plt.show()
 
 # One of the four rates immediately passes outside its threshold when drift is
@@ -253,6 +261,7 @@ plt.ylim(ylims)
 
 plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
 
+# Draw red lines that indicate where drift was detected
 plt.vlines(
     x=status.loc[status["drift_detected"] == "drift"]["index"],
     ymin=ylims[0],
@@ -261,7 +270,7 @@ plt.vlines(
     color="red",
 )
 
-# Draw lines that indicate the retraining windows.
+# Create a list of lines that indicate the retraining windows.
 # Space them evenly, vertically.
 rec_list = pd.DataFrame(rec_list)
 rec_list["y_val"] = np.linspace(
@@ -270,6 +279,7 @@ rec_list["y_val"] = np.linspace(
     num=len(rec_list),
 )
 
+# Draw green lines that indicate where retraining occurred
 plt.hlines(
     y=rec_list["y_val"],
     xmin=rec_list[0],
@@ -278,7 +288,7 @@ plt.hlines(
     label="Retraining Windows",
 )
 
-plt.legend()
+plt.legend(loc='lower right')
 
 # After drift is induced, the accuracy decreases enough for ADWIN to shrink its
 # window and alarm;  subsequent windows also include data from the old regime,
@@ -295,7 +305,6 @@ plt.savefig("example_ADWIN.png")
 # DDM can enter either a "drift" or "warning" state, depending on how close
 # a classifier's error rate has approached to those respective thresholds,
 # defined by the warning_scale and drift_scale parameters.
-#
 
 np.random.seed(123)
 # setup classifier: train on first training_size rows
@@ -366,6 +375,7 @@ plt.ylim(ylims)
 
 plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
 
+# Draw red lines that indicate where drift was detected
 plt.vlines(
     x=status.loc[status["drift_detected"] == "drift"]["index"],
     ymin=ylims[0],
@@ -375,6 +385,7 @@ plt.vlines(
     linewidth=3,
 )
 
+# Draw orange lines that indicate where warnings of drift were provided
 plt.vlines(
     x=status.loc[status["drift_detected"] == "warning"]["index"],
     ymin=ylims[0],
@@ -384,7 +395,7 @@ plt.vlines(
     alpha=0.3,
 )
 
-# Draw lines that indicate the retraining windows.
+# Create a list of lines that indicate the retraining windows.
 # Space them evenly, vertically.
 rec_list = pd.DataFrame(rec_list)
 rec_list["y_val"] = np.linspace(
@@ -393,6 +404,7 @@ rec_list["y_val"] = np.linspace(
     num=len(rec_list),
 )
 
+# Draw green lines that indicate where retraining occurred
 plt.hlines(
     y=rec_list["y_val"],
     xmin=rec_list[0],
@@ -487,6 +499,7 @@ plt.ylim(ylims)
 
 plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
 
+# Draw orange lines that indicate where warnings of drift were provided
 plt.vlines(
     x=status.loc[status["drift_detected"] == "warning"]["index"],
     ymin=ylims[0],
@@ -496,6 +509,7 @@ plt.vlines(
     alpha=0.3,
 )
 
+# Draw red lines that indicate where drift was detected
 plt.vlines(
     x=status.loc[status["drift_detected"] == "drift"]["index"],
     ymin=ylims[0],
@@ -504,7 +518,7 @@ plt.vlines(
     color="red",
 )
 
-# Draw lines that indicate the retraining windows.
+# Create a list of lines that indicate the retraining windows.
 # Space them evenly, vertically.
 rec_list = pd.DataFrame(rec_list)
 rec_list["y_val"] = np.linspace(
@@ -513,6 +527,7 @@ rec_list["y_val"] = np.linspace(
     num=len(rec_list),
 )
 
+# Draw green lines that indicate where retraining occurred
 plt.hlines(
     y=rec_list["y_val"],
     xmin=rec_list[0],
@@ -540,7 +555,7 @@ plt.savefig("example_EDDM.png")
 # new sample is used to update the parameters of the classifier. STEPD monitors
 # the accuracy in two windows, "recent" and "past," and compares those in order
 # to detect drift in classifier accuracy.
-#
+
 np.random.seed(123)
 df_ex = df
 train_ix = [0, training_size]
@@ -607,6 +622,7 @@ plt.ylim(ylims)
 
 plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
 
+# Draw orange lines that indicate where warnings of drift were provided
 plt.vlines(
     x=status.loc[status["drift_detected"] == "warning"]["index"],
     ymin=ylims[0],
@@ -616,6 +632,7 @@ plt.vlines(
     alpha=0.3,
 )
 
+# Draw red lines that indicate where drift was detected
 plt.vlines(
     x=status.loc[status["drift_detected"] == "drift"]["index"],
     ymin=ylims[0],
@@ -625,7 +642,7 @@ plt.vlines(
     linewidth=3,
 )
 
-# Draw lines that indicate the retraining windows.
+# Create a list of lines that indicate the retraining windows.
 # Space them evenly, vertically.
 rec_list = pd.DataFrame(rec_list)
 rec_list["y_val"] = np.linspace(
@@ -634,6 +651,7 @@ rec_list["y_val"] = np.linspace(
     num=len(rec_list),
 )
 
+# Draw green lines that indicate where retraining occurred
 plt.hlines(
     y=rec_list["y_val"],
     xmin=rec_list[0],
@@ -642,7 +660,7 @@ plt.hlines(
     label="Retraining Windows",
 )
 
-plt.legend()
+plt.legend(loc='upper left')
 
 # STEPD identifies drift quite early in the drift induction window, triggering
 # retraining on a relatively small amount of data; after this, the online
