@@ -35,7 +35,7 @@ class LinearFourRates(DriftDetector):
             ``"drift"``, ``"warning"``, or ``None``.
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(
         self,
@@ -72,8 +72,6 @@ class LinearFourRates(DriftDetector):
         self.detect_level = detect_level
         self.num_mc = num_mc
         self.burn_in = burn_in
-        if self.burn_in is None:
-            self.burn_in = 0
         self.subsample = subsample
         self.all_drift_states = []
         self._warning_states = {

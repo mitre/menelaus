@@ -5,10 +5,10 @@ from menelaus.change_detection.cusum import CUSUM
 
 def test_no_drift():
     """Test build / sliding with drift-less stream."""
-    cusum = CUSUM()
+    cusum = CUSUM(threshold=50)
     stream_size = 0
     for _ in range(40):  # test burn-in period (30) + post-burn-in (10)
-        cusum.update(1)  # shouldn't detect drift
+        cusum.update(np.random.normal(size = 1))  # shouldn't detect drift, but cant inject same number
         stream_size += 1
         assert cusum.drift_state is None
         assert len(cusum._stream) == stream_size
@@ -17,8 +17,20 @@ def test_no_drift():
         )  # no reset til at least after burn in
 
 
+def test_zero_sd():
+    """Test build / feed stream with 1 unique value."""
+    cusum = CUSUM(threshold=10)
+    stream_size = 0
+    try:
+        for _ in range(31):  # test burn-in period (30) + post-burn-in (1)
+            cusum.update(1)  # should trigger SD error on 31st observation
+            stream_size += 1
+    except ValueError:
+        pass
+
+
 def test_with_drift():
-    """Test build / sliding with drift-y stream."""
+    """Test build / sliding with drift-y stream (bi-directional)."""
     cusum = CUSUM(threshold=10)
     stream_size = 0
     running_samples_since_reset = 0
@@ -40,5 +52,45 @@ def test_with_drift():
             cusum.update(100)
             running_samples_since_reset = 0
             assert cusum.drift_state == "drift"
+        else:
+            pass
+
+
+def test_positive_drift():
+    """Test build / sliding with drift-y stream in the positive direction."""
+    cusum = CUSUM(direction = 'positive')
+    stream_size = 0
+    # wait for burn-in, induce drift, test
+    for i in range(75):  
+        stream_size += 1
+        # set positive drift at 31st location , negative drift at 62nd
+        if i != 30:
+            cusum.update(np.random.uniform())
+        elif i == 30:
+            cusum.update(100)
+            assert cusum.drift_state == "drift"
+        elif i == 61:
+            cusum.update(-100) # drift in the negative direction should not induce alarm
+            assert cusum.drift_state is None
+        else:
+            pass
+
+
+def test_negative_drift():
+    """Test build / sliding with drift-y stream in the negative direction."""
+    cusum = CUSUM(direction = 'negative')
+    stream_size = 0
+    # wait for burn-in, induce drift, test
+    for i in range(75):  
+        stream_size += 1
+        # set negative drift at 31st location , positive drift at 62nd
+        if i != 30:
+            cusum.update(np.random.uniform())
+        elif i == 30:
+            cusum.update(-100)
+            assert cusum.drift_state == "drift"
+        elif i == 61:
+            cusum.update(100) # drift in the positive direction should not induce alarm
+            assert cusum.drift_state is None
         else:
             pass

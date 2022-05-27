@@ -8,6 +8,7 @@ def test_stdev():
     """Test statistic = 'stdev' parameter vs 'tstat' method"""
 
     # setup data
+    np.random.seed(1)
     data2 = np.random.randint(2, 10, 150)
     reference = pd.DataFrame(data=[data2, data2, data2]).T
     data1 = np.repeat(1, 100)
@@ -43,6 +44,7 @@ def test_stdev():
 
 def test_histograms():
     """Test histograms are calculated by reference data characteristics"""
+    
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
@@ -156,6 +158,7 @@ def test_detect_batch_1_drift():
     )
 
     # update with different test batch
+    np.random.seed(1)
     data2 = np.random.randint(2, 10, 150)
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
@@ -182,6 +185,7 @@ def test_detect_batch_1_reset():
     )
 
     # update with different test batch
+    np.random.seed(1)
     data2 = np.random.randint(2, 10, 150)
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
@@ -268,6 +272,7 @@ def test_detect_batch_2_drift():
     hdm.update(reference)
 
     # update with different test batch 2
+    np.random.seed(1)
     data2 = np.random.randint(2, 10, 150)
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
@@ -297,6 +302,7 @@ def test_detect_batch_2_reset():
     hdm.update(reference)
 
     # update with different test batch  2
+    np.random.seed(1)
     data2 = np.random.randint(2, 10, 150)
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
@@ -391,6 +397,7 @@ def test_detect_batch_3_drift():
     hdm.update(reference)
 
     # update with different test batch 3
+    np.random.seed(1)
     data2 = np.random.randint(2, 10, 150)
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
@@ -423,6 +430,7 @@ def test_detect_batch_3_reset():
     hdm.update(reference)
 
     # update with different test batch 3
+    np.random.seed(1)
     data2 = np.random.randint(2, 10, 150)
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
@@ -445,7 +453,7 @@ def test_detect_batch_3_reset():
 def test_KL():
     """Test of modified CDBD test using KL divergence"""
 
-    # np.random.seed(1)
+    np.random.seed(1)
     reference = pd.DataFrame(np.random.uniform(0, 1, 100))
     test = pd.DataFrame(np.random.uniform(3, 4, 100))
 

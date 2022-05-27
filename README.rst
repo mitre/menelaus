@@ -11,18 +11,18 @@ Background
 ==========
 
 Menelaus implements algorithms for the purposes of drift detection. Drift
-detection is a branch of machine learning focused on the real-time detection of
+detection is a branch of machine learning focused on the detection of
 unforeseen shifts in data. The relationships between variables in a dataset are
-sensitive and rarely static and can be affected by changes in both internal and
-external factors. These factors include changes in data collection techniques,
-population demographics, and external protocols. 
+rarely static and can be affected by changes in both internal and external
+factors, e.g. changes in data collection techniques, external protocols, and/or 
+population demographics.
  
-When drift occurs, the data to which a model is being applied can differ
-statistically from the data the model was trained on. This may lead to a
-decrease in both the discrimination and calibration of a deployed machine
-learning model or even of a rule-based system learned on the data. The goal of
-drift detection algorithms is to detect a change in either a model's error rate
-or in the distribution of features within a dataset. 
+When drift occurs, the data to which a model is applied can differ statistically
+from the data the model was trained on. This may lead to a decrease in the
+discrimination or calibration of a deployed model, or a decrease in the
+performance of even a simple rule-based system built for the original data. The
+goal of drift detection algorithms is to detect a change in either a model's
+error rate or in the distribution of features within a dataset. 
  
 Both undetected changes in data and undetected model underperformance pose risks
 to the users thereof. The aim of this package is to enable monitoring of data
@@ -47,6 +47,11 @@ algorithms are typically used when it is more important to process large volumes
 of information simultaneously, where the speed of results after receiving data
 is of less concern.
 
+In The Odyssey, Menelaus seeks a secret known by the shapeshifter Proteus.
+Menelaus holds Proteus down as he takes the form of a lion, a serpent, water,
+and so on. Eventually, Proteus relents, and Menelaus gains the answers he
+sought. Accordingly, this library provides tools to keep hold of the truth even 
+as the data might shift.
 
 Detector List
 ============================
@@ -74,7 +79,7 @@ Menelaus implements the following drift detectors.
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
 | Data drift        | Hellinger Distance Drift Detection Method                      | HDDDM         |            | x      |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Data drift        | kdq-tree Detection Method                                      | KdqTree       | x          | x      |
+| Data drift        | kdq-Tree Detection Method                                      | kdq-Tree      | x          | x      |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
 | Data drift        | PCA-Based Change Detection                                     | PCA-CD        | x          |        |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+
@@ -102,8 +107,8 @@ Background section:
 * Batch, in which the data has no meaningful ordering with respect to time, and
   the goal is comparing two datasets as a whole.
 
-Additionally, the library implements a kdq-tree partitioner, for support of the
-kdq-tree Detection Method. This data structure partitions a given feature space,
+Additionally, the library implements a kdq-Tree partitioner, for support of the
+kdq-Tree Detection Method. This data structure partitions a given feature space,
 then maintains a count of the number of samples from the given dataset that fall
 into each section of that partition. More details are given in the respective
 module.
@@ -141,6 +146,7 @@ Generally, the workflow for using a detector, given some data, is as follows:
 
 .. code-block:: python
 
+   import pandas as pd
    from menelaus.concept_drift import ADWIN
    df = pd.read_csv('example.csv')
    detector = ADWIN()
@@ -153,8 +159,7 @@ For this example, because ADWIN is a concept drift detector, it requires both a
 predicted value (``y_predicted``) and a true value (``y_true``), at each update
 step. Note that this requirement is not true for the detectors in other modules.
 More detailed examples, including code for visualizating drift locations, may be
-found in the ``examples`` directory.
-
+found in the ``examples`` directory, as stand-alone python scripts.
 
 
 Testing and Documentation
@@ -180,5 +185,5 @@ HTML documentation can be generated at ``menelaus/docs/build/html/index.html`` w
 Copyright
 ============================
 | Authors: Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Austin Downing.
-| Copyright 2020-2022 The MITRE Corporation.
-| Approved for Public Release; Distribution Unlimited. Case Number (TBD).
+| ©2022 The MITRE Corporation. ALL RIGHTS RESERVED
+| Approved for Public Release; Distribution Unlimited. Public Release Case Number 22-0244.

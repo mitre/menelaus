@@ -5,12 +5,12 @@ from menelaus.drift_detector import DriftDetector
 class EDDM(DriftDetector):
     """EDDM is a drift detection algorithm for binary classifiers which uses the
     distance between two classification errors. The running average distance
-    between two errors (``dist_i``) and its standard deviation (``s_i``) are tracked for
-    each element i in the data stream. The maximum values for these two
-    estimates are stored and used to define the warning and drift thresholds. If
-    the distance and its standard deviation exceed a certain threshold, relative
-    to their maxima, we assume that the distance between errors is no longer
-    stationary (drift has occurred).
+    between two errors (``dist_i``) and its standard deviation (``s_i``) are
+    tracked for each element i in the data stream. The maximum values for these
+    two estimates are stored and used to define the warning and drift
+    thresholds. If the distance and its standard deviation exceed a certain
+    threshold, relative to their maxima, we assume that the distance between
+    errors is no longer stationary (drift has occurred).
 
     If ``(dist_i + 2 * s_i)/(dist_max + 2 * s_max) < warning_thresh``,
     the detector's state is set to ``"warning"``.
@@ -37,7 +37,7 @@ class EDDM(DriftDetector):
             ``"drift"``, ``"warning"``, or ``None``.
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(self, n_threshold=30, warning_thresh=0.95, drift_thresh=0.9):
         """

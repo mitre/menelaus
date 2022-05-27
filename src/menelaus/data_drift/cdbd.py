@@ -76,7 +76,7 @@ class CDBD(HistogramDensityMethod):
 
     """
 
-    _input_type = "batch"
+    input_type = "batch"
 
     def __init__(
         self,

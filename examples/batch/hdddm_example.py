@@ -1,13 +1,6 @@
-import os
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from menelaus.data_drift.hdddm import HDDDM
-
-
 """ 
 
-HDDDM Example
+Hellinger Distance Drift Detection Method (HDDDM) Example
 
 This file details how to setup, run, and produce plots for HDDDM, using both
 numeric and categorical data. Drift occurs in 2009, 2012, 2015, 2018, and 2021.
@@ -22,11 +15,20 @@ Plots include:
 - A heatmap visualizing "where" drift is occuring, showing features for each
   year's test batch with the greatest Hellinger distance from the reference
   batch.
+
 """
+
+import os
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from menelaus.data_drift.hdddm import HDDDM
+
 
 ## Setup ##
 
 # Import data
+# assumes the script is being run from the root directory.
 data = pd.read_csv(
     os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
     index_col="id",
@@ -48,17 +50,22 @@ for year, subset_data in all_test.groupby("year"):
     feature_epsilons.append(hdddm.feature_epsilons)
     detected_drift.append(hdddm.drift_state)
 
+
 ## Plot Line Graph ##
 
+# Plot Info:
 # HDDDM identifies drifts in 2009, 2010, 2012, 2019, 2021. These drifts involve
 # a change in mean or variance. Drift in 2010 is likely identified as the
-# distribution returns to state prior tio 2009 drift. Drift in 2015, a change in
+# distribution returns to state prior to 2009 drift. Drift in 2015, a change in
 # correlation, is undetected. Drift in 2018 is detected one year late.
 
+# Calculate Hellinger distances for all years in dataset
 years = list(data.year.value_counts().index[1:])
 h_distances = [
     ep - th for ep, th in zip(hdddm.epsilon_values.values(), hdddm.thresholds.values())
 ]
+
+# Plot Hellinger Distance against Year, along with detected drift
 plot_data = pd.DataFrame(
     {"Year": years, "Hellinger Distance": h_distances, "Detected Drift": detected_drift}
 )
@@ -70,20 +77,24 @@ plt.plot(
 plt.grid(False, axis="x")
 plt.xticks(years, fontsize=16)
 plt.yticks(fontsize=16)
-plt.title("HDDDM", fontsize=22)
+plt.title("HDDDM Test Statistics", fontsize=22)
 plt.ylabel("Hellinger Distance", fontsize=18)
 plt.xlabel("Year", fontsize=18)
 plt.ylim([min(h_distances) - 0.02, max(h_distances) + 0.02])
 for _, t in enumerate(plot_data.loc[plot_data["Detected Drift"] == "drift"]["Year"]):
     plt.axvspan(
-        t - 0.2, t + 0.2, alpha=0.5, color="red", label=("Drift" if _ == 0 else None)
+        t - 0.2, t + 0.2, alpha=0.5, color="red", label=("Drift Detected" if _ == 0 else None)
     )
 plt.legend()
 plt.axhline(y=0, color="orange", linestyle="dashed")
-plt.savefig("HDDDM_test_statistics.png")
+
+# plt.show()
+plt.savefig("example_HDDDM_test_statistics.png")
+
 
 ## Plot Heatmap ##
 
+# Plot Info:
 # Drift in feature B is detected in 2009 and 2010 (as it reverts to normal).
 # Drift in feature D is detected in 2012 and 2013 (as it reverts to normal).
 # Drift in feature H is detected in 2019. Drift in feature J is detected in 2021.
@@ -92,7 +103,7 @@ plt.savefig("HDDDM_test_statistics.png")
 sns.set_style("whitegrid")
 sns.set(rc={"figure.figsize": (15, 8)})
 
-# flip axis of feature epsilon matrix
+# Flip axis of feature epsilon matrix
 inverted_matrix = []
 for alpha in range(0, len(list(data.columns[1:-2]))):
     var = []
@@ -115,8 +126,10 @@ ax = sns.heatmap(
     cbar_ax=cbar_ax,
     cbar_kws={"orientation": "horizontal"},
 )
+ax.set_title('HDDDM Feature Heatmap')
 ax.set(xlabel="Years", ylabel="Features")
 ax.collections[0].colorbar.set_label("Difference in Hellinger Distance")
 ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+
 # plt.show()
-plt.savefig("HDDDM_feature_heatmap.png")
+plt.savefig("example_HDDDM_feature_heatmap.png")

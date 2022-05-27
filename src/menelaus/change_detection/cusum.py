@@ -21,7 +21,7 @@ class CUSUM(DriftDetector):
             ``"drift"`` or ``None``.
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class CUSUM(DriftDetector):
         sd_hat=None,
         burn_in=30,
         delta=0.005,
-        threshold=50,
+        threshold=5,
         direction=None,
     ):
         """
@@ -41,7 +41,9 @@ class CUSUM(DriftDetector):
                 SD of validation accuracy). If ``None``, will be inferred from
                 observations in the burn-in window. Defaults to ``None``.
             burn_in (int, optional): Length of the burn-in period, during which
-                time no alarms will sound. Defaults to 30.
+                time no alarms will sound. Also determines how many prior
+                samples are used to calculate new estimates for mean and SD
+                after drift occurs. Defaults to 30.
             delta (float, optional): The amount of "slack" in the CUSUM test
                 statistic. Defaults to 0.005.
             threshold (int, optional): The threshold at which the CUSUM test
@@ -61,7 +63,6 @@ class CUSUM(DriftDetector):
         self.delta = delta
         self.threshold = threshold
         self.direction = direction
-        self._all_drift_states = []
         self._upper_bound = [0]
         self._lower_bound = [0]
         self._stream = []
@@ -81,19 +82,16 @@ class CUSUM(DriftDetector):
         Args:
           next_obs: The value of the new sample.
         """
-        # if the last run resulted in drift, reset everything
+        # if the last run resulted in drift, reset everything and use last 30 obs to estimate stats
         if self.drift_state == "drift":
-            self.target = np.mean(self._stream[-30:])
-            self.sd_hat = np.std(self._stream[-30:])
+            self.target = np.mean(self._stream[-self.burn_in :])
+            self.sd_hat = np.std(self._stream[-self.burn_in :])
             self.reset()
 
         super().update()
         self._stream.append(next_obs)
 
-        if self.samples_since_reset <= self.burn_in:
-            self._all_drift_states.append(None)
-
-        # cannot compute s_h/s_l, should we set those to 0?
+        # cannot compute s_h/s_l so set to 0
         if (self.target is None) & (self.samples_since_reset < self.burn_in):
             s_h = 0
             s_l = 0
@@ -104,6 +102,12 @@ class CUSUM(DriftDetector):
         if (self.target is None) & (self.samples_since_reset == self.burn_in):
             self.target = np.mean(self._stream)
             self.sd_hat = np.std(self._stream)
+
+        # if sd = 0 then no variance in stream and no drift -- raise error
+        if (self.sd_hat == 0) & (self.samples_since_reset > self.burn_in):
+            raise ValueError(
+                "Standard deviation is 0. Confirm imput is a time series with more than 1 unique value."
+            )
 
         # find new upper and lower cusum stats
         if self.target is not None:
@@ -130,20 +134,10 @@ class CUSUM(DriftDetector):
                 if (self._upper_bound[self.samples_since_reset] > self.threshold) | (
                     self._lower_bound[self.samples_since_reset] > self.threshold
                 ):
-                    self._all_drift_states.append("drift")
                     self.drift_state = "drift"
-
-                else:
-                    self._all_drift_states.append(None)
             elif self.direction == "positive":
                 if self._upper_bound[self.samples_since_reset] > self.threshold:
-                    self._all_drift_states.append("drift")
                     self.drift_state = "drift"
-                else:
-                    self._all_drift_states.append(None)
             elif self.direction == "negative":
                 if self._lower_bound[self.samples_since_reset] > self.threshold:
-                    self._all_drift_states.append("drift")
                     self.drift_state = "drift"
-                else:
-                    self._all_drift_states.append(None)

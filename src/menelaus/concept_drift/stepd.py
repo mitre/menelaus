@@ -20,7 +20,7 @@ class STEPD(DriftDetector):
     * and P(T) < ``alpha_drift``, the detector's state is set to ``"drift"``.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``,
+    (relative to ``self.samples_since_reset``) is stored in ``self._retraining_recs``,
     for retraining the classifier when drift occurs.
 
     STEPD is intended for use with an online classifier, which is trained on
@@ -45,7 +45,7 @@ class STEPD(DriftDetector):
             ``"drift"``, ``"warning"``, or ``None``.
     """
 
-    _input_type = "stream"
+    input_type = "stream"
 
     def __init__(self, window_size=30, alpha_warning=0.05, alpha_drift=0.003):
         """
@@ -87,7 +87,6 @@ class STEPD(DriftDetector):
         """
         if self.drift_state == "drift":
             self.reset()
-            self._initialize_retraining_recs()
 
         super().update()
         classifier_result = int(y_pred == y_true)
@@ -175,7 +174,7 @@ class STEPD(DriftDetector):
 
     def _initialize_retraining_recs(self):
         """Sets `self._retraining_recs` to ``[None, None]``."""
-        self._retraining_recs = [None, None]
+        self._retraining_recs = np.array([None, None])
 
     def _increment_retraining_recs(self):
         """Set ``self._retraining_recs`` to the beginning and end of the current

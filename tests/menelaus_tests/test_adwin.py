@@ -1,6 +1,6 @@
 """Methods for checking simple behaviors of ADWIN."""
 import pytest
-from menelaus.concept_drift.adwin import ADWIN
+from menelaus.concept_drift.adwin import ADWIN, _BucketRow, _BucketRowList
 
 
 def test_compression():
@@ -51,7 +51,7 @@ def test_variance():
 
 
 def test_drift():
-    """Check that, for a trivially drifting data stream:
+    """Check that, for a very drifting data stream:
     - drift is identified
     - ADWIN.retraining_recs takes on the proper values before and after drift
     """
@@ -66,7 +66,7 @@ def test_drift():
         drift_found = (det.drift_state == "drift") or drift_found
         if drift_found:
             break
-    # confirm drift is found with trivially different stream
+    # confirm drift is found with very different stream
     assert drift_found is True
     # better refactored as a separate test with determined, desired window
     # but for now, just confirm that it's populated as part of the normal flow
@@ -80,7 +80,7 @@ def test_drift():
 
 def test_conservative_bound():
     """Confirm that, using conservative_bound param, drift is found in a
-    trivially drifting stream.
+    very drifting stream.
     """
     det = ADWIN(new_sample_thresh=2, conservative_bound=True)
     n_samples = 20
@@ -93,5 +93,45 @@ def test_conservative_bound():
         drift_found = (det.drift_state == "drift") or drift_found
         if drift_found:
             break
-    # confirm drift is found with trivially different stream
+    # confirm drift is found with very different stream
     assert drift_found is True
+
+
+# TODO: tests for the other BucketRow and BucketRowList methods, separate from the full ADWIN tests
+
+
+def test_bucket_row_init():
+    max_buckets = 10
+    row3 = _BucketRow(max_buckets=max_buckets, prev_bucket=None, next_bucket=None)
+    row1 = _BucketRow(max_buckets=max_buckets, prev_bucket=None, next_bucket=row3)
+    row2 = _BucketRow(max_buckets=max_buckets, prev_bucket=row1, next_bucket=row3)
+
+    assert row1.next_bucket is row2
+    assert row2.next_bucket is row3
+    assert row3.next_bucket is None
+
+    assert row1.prev_bucket is None
+    assert row2.prev_bucket is row1
+    assert row3.prev_bucket is row2
+
+    assert row1.bucket_count == 0
+    assert len(row1.bucket_totals) == (max_buckets + 1)
+    assert len(row1.bucket_totals) == (max_buckets + 1)
+
+
+def test_bucket_row_list_empty():
+    max_buckets = 10
+    b_list = _BucketRowList(max_buckets=max_buckets)
+    b_list.remove_tail()
+    assert b_list.head is None
+
+    b_list.append_tail()
+    assert b_list.head is b_list.tail
+
+
+def test_bucket_row_list_append_head():
+    max_buckets = 10
+    b_list = _BucketRowList(max_buckets=max_buckets)
+    original_head = b_list.head
+    b_list.append_head()
+    assert original_head.prev_bucket is b_list.head
