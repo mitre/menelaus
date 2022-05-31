@@ -115,7 +115,7 @@ class HDDDM(HistogramDensityMethod):
             been updated with.
         samples_since_reset (int): number of batches since the last drift detection.
         drift_state (str): detector's current drift state. Can take values
-            ``"drift"``, ``"warning"``, or ``None``.
+            ``"drift"`` or ``None``.
         Epsilon (list): stores Epsilon values since the last drift detection.
         reference_n (int): number of samples in reference batch.
         total_epsilon (int): stores running sum of Epsilon values until drift is detected,
@@ -139,8 +139,8 @@ class HDDDM(HistogramDensityMethod):
 
     def __init__(
         self,
-        reference_batch,
         detect_batch=1,
+        divergence="H",
         statistic="tstat",
         significance=0.05,
         subsets=5,
@@ -148,13 +148,30 @@ class HDDDM(HistogramDensityMethod):
 
         """
         Args:
-            reference_batch (DataFrame): initial baseline dataset.
+            divergence (str): divergence measure used to compute distance
+                between histograms. Default is "H".
+
+                    * "H"  - Hellinger distance, original use is for HDDDM
+
+                    * "KL" - Kullback-Leibler Divergence, original use is for CDBD
+
+                    * User can pass in custom divergence function. Input is two
+                    two-dimensional arrays containing univariate histogram
+                    estimates of density, one for reference, one for test. It
+                    must return the distance value between histograms. To be
+                    a valid distance metric, it must satisfy the following
+                    properties: non-negativity, identity, symmetry,
+                    and triangle inequality, e.g. that in
+                    examples/hdddm_example.py.
+
             detect_batch (int): the test batch on which drift will be detected.
               See class docstrings for more information on this modification.
               Defaults to 1.
 
                 * if detect_batch = 1 - HDDDM can detect drift on the first test
-                  batch passed to the update method.
+                  batch passed to the update method. BE AWARE, total samples
+                  and samples since reset will be number of batches passed to HDM
+                  plus 1, due to splitting of reference batch
 
                 * if detect_batch = 2 - HDDDM can detect drift on the second test
                   batch passed to the update method.
@@ -193,16 +210,28 @@ class HDDDM(HistogramDensityMethod):
         """
 
         super().__init__(
-            reference_batch=reference_batch,
-            divergence="H",
+            divergence=divergence,
             detect_batch=detect_batch,
             statistic=statistic,
             significance=significance,
             subsets=subsets,
         )
 
+    def set_reference(self, reference_batch):
+        """
+        Initialize detector with a reference batch. After drift, reference batch is
+        automatically set to most recent test batch. Option for user to specify
+        alternative reference batch using this method.
+
+        Args:
+            reference_batch (DataFrame): initial baseline dataset
+        """
+
+        super().set_reference(reference_batch)
+
     def update(self, test_batch):
-        """Update the detector with a new test batch. If drift is detected, new
+        """
+        Update the detector with a new test batch. If drift is detected, new
         reference batch becomes most recent test batch. If drift is not
         detected, reference batch is updated to include most recent test batch.
 

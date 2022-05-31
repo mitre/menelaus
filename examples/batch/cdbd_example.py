@@ -6,6 +6,7 @@ This file details how to setup, run, and produce plots for CDBD. This script
 monitors the feature "confidence", simulated confidence scores output by a
 classifier. Drift occurs in 2018 and persists through 2021. See
 src/menelaus/tools/artifacts/README_example_data.txt for more info.
+It additionally contains an example of using a custom divergence function. 
 
 CDBD must be setup and run with batches of data containing 1 variable. 
 
@@ -35,11 +36,16 @@ data = pd.read_csv(
 reference = pd.DataFrame(data[data.year == 2007].loc[:, "confidence"])
 all_test = data[data.year != 2007]
 
-# Run CDBD
-cdbd = CDBD(reference_batch=reference, subsets=8)
+# Setup CDBD
+np.random.seed(1)
+cdbd = CDBD(subsets=8)
 
 # Store drift for test statistic plot
+years = all_test.year.unique()
 detected_drift = []
+
+# Run CDBD
+cdbd.set_reference(reference)
 for year, subset_data in all_test.groupby("year"):
     cdbd.update(pd.DataFrame(subset_data.loc[:, "confidence"]))
     detected_drift.append(cdbd.drift_state)
@@ -47,22 +53,11 @@ for year, subset_data in all_test.groupby("year"):
 
 ## Plot Line Graph ##
 
-# Plot Info:
-# Drift occurs in 2018 and persists through end of dataset. CDBD identifies drift
-# occurring in 2019, one year late. It alerts to a false alarm in 2012.
 
-# Calculate divergences for all years in dataset
-years = list(data.year.value_counts().index[1:])
 kl_divergence = [
     ep - th for ep, th in zip(cdbd.epsilon_values.values(), cdbd.thresholds.values())
 ]
 
-# Remove potential infs that arise because of small confidence scores
-kl_divergence = [
-    x if np.isnan(x) == False and np.isinf(x) == False else 0 for x in kl_divergence
-]
-
-# Plot KL Divergence against Year, along with detected drift
 plot_data = pd.DataFrame(
     {"Year": years, "KL Divergence": kl_divergence, "Detected Drift": detected_drift}
 )
@@ -85,3 +80,27 @@ plt.axhline(y=0, color="orange", linestyle="dashed")
 
 # plt.show()
 plt.savefig("example_CDBD_test_statistics.png")
+
+
+### Custom Divergence Metric ### 
+
+# Define divergence function
+def distance_metric(reference_histogram, test_histogram):
+
+    # Convert inputs to appropriate datatype 
+    ref = np.array(reference_histogram[0])
+    test = np.array(test_histogram[0])
+
+    return np.sqrt(np.sum(np.square(ref-test)))
+
+# Test self-defined divergence metric 
+cdbd = CDBD(
+    divergence=distance_metric,
+    detect_batch=1,
+    statistic="stdev",
+    significance=0.05,
+    subsets=5,
+)
+
+cdbd.set_reference(reference)
+cdbd.update(pd.DataFrame(data[data.year == 2008].loc[:, "confidence"]))

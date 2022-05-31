@@ -5,7 +5,6 @@ from menelaus.drift_detector import DriftDetector
 from scipy.spatial.distance import jensenshannon
 
 
-
 class HistogramDensityMethod(DriftDetector):
     """
     The Histogram Density Method (HDM) is the base class for both HDDDM and
@@ -16,13 +15,15 @@ class HistogramDensityMethod(DriftDetector):
 
         * Distance metric:
 
-            * Hellinger distance (if called via HDDDM): the sum of the
+            * Hellinger distance (default if called via HDDDM): the sum of the
               normalized, squared differences in frequency counts for each bin
               between reference and test datasets, averaged across all features.
 
-            * KL divergence (if called via CDBD): Jensen-Shannon distances, a
+            * KL divergence (default if called via CDBD): Jensen-Shannon distances, a
               symmetric and bounded measure based upon Kullback-Leibler
               Divergence
+
+            * Optional user-defined distance metric
 
         * Epsilon: the differences in Hellinger distances between sets
           of reference and test batches.
@@ -114,7 +115,9 @@ class HistogramDensityMethod(DriftDetector):
               perform the method for bootstrapping Epsilon, as described in the
               above bullet for ``detect_batch`` = 2. This will allow a Beta
               threshold to be calculated using the first test batch, allowing
-              for detection of drift on this batch.
+              for detection of drift on this batch. BE AWARE, total samples
+              and samples since reset will be number of batches passed to HDM
+              plus 1, due to splitting of reference batch
 
     Ref.
 
@@ -131,7 +134,7 @@ class HistogramDensityMethod(DriftDetector):
         samples_since_reset (int): number of batches since the last drift
             detection.
         drift_state (str): detector's current drift state. Can take values
-            ``"drift"``, ``"warning"``, or ``None``.
+            ``"drift"`` or ``None``.
         Epsilon (list): stores Epsilon values since the last drift detection.
         reference_n (int): number of samples in reference batch .
         total_epsilon (int): stores running sum of Epsilon values until drift is
@@ -153,7 +156,6 @@ class HistogramDensityMethod(DriftDetector):
 
     def __init__(
         self,
-        reference_batch,
         divergence,
         detect_batch,
         statistic,
@@ -163,13 +165,21 @@ class HistogramDensityMethod(DriftDetector):
 
         """
         Args:
-            reference_batch (DataFrame): initial baseline dataset divergence
-            (str): divergence measure used to compute distance
+            divergence (str or function): divergence measure used to compute distance
                 between histograms. Default is "H".
 
-                    * "H"  - Hellinger distance, used only for HDDDM
+                    * "H"  - Hellinger distance, original use is for HDDDM
 
-                    * "KL" - Kullback-Leibler Divergence, used only for CDBD
+                    * "KL" - Kullback-Leibler Divergence, original use is for CDBD
+
+                    * User can pass in custom divergence function. Input is two
+                    two-dimensional arrays containing univariate histogram
+                    estimates of density, one for reference, one for test. It
+                    must return the distance value between histograms. To be
+                    a valid distance metric, it must satisfy the following
+                    properties: non-negativity, identity, symmetry,
+                    and triangle inequality, e.g. that in
+                    examples/cdbd_example.py or examples/hdddm_example.py.
 
             detect_batch (int): the test batch on which drift will be detected.
                 See class docstrings for more information on this modification.
@@ -217,25 +227,42 @@ class HistogramDensityMethod(DriftDetector):
 
         # Initialize parameters
         self.detect_batch = detect_batch
-        self.divergence = divergence
-        self.reference = reference_batch
         self.statistic = statistic
         self.significance = significance
         self.subsets = subsets
+        if divergence == "H":
+            self.distance_function = self._hellinger_distance
+        elif divergence == "KL":
+            self.distance_function = self._KL_divergence
+        else:
+            self.distance_function = divergence
+
+        self._lambda = 0  # batch number on which last drift was detected.
 
         # For visualizations
         self.distances = {}
         self.epsilon_values = {}
         self.thresholds = {}
 
-        # Initial attributes
+    def set_reference(self, reference_batch):
+        """
+        Initialize detector with a reference batch. After drift, reference batch is
+        automatically set to most recent test batch. Option for user to specify
+        alternative reference batch using this method.
+
+        Args:
+            reference_batch (DataFrame): initial baseline dataset
+        """
+
+        # Initialize attributes
+        self.reference = reference_batch
         self._num_features = self.reference.shape[1]
-        self._lambda = 0  # batch number on which last drift was detected.
         self.reset()
 
     def update(self, test_batch):
 
-        """Update the detector with a new test batch. If drift is detected, new
+        """
+        Update the detector with a new test batch. If drift is detected, new
         reference batch becomes most recent test batch. If drift is not
         detected, reference batch is updated to include most recent test batch.
 
@@ -249,7 +276,7 @@ class HistogramDensityMethod(DriftDetector):
         super().update()
         test_n = test_batch.shape[0]
 
-        # Estimate histograms
+        # Estimate reference and test histograms
         mins = []
         maxes = []
         for f in range(self._num_features):
@@ -257,33 +284,26 @@ class HistogramDensityMethod(DriftDetector):
             test_variable = test_batch.iloc[:, f]
             mins.append(np.concatenate((reference_variable, test_variable)).min())
             maxes.append(np.concatenate((reference_variable, test_variable)).max())
-        self.reference_density = self._build_histograms(self.reference, mins, maxes)
+        self._reference_density = self._build_histograms(self.reference, mins, maxes)
         test_density = self._build_histograms(test_batch, mins, maxes)
 
-
-        # Hellinger distances
-        if self.divergence == "H":
-
-            self.current_distance, feature_distances = self._hellinger_distance(
-                self.reference_density, test_density
+        # Divergence metric
+        total_distance = 0
+        feature_distances = []
+        for f in range(self._num_features):
+            f_distance = self.distance_function(
+                self._reference_density[f], test_density[f]
             )
-
-        # KL divergence
-        else:
-            self.current_distance = self._KL_divergence(
-                self.reference_density, test_density
-            )
-            feature_distances = [0]
-            self.feature_epsilons = [0]
-
-
+            total_distance += f_distance
+            feature_distances.append(f_distance)
+        self.current_distance = (1 / self._num_features) * total_distance
         self.distances[self.total_samples] = self.current_distance
 
-        # For each feature, calculate Epsilon, difference in distances, only valid if HDDDM
-        if self.total_samples > 1 and self.divergence == "H":
+        # For each feature, calculate Epsilon, difference in distances
+        if self.total_samples > 1:
             self.feature_epsilons = [
                 a_i - b_i
-                for a_i, b_i in zip(feature_distances, self.prev_feature_distances)
+                for a_i, b_i in zip(feature_distances, self._prev_feature_distances)
             ]
 
         # Compute Epsilon and Beta
@@ -295,7 +315,7 @@ class HistogramDensityMethod(DriftDetector):
                 )
                 self.epsilon.append(initial_epsilon)
 
-            current_epsilon = abs(self.current_distance - self.prev_distance) * 1.0
+            current_epsilon = abs(self.current_distance - self._prev_distance) * 1.0
             self.epsilon.append(current_epsilon)
             self.epsilon_values[self.total_samples] = current_epsilon
 
@@ -309,12 +329,12 @@ class HistogramDensityMethod(DriftDetector):
                 # Detect drift
                 if current_epsilon > self.beta:
 
-                    # Feature information only relevant if HDDDM
-                    if self.divergence == "H":
+                    # Feature information
+                    if self._num_features > 1:
 
                         self.feature_info = {
                             "Epsilons": self.feature_epsilons,
-                            "Hellinger_distances": feature_distances,
+                            "Feature_Distances": feature_distances,
                             "Significant_drift_in_variable ": self.feature_epsilons.index(
                                 max(self.feature_epsilons)
                             ),
@@ -325,8 +345,8 @@ class HistogramDensityMethod(DriftDetector):
                     self._lambda = self.total_samples
 
         if self._drift_state != "drift":
-            self.prev_distance = self.current_distance
-            self.prev_feature_distances = feature_distances
+            self._prev_distance = self.current_distance
+            self._prev_feature_distances = feature_distances
             self.reference = pd.concat([self.reference, test_batch])
             self.reference_n = self.reference.shape[0]
             # number of bins for histogram, from reference batch
@@ -391,37 +411,29 @@ class HistogramDensityMethod(DriftDetector):
 
     def _hellinger_distance(self, reference_density, test_density):
         """
-        Computes Hellinger distance between reference and test histograms,
-        averaging across features.
+        Computes Hellinger distance between reference and test histograms
 
         Args:
-            reference_density (list): Output of _build_histograms on reference
+            reference_density (list): Univariate output of _build_histograms from reference
                 batch.
-            test_density (list): Output of _build_histograms on test
+            test_density (list): Univariate tput of _build_histograms from test
                 batch.
 
         Returns:
-            Average Hellinger distance across features. List of individual
-            Hellinger distances for each feature.
+            Hellinger distance between univariate reference and test density
 
         """
 
-        feature_distances = []
-        total_distance = 0
-        for f in range(self._num_features):
-            f_distance = 0
-            r_density = reference_density[f]
-            r_length = sum(r_density)
-            t_density = test_density[f]
-            t_length = sum(t_density)
-            for b in range(self._bins):
-                f_distance += (
-                    np.sqrt(t_density[b] / t_length) - np.sqrt(r_density[b] / r_length)
-                ) ** 2
-            feature_distances.append(f_distance)
-            total_distance += np.sqrt(f_distance)
+        f_distance = 0
+        r_length = sum(reference_density)
+        t_length = sum(test_density)
+        for b in range(self._bins):
+            f_distance += (
+                np.sqrt(test_density[b] / t_length)
+                - np.sqrt(reference_density[b] / r_length)
+            ) ** 2
 
-        return (1 / self._num_features) * total_distance, feature_distances
+        return np.sqrt(f_distance)
 
     def _adaptive_threshold(self, stat, test_n):
         """
@@ -448,7 +460,7 @@ class HistogramDensityMethod(DriftDetector):
             d_scale = self.total_samples - self._lambda - 1
 
         # Increment running mean of epsilon from samples_since_reset (lambda) -> t-1
-        self.total_epsilon += self.epsilon[-2]
+        self.total_epsilon += self.epsilon[-2]  # was -2 before total samples change...
 
         epsilon_hat = (1 / d_scale) * self.total_epsilon
 
@@ -509,16 +521,15 @@ class HistogramDensityMethod(DriftDetector):
             j = df_indx + 1
             while j < len(bootstraps):
 
-                if self.divergence == "H":
-                    distances.append(
-                        self._hellinger_distance(bootstraps[df_indx], bootstraps[j])[0]
-                    )
+                subset1 = bootstraps[df_indx]
+                subset2 = bootstraps[j]
 
-                else:
-                    distances.append(
-                        self._KL_divergence(bootstraps[df_indx], bootstraps[j])
-                    )
-                    
+                # Divergence metric
+                total_distance = 0
+                for f in range(self._num_features):
+                    f_distance = self.distance_function(subset1[f], subset2[f])
+                    total_distance += f_distance
+                distances.append(total_distance)
 
                 j += 1
 
@@ -537,20 +548,16 @@ class HistogramDensityMethod(DriftDetector):
     def _KL_divergence(self, reference_density, test_density):
         """
         Computes Jensen Shannon (JS) divergence between reference and test
-        histograms, for a univariate classifier-derived statistic. JS is a
-        bounded, symmetric form of KL divergence.
+        histograms. JS is a bounded, symmetric form of KL divergence.
 
         Args:
-            reference_density (list): Output of _build_histograms on reference
+            reference_density (list): Univariate output of _build_histograms from reference
                 batch.
-            test_density (list): Output of _build_histograms on test batch.
+            test_density (list): Univariate output of _build_histograms from test batch.
 
         Returns:
-            JS divergence between reference and test batches
+            JS divergence between univariate reference and test density
 
         """
 
-        js = jensenshannon(reference_density[0], test_density[0])
-
-        return js
-
+        return jensenshannon(reference_density, test_density)

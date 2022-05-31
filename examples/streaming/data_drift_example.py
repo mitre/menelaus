@@ -183,7 +183,7 @@ plt.savefig("example_streaming_kdqtree_feature_stream.png")
 # the reference and test data.
 #
 # Note that the structure of the particular tree depends on the reference data
-# and the order that the are in within the dataframe!
+# and the order of the columns within the dataframe!
 
 # Since this data only contains two features, the tree is relatively
 # shallow.
