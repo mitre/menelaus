@@ -6,6 +6,7 @@ This file details how to setup, run, and produce plots for HDDDM, using both
 numeric and categorical data. Drift occurs in 2009, 2012, 2015, 2018, and 2021.
 Drift in 2018 persists through 2021. See
 src/menelaus/tools/artifacts/README_example_data.txt for more info.
+It additionally contains an example of using a custom divergence function. 
 
 HDDDM must be setup and run with batches of data. 
 
@@ -18,10 +19,11 @@ Plots include:
 
 """
 
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 from menelaus.data_drift.hdddm import HDDDM
 
 
@@ -36,18 +38,25 @@ data = pd.read_csv(
 
 # Set up reference and test batches, using 2007 as reference year
 # -2 indexing removes columns "drift" and "confidence"
-reference = data[data.year == 2007].iloc[:, 1:-2]
-all_test = data[data.year != 2007]
+reference = df[df.year == 2007].iloc[:, 1:-2]
+all_test = df[df.year != 2007]
 
-#  Run HDDDM
-hdddm = HDDDM(reference, subsets=8)
+#  Setup HDDDM
+np.random.seed(1)
+hdddm = HDDDM(subsets=8)
+
 # Store epsilons per feature for heatmap
-feature_epsilons = []
+years = all_test.year.unique()
+heatmap_data = pd.DataFrame(columns = years)
+
 # Store drift for test statistic plot
 detected_drift = []
-for year, subset_data in all_test.groupby("year"):
+
+# Run HDDDM
+hdddm.set_reference(reference)
+for year, subset_data in df[df.year != 2007].groupby("year"):
     hdddm.update(subset_data.iloc[:, 1:-2])
-    feature_epsilons.append(hdddm.feature_epsilons)
+    heatmap_data[year] = hdddm.feature_epsilons
     detected_drift.append(hdddm.drift_state)
 
 
@@ -59,8 +68,6 @@ for year, subset_data in all_test.groupby("year"):
 # distribution returns to state prior to 2009 drift. Drift in 2015, a change in
 # correlation, is undetected. Drift in 2018 is detected one year late.
 
-# Calculate Hellinger distances for all years in dataset
-years = list(data.year.value_counts().index[1:])
 h_distances = [
     ep - th for ep, th in zip(hdddm.epsilon_values.values(), hdddm.thresholds.values())
 ]
@@ -103,25 +110,18 @@ plt.savefig("example_HDDDM_test_statistics.png")
 sns.set_style("whitegrid")
 sns.set(rc={"figure.figsize": (15, 8)})
 
-# Flip axis of feature epsilon matrix
-inverted_matrix = []
-for alpha in range(0, len(list(data.columns[1:-2]))):
-    var = []
-    for year in range(len(feature_epsilons)):
-        var.append(feature_epsilons[year][alpha])
-    inverted_matrix.append(var)
-
+# Setup plot
 
 # Setup plot
 grid_kws = {"height_ratios": (0.9, 0.05), "hspace": 0.3}
 f, (ax, cbar_ax) = plt.subplots(2, gridspec_kw=grid_kws)
 coloring = sns.cubehelix_palette(start=0.8, rot=-0.5, as_cmap=True)
 ax = sns.heatmap(
-    inverted_matrix,
+    heatmap_data,
     ax=ax,
     cmap=coloring,
-    xticklabels=years,
-    yticklabels=list(data.columns[1:-2]),
+    xticklabels=heatmap_data.columns,
+    yticklabels=heatmap_data.index,
     linewidths=0.5,
     cbar_ax=cbar_ax,
     cbar_kws={"orientation": "horizontal"},
@@ -133,3 +133,29 @@ ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
 
 # plt.show()
 plt.savefig("example_HDDDM_feature_heatmap.png")
+
+
+### Custom Divergence Metric ### 
+
+# Define divergence function
+def distance_metric(reference_histogram, test_histogram):
+
+    # Convert inputs to appropriate datatype 
+    ref = np.array(reference_histogram[0])
+    test = np.array(test_histogram[0])
+
+    return np.sqrt(np.sum(np.square(ref-test)))
+
+# Test self-defined divergence metric 
+hdddm = HDDDM(
+    divergence=distance_metric,
+    detect_batch=1,
+    statistic="stdev",
+    significance=0.05,
+    subsets=5,
+)
+
+hdddm.set_reference(reference)
+hdddm.update(df[df.year == 2008].iloc[:, 1:-2])
+
+

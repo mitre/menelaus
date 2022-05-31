@@ -54,8 +54,11 @@ plot_data = {}
 status = pd.DataFrame(columns=["year", "drift"])
 det = KdqTree(input_type="batch")
 
-# Batch the data by year.
-for group, sub_df in df.groupby("year"):
+# Set up reference batch, using 2007 as reference year
+det.set_reference(df[df.year == 2007].values)
+
+# Batch the data by year and run kdqTree
+for group, sub_df in df[df.year != 2007].groupby("year"):
     det.update(sub_df.drop(columns=["year"]).values)
     status = pd.concat(
         [status, pd.DataFrame({"year": [group], "drift": [det.drift_state]})],
@@ -65,8 +68,9 @@ for group, sub_df in df.groupby("year"):
     if det.drift_state is not None:
         # capture the visualization data
         plot_data[group] = det.to_plotly_dataframe()
-        # update the reference window if drift is detected
-        det.update(sub_df.drop(columns=["year"]).values)
+        
+        # option to specify reference batch to be any year 
+        #det.set_reference(df[df.year == XXXX].values)
 
 # Print out the true drift status, and that according to the detector.
 # The detector successfully identifies drift in every year but 2018;
@@ -107,18 +111,4 @@ for year, df_plot in plot_data.items():
 # Drift 4: change mean and var of H and persist it from 2018 on
 # Drift 5: change mean and var just for a year of J in 2021
 
-# TODO:
-# right now we're not gracefully including the column names, but in this case the map is simple:
-# ax 0 - column a
-# ax 1 - column b
-# ax 2 - column c
-# ax 3 - column d
-# ax 4 - column e
-# ax 5 - column f
-# ax 6 - column g
-# ax 7 - column h
-# ax 8 - column i
-# ax 9 - column j
 
-# TODO:
-# set the depth limit for some of these years, as a demo

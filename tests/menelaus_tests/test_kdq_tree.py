@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 from menelaus.data_drift.kdq_tree import KdqTree
 
-# TODO: visualization
-# TODO: batch mode
+
 NUM_FEATURES = 3
 
 
@@ -48,7 +47,7 @@ def fixture_kdq_det_batch():
     np.random.seed(123)
     in_df = np.random.sample((10, NUM_FEATURES))
     det = KdqTree(input_type="batch", count_ubound=1, bootstrap_samples=10)
-    det.update(in_df)
+    det.set_reference(in_df)
     det.update(in_df)
     det.update(50 * in_df)
     return det
@@ -75,12 +74,14 @@ def test_reset_batch(kdq_det_batch):
     assert det.drift_state is None
 
 
-def test_validation():
+def test_validation(kdq_det_stream):
     with pytest.raises(ValueError) as _:
         det = KdqTree(window_size=None, input_type="stream")
     with pytest.raises(ValueError) as _:
         det = KdqTree(window_size=-5, input_type="stream")
-    # TODO: validation on update()
+    with pytest.raises(ValueError) as _:
+        det = copy.copy(kdq_det_stream)
+        det.set_reference(pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values)
 
 
 def test_viz_dataframe(kdq_det_batch):
@@ -91,3 +92,11 @@ def test_viz_dataframe(kdq_det_batch):
     assert set(plot_df.columns) == set(
         ["name", "idx", "parent_idx", "cell_count", "depth", "count_diff", "kss"]
     )
+
+
+def test_set_reference_batch(kdq_det_batch):
+    det = copy.copy(kdq_det_batch)
+    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values
+    det.set_reference(new_sample)
+    det.update(new_sample)
+    assert det.drift_state is None

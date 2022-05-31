@@ -16,25 +16,25 @@ def test_stdev():
 
     # test 'stdev'
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="stdev",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
     hdm.update(test)
     beta_stdev = hdm.beta
 
     # test 'tstat'
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
     hdm.update(test)
     beta_tstat = hdm.beta
 
@@ -48,23 +48,23 @@ def test_histograms():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # number of histograms matches number of variables
-    assert len(hdm.reference_density) == reference.shape[1]
+    assert len(hdm._reference_density) == reference.shape[1]
 
     # bins in histogram are calculated appropriately, using only first half of reference window
     first_half = reference.iloc[
         0 : int(len(reference) / 2),
     ]
     bin_count = int(np.floor(np.sqrt(len(first_half))))
-    assert len(hdm.reference_density[0]) == bin_count
+    assert len(hdm._reference_density[0]) == bin_count
 
 
 def test_detect_batch_1_init():
@@ -74,20 +74,20 @@ def test_detect_batch_1_init():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     assert hdm.total_samples == 1
     assert hdm.samples_since_reset == 1
     assert hdm.drift_state == None
-    assert hdm.prev_feature_distances != []
+    assert hdm._prev_feature_distances != []
     assert hdm.reference_n == len(reference)
-    assert hdm.prev_distance != None
+    assert hdm._prev_distance != None
 
 
 def test_detect_batch_1_no_drift():
@@ -97,13 +97,14 @@ def test_detect_batch_1_no_drift():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+
+    hdm.set_reference(reference)
 
     # update with identical test batch
     hdm.update(reference)
@@ -124,13 +125,14 @@ def test_detect_batch_1_epsilon():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+
+    hdm.set_reference(reference)
 
     # update with identical test batch
     hdm.update(reference)
@@ -149,13 +151,13 @@ def test_detect_batch_1_drift():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with different test batch
     np.random.seed(1)
@@ -163,7 +165,7 @@ def test_detect_batch_1_drift():
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
 
-    assert hdm.feature_info != None
+    assert hdm.feature_epsilons != None
     assert hdm._drift_state == "drift"
     assert hdm._lambda == 2
     assert len(hdm.reference) == len(test)
@@ -176,13 +178,13 @@ def test_detect_batch_1_reset():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with different test batch
     np.random.seed(1)
@@ -207,13 +209,13 @@ def test_detect_batch_2_init():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=2,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     assert hdm.total_samples == 0
     assert hdm.samples_since_reset == 0
@@ -229,13 +231,13 @@ def test_detect_batch_2_no_drift():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=2,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with identical test batch
     hdm.update(reference)
@@ -260,13 +262,13 @@ def test_detect_batch_2_drift():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=2,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with identical test batch 1
     hdm.update(reference)
@@ -277,7 +279,7 @@ def test_detect_batch_2_drift():
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
 
-    assert hdm.feature_info != None
+    assert hdm.feature_epsilons != None
     assert hdm._drift_state == "drift"
     assert hdm._lambda == 2
     assert len(hdm.reference) == len(test)
@@ -290,13 +292,13 @@ def test_detect_batch_2_reset():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=2,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with identical test batch 1
     hdm.update(reference)
@@ -326,13 +328,13 @@ def test_detect_batch_3_init():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=3,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     assert hdm.total_samples == 0
     assert hdm.samples_since_reset == 0
@@ -348,13 +350,13 @@ def test_detect_batch_3_no_drift():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=3,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with identical test batch
     hdm.update(reference)
@@ -382,13 +384,13 @@ def test_detect_batch_3_drift():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=3,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with identical test batch 1
     hdm.update(reference)
@@ -402,7 +404,7 @@ def test_detect_batch_3_drift():
     test = pd.DataFrame(data=[data2, data2, data2]).T
     hdm.update(test)
 
-    assert hdm.feature_info != None
+    assert hdm.feature_epsilons != None
     assert hdm._drift_state == "drift"
     assert hdm._lambda == 3
     assert len(hdm.reference) == len(test)
@@ -415,13 +417,13 @@ def test_detect_batch_3_reset():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
-        reference_batch=reference,
         divergence="H",
         detect_batch=3,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with identical test batch 1
     hdm.update(reference)
@@ -446,10 +448,6 @@ def test_detect_batch_3_reset():
     assert hdm.beta != None
     assert hdm._drift_state == None
 
-
-# TODO add tests for testing KL divergence
-
-
 def test_KL():
     """Test of modified CDBD test using KL divergence"""
 
@@ -459,16 +457,79 @@ def test_KL():
 
     # initialize with reference batch
     hdm = HDM(
-        reference_batch=reference,
         divergence="KL",
         detect_batch=1,
         statistic="tstat",
         significance=0.05,
         subsets=5,
     )
+    hdm.set_reference(reference)
 
     # update with different test batch
     hdm.update(test)
 
     assert hdm._drift_state == "drift"
     assert len(hdm.reference) == len(test)
+
+def test_KL_multivariate():
+    """Test of modified CDBD test using KL divergence on multivariate data. 
+    Tests ability to compute individual distances for multiple variables"""
+
+    np.random.seed(1)
+    # init with first test batch
+    data1 = np.repeat(1, 100)
+    reference = pd.DataFrame(data=[data1, data1, data1]).T
+
+    # initialize with reference batch
+    hdm = HDM(
+        divergence="KL",
+        detect_batch=1,
+        statistic="tstat",
+        significance=0.05,
+        subsets=5,
+    )
+    hdm.set_reference(reference)
+
+    # update with similar batch
+    hdm.update(reference)
+
+    assert hdm._drift_state == None
+    assert hdm._prev_feature_distances != []
+
+
+def test_custom_divmetric():
+    """ Tests functionality of user defining custom divergence metric """
+    
+    # Define divergence metric
+    def distance_metric1(reference_histogram, test_histogram):
+
+        # Convert inputs to appropriate datatype 
+        ref = np.array(reference_histogram[0])
+        test = np.array(test_histogram[0])
+
+        dist = np.sqrt(np.sum(np.square(ref-test)))
+        
+        return dist
+
+    # Setup data
+    np.random.seed(1)
+    data1 = np.repeat(1, 100)
+    reference = pd.DataFrame(data=[data1, data1, data1]).T
+    data2 = np.random.randint(2, 10, 150)
+    test = pd.DataFrame(data=[data2, data2, data2]).T
+
+    # Test self-defined divergence metric 
+    hdm = HDM(
+        divergence=distance_metric1,
+        detect_batch=1,
+        statistic="stdev",
+        significance=0.05,
+        subsets=5,
+    )
+    hdm.set_reference(reference)
+
+    hdm.update(test)
+    assert hdm.current_distance != 0
+    assert hdm.drift_state == 'drift'
+    
+ 

@@ -12,7 +12,8 @@ def test_batch_validation():
     test = pd.DataFrame(data=[data1, data1, data1]).T
 
     # initialize with reference batch
-    cdbd = CDBD(reference_batch=reference)
+    cdbd = CDBD()
+    cdbd.set_reference(reference)
 
     # update with test batch
     with pytest.raises(ValueError) as _:
@@ -24,7 +25,8 @@ def test_init_validation():
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     with pytest.raises(ValueError) as _:
-        _ = CDBD(reference_batch=reference, detect_batch=3)
+        _ = CDBD(detect_batch=3)
+        _.set_reference(reference)
 
 
 def test_drift():
@@ -35,10 +37,36 @@ def test_drift():
     test = pd.DataFrame(np.random.uniform(3, 4, 100))
 
     # initialize with reference batch
-    cdbd = CDBD(reference_batch=reference)
+    cdbd = CDBD()
+    cdbd.set_reference(reference)
 
     # update with different test batch
     cdbd.update(test)
 
     assert cdbd._drift_state == "drift"
     assert len(cdbd.reference) == len(test)
+
+def test_custom_divmetric():
+    """ Tests functionality of user defining custom divergence metric """
+    
+    # Define divergence metric
+    def distance_metric1(reference_histogram, test_histogram):
+
+        # Convert inputs to appropriate datatype 
+        ref = np.array(reference_histogram[0])
+        test = np.array(test_histogram[0])
+
+        dist = np.sqrt(np.sum(np.square(ref-test)))
+        
+        return dist
+
+    # Setup data
+    reference = pd.DataFrame(data=[np.repeat(1, 100)]).T
+    test = pd.DataFrame(data=[np.repeat(4, 100)]).T
+
+    # initialize with reference batch
+    cdbd = CDBD(divergence=distance_metric1)
+    cdbd.set_reference(reference)
+
+    cdbd.update(test)
+    assert cdbd.current_distance != 0
