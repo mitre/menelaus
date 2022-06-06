@@ -51,8 +51,6 @@ def NNSpacePartitioner():
         nn = NearestNeighbors(n_neighbors=self.k).fit(D)
         M_adj = nn.kneighbors_graph(D).toarray()
         self.adjacency_matrix = M_adj
-        # NearestNeighbors already adds the self-neighbors
-        # TODO - check about order preservation
         P_nnps = M_adj
         weight_array = np.sum(P_nnps, axis=1).astype(int)
         Q = np.lcm.reduce(weight_array)
@@ -85,7 +83,5 @@ def NNSpacePartitioner():
         M_s1 = np.dot(v1, nnps_matrix)
         M_s2 = np.dot(v2, nnps_matrix)
         d_nnps += np.sum(np.absolute(M_s1 - M_s2))
-        # TODO - verify output, order
-        # TODO - will nnps_matrix always be same size as M_adj?
         d_nnps /= nnps_matrix.shape[0]
         return d_nnps

@@ -97,9 +97,6 @@ def test_conservative_bound():
     assert drift_found is True
 
 
-# TODO: tests for the other BucketRow and BucketRowList methods, separate from the full ADWIN tests
-
-
 def test_bucket_row_init():
     max_buckets = 10
     row3 = _BucketRow(max_buckets=max_buckets, prev_bucket=None, next_bucket=None)

@@ -4,7 +4,6 @@ from menelaus.concept_drift.lfr import LinearFourRates
 
 
 def test_build_no_drift():
-    """TODO - this entire function is basically one large todo"""
     np.random.seed(
         123
     )  # hack to get tests to pass; need a better way to force drift/non-drift
