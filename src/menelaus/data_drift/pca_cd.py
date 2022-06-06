@@ -94,7 +94,7 @@ class PCACD(DriftDetector):
         self.ev_threshold = ev_threshold
         self.divergence_metric = divergence_metric
         self.sample_period = (
-            sample_period  # TODO modify sample period dependent upon density estimate
+            sample_period
         )
 
         # Initialize parameters
@@ -273,7 +273,6 @@ class PCACD(DriftDetector):
                             )
                         )
 
-                self.test_change_scores = change_scores  # TODO delete later
                 change_score = max(change_scores)
                 self._change_score.append(change_score)
 
