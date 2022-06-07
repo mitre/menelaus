@@ -80,16 +80,15 @@ html_static_path = ["_static"]
 # Get sphinx-apidocs to run on readthedocs pipeline
 # see https://github.com/readthedocs/readthedocs.org/issues/1139
 def run_apidoc(_):
-	from sphinx.ext.apidoc import main
-	import os
-	import sys
-    os.chdir('docs')
-	
-    src_dir = os.path.join('../src/menelaus')
-	template_dir = os.path.join('source', 'templates')
+    from sphinx.ext.apidoc import main
+    import os
+    import sys
 
-    main(['-M', '--templatedir', template_dir, '-f', '-o', 'source', src_dir])
+    os.chdir("docs")
+    src_dir = os.path.join("../src/menelaus")
+    template_dir = os.path.join("source", "templates")
+    main(["-M", "--templatedir", template_dir, "-f", "-o", "source", src_dir])
 
 
 def setup(app):
-	app.connect('builder-inited', run_apidoc)
+    app.connect("builder-inited", run_apidoc)
