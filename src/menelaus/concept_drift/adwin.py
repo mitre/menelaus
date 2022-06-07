@@ -31,14 +31,12 @@ class ADWIN(DriftDetector):
     When drift occurs, the index of the element at the beginning of ADWIN's new
     window is stored in ``self.retraining_recs``.
 
-    Ref. A. Bifet and R. Gavalda, "Learning from time-changing data with
-    adaptive windowing." in Proc. 2007 SIAM Int. Conf. Data Mining, vol. 7.
-    SIAM, 2007, Conference Proceedings, p. 2007.
+    Ref. [C3]_
 
     Attributes:
-        total_samples (int): number of samples the drift detector has ever
+        total_updates (int): number of samples the drift detector has ever
             been updated with
-        samples_since_reset (int): number of samples since the last time the
+        updates_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
@@ -217,7 +215,7 @@ class ADWIN(DriftDetector):
         size and set the ``drift_state`` to ``"drift"``.
         """
         if (
-            self.total_samples % self.new_sample_thresh == 0
+            self.total_updates % self.new_sample_thresh == 0
             and self._window_size > self.window_size_thresh
         ):
             # either we reduced the window and must restart to check the new
@@ -269,8 +267,8 @@ class ADWIN(DriftDetector):
                             if self._window_size > 0:
                                 n_elements0 -= self._remove_last()
                                 self._retraining_recs = (
-                                    self.total_samples - self._window_size,
-                                    self.total_samples - 1,
+                                    self.total_updates - self._window_size,
+                                    self.total_updates - 1,
                                 )
                                 exit_shrink = True
                                 break

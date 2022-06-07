@@ -105,15 +105,12 @@ class HDDDM(HistogramDensityMethod):
               calculated using the first test batch, allowing for detection of
               drift on this batch.
 
-    Ref. G. Ditzler and R. Polikar, "Hellinger distance based drift detection
-    for nonstationary environments," 2011 IEEE Symposium on Computational
-    Intelligence in Dynamic and Uncertain Environments (CIDUE), 2011, pp. 41-48,
-    doi: 10.1109/CIDUE.2011.5948491.
+    Ref. [C9]_
 
     Attributes:
-        total_samples (int): number of batches the drift detector has ever
+        total_updates (int): number of batches the drift detector has ever
             been updated with.
-        samples_since_reset (int): number of batches since the last drift detection.
+        updates_since_reset (int): number of batches since the last drift detection.
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
         Epsilon (list): stores Epsilon values since the last drift detection.
@@ -151,18 +148,18 @@ class HDDDM(HistogramDensityMethod):
             divergence (str): divergence measure used to compute distance
                 between histograms. Default is "H".
 
-                    * "H"  - Hellinger distance, original use is for HDDDM
+                * "H"  - Hellinger distance, original use is for HDDDM
 
-                    * "KL" - Kullback-Leibler Divergence, original use is for CDBD
+                * "KL" - Kullback-Leibler Divergence, original use is for CDBD
 
-                    * User can pass in custom divergence function. Input is two
-                    two-dimensional arrays containing univariate histogram
-                    estimates of density, one for reference, one for test. It
-                    must return the distance value between histograms. To be
-                    a valid distance metric, it must satisfy the following
-                    properties: non-negativity, identity, symmetry,
-                    and triangle inequality, e.g. that in
-                    examples/hdddm_example.py.
+                * User can pass in custom divergence function. Input is two
+                  two-dimensional arrays containing univariate histogram
+                  estimates of density, one for reference, one for test. It
+                  must return the distance value between histograms. To be
+                  a valid distance metric, it must satisfy the following
+                  properties: non-negativity, identity, symmetry,
+                  and triangle inequality, e.g. that in
+                  examples/hdddm_example.py.
 
             detect_batch (int): the test batch on which drift will be detected.
               See class docstrings for more information on this modification.
@@ -248,7 +245,7 @@ class HDDDM(HistogramDensityMethod):
     def reset(self):
         """
         Initialize relevant attributes to original values, to ensure information
-        only stored from samples_since_reset (lambda) onwards. Intended for use
+        only stored from updates_since_reset (lambda) onwards. Intended for use
         after ``drift_state == 'drift'``.
         """
         # This is here to make sphinx behave.

@@ -45,13 +45,12 @@ class CDBD(HistogramDensityMethod):
            drift is not detected. The reference batch is updated to include this
            most recent test batch. All statistics are maintained.
 
-    Ref. Lindstrom, P., Mac Namee, B., Delany, S. J., 2013. Drift detection
-    using uncertainty distribution divergence. Evolving Systems 4 (1), 13–25.
+    Ref. [C8]_
 
     Attributes:
-            total_samples (int): number of batches the drift detector has ever
+            total_updates (int): number of batches the drift detector has ever
                 been updated with.
-            samples_since_reset (int): number of batches since the last drift
+            updates_since_reset (int): number of batches since the last drift
                 detection.
             drift_state (str): detector's current drift state. Can take values
                 ``"drift"`` or ``None``.
@@ -93,18 +92,18 @@ class CDBD(HistogramDensityMethod):
             divergence (str): divergence measure used to compute distance
                 between histograms. Default is "H".
 
-                    * "H"  - Hellinger distance, original use is for HDDDM
+                * "H"  - Hellinger distance, original use is for HDDDM
 
-                    * "KL" - Kullback-Leibler Divergence, original use is for CDBD
+                * "KL" - Kullback-Leibler Divergence, original use is for CDBD
 
-                    * User can pass in custom divergence function. Input is two
-                    two-dimensional arrays containing univariate histogram
-                    estimates of density, one for reference, one for test. It
-                    must return the distance value between histograms. To be
-                    a valid distance metric, it must satisfy the following
-                    properties: non-negativity, identity, symmetry,
-                    and triangle inequality, e.g. that in
-                    examples/cbdb_example.py.
+                * User can pass in custom divergence function. Input is two
+                  two-dimensional arrays containing univariate histogram
+                  estimates of density, one for reference, one for test. It
+                  must return the distance value between histograms. To be
+                  a valid distance metric, it must satisfy the following
+                  properties: non-negativity, identity, symmetry,
+                  and triangle inequality, e.g. that in
+                  examples/cbdb_example.py.
 
             detect_batch (int): the test batch on which drift will be detected.
                 See class docstrings for more information on this modification.
@@ -193,7 +192,7 @@ class CDBD(HistogramDensityMethod):
     def reset(self):
         """
         Initialize relevant attributes to original values, to ensure information
-        only stored from samples_since_reset (lambda) onwards. Intended for use
+        only stored from updates_since_reset (lambda) onwards. Intended for use
         after ``drift_state == 'drift'``.
         """
         # This is here to make sphinx behave.

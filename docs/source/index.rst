@@ -15,6 +15,11 @@ Package structure
 
    menelaus
 
+References
+==================================
+
+* :ref:`references_page`
+
 Indices and tables
 ==================
 

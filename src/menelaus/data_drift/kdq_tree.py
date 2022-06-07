@@ -2,7 +2,6 @@ import numpy as np
 import scipy.stats
 from pandas import DataFrame  # more efficient for later for loop
 from numpy import unique
-from numpy.random import choice
 from menelaus.drift_detector import DriftDetector
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
@@ -19,7 +18,7 @@ class KdqTree(DriftDetector):
     (k-d) whose nodes contain square cells (quad) which are created via
     sequential splits along each dimension. This structure allows the
     calculation of the K-L divergence for continuous distributions, as the K-L
-    divergence is defined on probability mass functions. The number of samples
+    divergence is defined on prwobability mass functions. The number of samples
     in each leaf of the tree is an empirical distribution for either dataset;
     this allows us to calculate the K-L divergence.
 
@@ -52,16 +51,13 @@ class KdqTree(DriftDetector):
     Note that the current implementation does not explicitly handle categorical
     data.
 
-    Ref. T. Dasu, S. Krishnan, S. Venkatasubramanian, and K. Yi, “An
-    information-theoretic approach to detecting changes in multidimensional data
-    streams,” in Proc. Symp. the Interface of Statistics, Computing Science, and
-    Applications. Citeseer, 2006, Conference Proceedings, pp. 1-24.
+    Ref. [C10]_
 
 
     Attributes:
-        total_samples (int): number of samples/batches the drift detector has
+        total_updates (int): number of samples/batches the drift detector has
             ever been updated with.
-        samples_since_reset (int): number of samples/batches since the last time
+        updates_since_reset (int): number of samples/batches since the last time
             the drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
@@ -260,7 +256,7 @@ class KdqTree(DriftDetector):
         bin_indices_df = DataFrame({"leaf": bin_indices})
         for _ in range(self.bootstrap_samples):
             # note the maintenance of the leaf order!
-            b_sample = choice(bin_indices, size=2 * sample_size, p=ref_dist)
+            b_sample = np.random.choice(bin_indices, size=2 * sample_size, p=ref_dist)
             b_hist1 = unique(b_sample[:sample_size], return_counts=True)
             b_hist2 = unique(b_sample[sample_size:], return_counts=True)
             b_hist1 = DataFrame({"leaf": b_hist1[0], "count": b_hist1[1]})

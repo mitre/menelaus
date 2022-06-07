@@ -26,15 +26,12 @@ class PCACD(DriftDetector):
     Once drift is detected, the reference window is replaced with the current
     test window, and the test window is initialized.
 
-    Ref. Qahtan, A., Wang, S. A PCA-Based Change Detection Framework for
-    Multidimensional Data Streams Categories and Subject Descriptors. KDD '15:
-    The 21st ACM SIGKDD International Conference on Knowledge Discovery and Data
-    Mining, 935-44. https://doi.org/10.1145/2783258.2783359
+    Ref. [C11]_
 
     Attributes:
-        total_samples (int): number of samples the drift detector has ever
+        total_updates (int): number of samples the drift detector has ever
             been updated with
-        samples_since_reset (int): number of samples since the last time the
+        updates_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
@@ -93,9 +90,7 @@ class PCACD(DriftDetector):
         self.window_size = window_size
         self.ev_threshold = ev_threshold
         self.divergence_metric = divergence_metric
-        self.sample_period = (
-            sample_period
-        )
+        self.sample_period = sample_period
 
         # Initialize parameters
         self.step = min(100, round(self.sample_period * window_size))
@@ -232,7 +227,7 @@ class PCACD(DriftDetector):
             )
 
             # Compute change score
-            if (self.total_samples % self.step) == 0 and self.total_samples != 0:
+            if (self.total_updates % self.step) == 0 and self.total_updates != 0:
 
                 # Compute density distribution for test data
                 self._density_test = {}
