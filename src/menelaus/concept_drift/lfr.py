@@ -1,14 +1,15 @@
 import pandas as pd
 import numpy as np
+from joblib import Parallel, delayed
 from menelaus.drift_detector import DriftDetector
 
 
 class LinearFourRates(DriftDetector):
-    """Linear Four Rates detects drift in a learner's true positive rate, true
-    negative rate, negative predictive value, and positive predictive value over
-    time. It relies on the assumption that a significant change in any of these
-    rates implies a change in the joint distribution of of the features and
-    their classification.
+    """Linear Four Rates detects drift in a learner's true positive rate (TPR), 
+    true negative rate (TNR), negative predictive value (NPV), and 
+    positive predictive value (PPV) over time. It relies on the assumption that 
+    a significant change in any of these rates implies a change in the joint 
+    distribution of of the features and their classification.
 
     For each rate, the empirical rate is calculated at each sample. The test
     statistic for each rate is a weighted average of all observed empirical
@@ -45,6 +46,8 @@ class LinearFourRates(DriftDetector):
         burn_in=50,
         num_mc=10000,
         subsample=1,
+        rates_tracked=["tpr", "tnr", "ppv", "npv"],
+        parallelize=False,
     ):
         """
         Args:
@@ -65,14 +68,26 @@ class LinearFourRates(DriftDetector):
                 drift every nth observation. Rates will still be calculated, the
                 monte carlo simulation will not be. Larger subsample value will
                 decrease the runtime. Defaults to 1.
+            rates_tracked (list, optional): A list of the rates that this LFR
+                algorithm should track and alert the user based on changes.
+                Fewer rates can be tracked based on use case context, as well
+                as to improve runtime performance. Defaults to all four rates,
+                ["tpr", "tnr", "ppv", "npv"].
+            parallelize (boolean, optional): A flag that determines whether
+                bound calculations across the rates being tracked by this LFR
+                algorithm will be parallelized or not. Advantageous for large
+                datasets, but will slow down runtime for fewer data due to
+                overhead of threading. Defaults to False.
         """
         super().__init__()
         self.time_decay_factor = time_decay_factor
         self.warning_level = warning_level
         self.detect_level = detect_level
-        self.num_mc = num_mc
         self.burn_in = burn_in
+        self.num_mc = num_mc
         self.subsample = subsample
+        self.rates_tracked = rates_tracked
+        self.parallelize = parallelize
         self.all_drift_states = []
         self._warning_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
@@ -133,13 +148,11 @@ class LinearFourRates(DriftDetector):
             self.reset()
 
         super().update()
+        y_p = 1 * y_pred
         y_t = 1 * y_true
-        yhat_t = 1 * y_pred
 
-        old_confusion = self._confusion.copy()
-        self._confusion[yhat_t][y_t] += 1
-
-        old_rates = self._get_four_rates(old_confusion)
+        old_rates = self._get_four_rates(self._confusion)
+        self._confusion[y_p][y_t] += 1
         new_rates = self._get_four_rates(self._confusion)
 
         # init next index for test stats
@@ -178,11 +191,11 @@ class LinearFourRates(DriftDetector):
             }
         )
 
-        for rate in ["tpr", "tnr", "ppv", "npv"]:
+        def _calculate_rate_bounds(rate):
             if new_rates[rate] != old_rates[rate]:
                 new_r_stat = self.time_decay_factor * self._r_stat[
                     self.samples_since_reset
-                ][rate] + (1 - self.time_decay_factor) * (y_t == yhat_t)
+                ][rate] + (1 - self.time_decay_factor) * (y_t == y_p)
             else:
                 new_r_stat = self._r_stat[self.samples_since_reset - 1][rate]
 
@@ -196,12 +209,12 @@ class LinearFourRates(DriftDetector):
                 self.samples_since_reset % self.subsample == 0
             ):
                 est_rate = new_rates[rate]
-                curr_n = self._denominators[rate + "_N"]
+                curr_denom = self._denominators[rate + "_N"]
 
                 r_est_rate = round(est_rate, round_val)
-                r_n = round(curr_n, round_val)
+                r_curr_denom = round(curr_denom, round_val)
 
-                bound_dict = self._update_bounds_dict(est_rate, curr_n, r_est_rate, r_n)
+                bound_dict = self._update_bounds_dict(est_rate, curr_denom, r_est_rate, r_curr_denom)
 
                 lb_warn = bound_dict["lb_warn"]
                 ub_warn = bound_dict["ub_warn"]
@@ -214,6 +227,12 @@ class LinearFourRates(DriftDetector):
                 self._alarm_states[self.samples_since_reset][rate] = (
                     new_r_stat < lb_detect
                 ) | (new_r_stat > ub_detect)
+
+        if self.parallelize:
+            Parallel(n_jobs=2, require='sharedmem')(delayed(_calculate_rate_bounds)(rate) for rate in self.rates_tracked)
+        else:
+            for rate in self.rates_tracked:
+                _calculate_rate_bounds(rate)
 
         if any(self._alarm_states[self.samples_since_reset].values()):
             self.all_drift_states.append("drift")
@@ -246,8 +265,8 @@ class LinearFourRates(DriftDetector):
 
     @staticmethod
     def _get_four_rates(confusion):
-        """Takes a confusion matrix and returns a dictionary with TPR, TNR, PPV,
-        NPV.
+        """Takes a confusion matrix and returns a dictionary with values
+        for TPR, TNR, PPV, NPV.
 
         Args:
             confusion: matrix with TN located at [0,0], FN at [0,1], FP at
@@ -266,7 +285,8 @@ class LinearFourRates(DriftDetector):
 
     @staticmethod
     def _get_four_denominators(confusion):
-        """Takes a confusion matrix and returns a dictionary with denominators
+        """
+        Takes a confusion matrix and returns a dictionary with denominators
         for TPR, TNR, PPV, NPV.
 
         Args:
@@ -284,8 +304,9 @@ class LinearFourRates(DriftDetector):
         result["npv_N"] = tn + fn
         return result
 
-    def _update_bounds_dict(self, est_rate, denom, r_est_rate, r_n):
-        """Checks if combination of rounded ``est_rate`` and N has been seen before.
+    def _update_bounds_dict(self, est_rate, curr_denom, r_est_rate, r_curr_denom):
+        """
+        Checks if combination of rounded ``est_rate`` and denom has been seen before.
         If yes, reuse the bounds estimates. If no, simulate new bounds estimates
         and maintain in sorted bound dictionary. This method calculates Monte
         Carlo simulations using exact rates but stores results using rounded
@@ -293,9 +314,9 @@ class LinearFourRates(DriftDetector):
 
         Args:
             est_rate: empirical estimate of rate (P)
-            denom: denominator of rate
+            curr_denom: denominator of rate
             r_est_rate: rounded ``est_rate``
-            r_n: rounded denom
+            r_curr_denom: rounded denom
 
         Returns:
             dict: dictionary storing the bounds from MonteCarlo simulation for
@@ -306,24 +327,26 @@ class LinearFourRates(DriftDetector):
         if r_est_rate in self._bounds:
             denom_dict = self._bounds[r_est_rate]
 
-            if r_n in denom_dict:
-                bound_dict = denom_dict[r_n]
+            if r_curr_denom in denom_dict:
+                bound_dict = denom_dict[r_curr_denom]
             else:
-                bound_dict = self._sim_bounds(est_rate, denom)
-                denom_dict[r_n] = bound_dict
-                denom_dict = dict(sorted(denom_dict.items()))
+                bound_dict = self._sim_bounds(est_rate, curr_denom)
+                denom_dict[r_curr_denom] = bound_dict
                 self._bounds[r_est_rate] = denom_dict
+                denom_dict = dict(sorted(denom_dict.items()))
         else:
-            bound_dict = self._sim_bounds(est_rate, denom)
+            bound_dict = self._sim_bounds(est_rate, curr_denom)
 
-            denom_dict = {r_n: bound_dict}
+            denom_dict = {r_curr_denom: bound_dict}
+            denom_dict[r_curr_denom] = bound_dict
             self._bounds[r_est_rate] = denom_dict
             self._bounds = dict(sorted(self._bounds.items()))
 
         return bound_dict
 
     def _sim_bounds(self, est_rate, denom):
-        """Takes an estimated rate and number of time steps denom and returns
+        """
+        Takes an estimated rate and number of time steps denom and returns
         dictionary of lower and upper bounds for its empirical distribution.
 
         Args:
@@ -334,8 +357,6 @@ class LinearFourRates(DriftDetector):
             dict: dictionary with keys ``['lb_warn', 'ub_warn', 'lb_detect',
                 'ub_detect']`` corresponding to the lower and upper bounds at
                 the respective thresholds
-
-
         """
         eta = self.time_decay_factor
         warning_level = self.warning_level
