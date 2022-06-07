@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("../src/menelaus"))
 project = "menelaus"
 copyright = "©2022 The MITRE Corporation. ALL RIGHTS RESERVED"
 author = "Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Austin Downing"
-release = "0.0.0"
+release = "0.1.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -77,23 +77,19 @@ html_css_files = [
 html_static_path = ["_static"]
 
 
+# Get sphinx-apidocs to run on readthedocs pipeline
+# see https://github.com/readthedocs/readthedocs.org/issues/1139
 def run_apidoc(_):
-    ignore_paths = [...]
+	from sphinx.ext.apidoc import main
+	import os
+	import sys
+    os.chdir('docs')
+	
+    src_dir = os.path.join('../src/menelaus')
+	template_dir = os.path.join('source', 'templates')
 
-    argv = ["-f", "-T", "-e", "-M", "-o", ".", ".."] + ignore_paths
-
-    try:
-        # Sphinx 1.7+
-        from sphinx.ext import apidoc
-
-        apidoc.main(argv)
-    except ImportError:
-        # Sphinx 1.6 (and earlier)
-        from sphinx import apidoc
-
-        argv.insert(0, apidoc.__file__)
-        apidoc.main(argv)
+    main(['-M', '--templatedir', template_dir, '-f', '-o', 'source', src_dir])
 
 
 def setup(app):
-    app.connect("builder-inited", run_apidoc)
+	app.connect('builder-inited', run_apidoc)
