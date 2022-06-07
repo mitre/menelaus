@@ -84,7 +84,9 @@ def run_apidoc(_):
     import os
     import sys
 
-    os.chdir("docs")
+    # os.chdir("docs")
+    print(os.getcwd(), "\n")
+    print(os.listdir())
     src_dir = os.path.join("../src/menelaus")
     template_dir = os.path.join("source", "templates")
     main(["-M", "--templatedir", template_dir, "-f", "-o", "source", src_dir])
