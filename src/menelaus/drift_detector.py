@@ -17,31 +17,31 @@ class DriftDetector(ABC):
     detector compares only one new sample at a time, also passed via ``update``.
 
     Attributes:
-        total_samples (int): number of samples/batches the drift detector
+        total_updates (int): number of samples/batches the drift detector
             has ever been updated with
-        samples_since_reset (int): number of samples/batches since the last
+        updates_since_reset (int): number of samples/batches since the last
             time the drift detector was reset
 
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.total_samples = 0
-        self.samples_since_reset = 0
+        self.total_updates = 0
+        self.updates_since_reset = 0
         self._drift_state = None
         self._input_type = None
 
     @abstractmethod
     def update(self, *args, **kwargs):
         """Update the detector with a new sample or batch."""
-        self.total_samples += 1
-        self.samples_since_reset += 1
+        self.total_updates += 1
+        self.updates_since_reset += 1
 
     @abstractmethod
     def reset(self, *args, **kwargs):
         """Initialize the detector's drift state and other relevant attributes.
         Intended for use after ``drift_state == 'drift'``."""
-        self.samples_since_reset = (
+        self.updates_since_reset = (
             0  # number of elements the detector has been updated with since last reset
         )
         self.drift_state = None

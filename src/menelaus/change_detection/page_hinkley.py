@@ -21,13 +21,12 @@ class PageHinkley(DriftDetector):
     If the threshold is too small, PH may result in many false alarms. If too
     large, the PH test will be more robust, but may miss true drift.
 
-    References: D.V.Hinkley. 1971. Inference about the change-point from
-    cumulative sum tests. Biometrika 58, 3 (1971), 509-523
+    Ref. [C2]_
 
     Attributes:
-        total_samples (int): number of samples the drift detector has ever
+        total_updates (int): number of samples the drift detector has ever
             been updated with
-        samples_since_reset (int): number of samples since the last time the
+        updates_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             ``"drift"``, or ``None``.
@@ -92,7 +91,7 @@ class PageHinkley(DriftDetector):
             self.reset()
         super().update()
 
-        self._mean = self._mean + (next_obs - self._mean) / self.samples_since_reset
+        self._mean = self._mean + (next_obs - self._mean) / self.updates_since_reset
         self._sum = self._sum + next_obs - self._mean - self.delta
         theta = self.threshold * self._mean
 
@@ -109,7 +108,7 @@ class PageHinkley(DriftDetector):
 
         drift_check = ph_difference > theta
 
-        if drift_check and self.samples_since_reset > self.burn_in:
+        if drift_check and self.updates_since_reset > self.burn_in:
             self.drift_state = "drift"
 
         self._ids.append(obs_id)

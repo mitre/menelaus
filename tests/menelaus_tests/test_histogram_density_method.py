@@ -44,7 +44,7 @@ def test_stdev():
 
 def test_histograms():
     """Test histograms are calculated by reference data characteristics"""
-    
+
     data1 = np.repeat(1, 100)
     reference = pd.DataFrame(data=[data1, data1, data1]).T
     hdm = HDM(
@@ -82,8 +82,8 @@ def test_detect_batch_1_init():
     )
     hdm.set_reference(reference)
 
-    assert hdm.total_samples == 1
-    assert hdm.samples_since_reset == 1
+    assert hdm.total_updates == 1
+    assert hdm.updates_since_reset == 1
     assert hdm.drift_state == None
     assert hdm._prev_feature_distances != []
     assert hdm.reference_n == len(reference)
@@ -109,8 +109,8 @@ def test_detect_batch_1_no_drift():
     # update with identical test batch
     hdm.update(reference)
 
-    assert hdm.total_samples == 2
-    assert hdm.samples_since_reset == 2
+    assert hdm.total_updates == 2
+    assert hdm.updates_since_reset == 2
     assert hdm.drift_state == None
     assert hdm.reference_n == len(reference) * 2
     assert hdm.feature_epsilons != []
@@ -195,8 +195,8 @@ def test_detect_batch_1_reset():
     # test reset updating with identical batch to test
     hdm.update(test)
 
-    assert hdm.total_samples == 4
-    assert hdm.samples_since_reset == 2
+    assert hdm.total_updates == 4
+    assert hdm.updates_since_reset == 2
     assert len(hdm.epsilon) == 2  # epsilon is reset
     assert hdm.beta != None
     assert hdm.drift_state is None
@@ -217,8 +217,8 @@ def test_detect_batch_2_init():
     )
     hdm.set_reference(reference)
 
-    assert hdm.total_samples == 0
-    assert hdm.samples_since_reset == 0
+    assert hdm.total_updates == 0
+    assert hdm.updates_since_reset == 0
     assert hdm.drift_state == None
     assert hdm.reference_n == len(reference)
 
@@ -249,7 +249,7 @@ def test_detect_batch_2_no_drift():
     hdm.update(reference)
 
     assert hdm.drift_state == None
-    assert hdm.total_samples == 2
+    assert hdm.total_updates == 2
     assert hdm.feature_epsilons != []
     assert len(hdm.epsilon) == 2
     assert hdm.beta != None
@@ -314,8 +314,8 @@ def test_detect_batch_2_reset():
     # test reset updating with identical batch to test batch 2
     hdm.update(test)
 
-    assert hdm.total_samples == 3
-    assert hdm.samples_since_reset == 1
+    assert hdm.total_updates == 3
+    assert hdm.updates_since_reset == 1
     assert len(hdm.epsilon) == 0  # epsilon is reset
     assert hdm.beta != None
     assert hdm._drift_state == None
@@ -336,8 +336,8 @@ def test_detect_batch_3_init():
     )
     hdm.set_reference(reference)
 
-    assert hdm.total_samples == 0
-    assert hdm.samples_since_reset == 0
+    assert hdm.total_updates == 0
+    assert hdm.updates_since_reset == 0
     assert hdm.drift_state == None
     assert hdm.reference_n == len(reference)
 
@@ -371,7 +371,7 @@ def test_detect_batch_3_no_drift():
     hdm.update(reference)
 
     assert hdm.drift_state == None
-    assert hdm.total_samples == 3
+    assert hdm.total_updates == 3
     assert hdm.feature_epsilons != []
     assert len(hdm.epsilon) == 2
     assert hdm.beta != None
@@ -442,11 +442,12 @@ def test_detect_batch_3_reset():
     # test reset updating with identical batch to test batch 3
     hdm.update(test)
 
-    assert hdm.total_samples == 4
-    assert hdm.samples_since_reset == 1
+    assert hdm.total_updates == 4
+    assert hdm.updates_since_reset == 1
     assert len(hdm.epsilon) == 0  # epsilon is reset
     assert hdm.beta != None
     assert hdm._drift_state == None
+
 
 def test_KL():
     """Test of modified CDBD test using KL divergence"""
@@ -471,8 +472,9 @@ def test_KL():
     assert hdm._drift_state == "drift"
     assert len(hdm.reference) == len(test)
 
+
 def test_KL_multivariate():
-    """Test of modified CDBD test using KL divergence on multivariate data. 
+    """Test of modified CDBD test using KL divergence on multivariate data.
     Tests ability to compute individual distances for multiple variables"""
 
     np.random.seed(1)
@@ -498,17 +500,17 @@ def test_KL_multivariate():
 
 
 def test_custom_divmetric():
-    """ Tests functionality of user defining custom divergence metric """
-    
+    """Tests functionality of user defining custom divergence metric"""
+
     # Define divergence metric
     def distance_metric1(reference_histogram, test_histogram):
 
-        # Convert inputs to appropriate datatype 
+        # Convert inputs to appropriate datatype
         ref = np.array(reference_histogram[0])
         test = np.array(test_histogram[0])
 
-        dist = np.sqrt(np.sum(np.square(ref-test)))
-        
+        dist = np.sqrt(np.sum(np.square(ref - test)))
+
         return dist
 
     # Setup data
@@ -518,7 +520,7 @@ def test_custom_divmetric():
     data2 = np.random.randint(2, 10, 150)
     test = pd.DataFrame(data=[data2, data2, data2]).T
 
-    # Test self-defined divergence metric 
+    # Test self-defined divergence metric
     hdm = HDM(
         divergence=distance_metric1,
         detect_batch=1,
@@ -530,6 +532,4 @@ def test_custom_divmetric():
 
     hdm.update(test)
     assert hdm.current_distance != 0
-    assert hdm.drift_state == 'drift'
-    
- 
+    assert hdm.drift_state == "drift"

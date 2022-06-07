@@ -18,17 +18,14 @@ class DDM(DriftDetector):
     detector's state is set to ``"drift"``.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``.
+    (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
 
-    Ref. J. Gama, P. Medas, G. Castillo, and P. Rodrigues, "Learning with drift
-    detection," in Proc. 17th Brazilian Symp. Artificial Intelligence, ser.
-    Lecture Notes in Computer Science. Springer, 2004, Book Section, pp.
-    286-295.
+    Ref. [C4]_
 
     Attributes:
-        total_samples (int): number of samples the drift detector has ever
+        total_updates (int): number of samples the drift detector has ever
             been updated with
-        samples_since_reset (int): number of samples since the last time the
+        updates_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             ``"drift"``, ``"warning"``, or ``None``.
@@ -89,16 +86,16 @@ class DDM(DriftDetector):
         error_rate_prev = self._error_rate
         self._error_rate = (
             self._error_rate
-            + (classifier_result - self._error_rate) / self.samples_since_reset
+            + (classifier_result - self._error_rate) / self.updates_since_reset
         )
         self._error_std = self._error_std + (classifier_result - self._error_rate) * (
             classifier_result - error_rate_prev
         )
-        self._error_std = np.sqrt(self._error_std / self.samples_since_reset)
+        self._error_std = np.sqrt(self._error_std / self.updates_since_reset)
 
         # it's unclear whether the 'burn-in' period should be updating the
         # minimums - seems like a bad idea though.
-        if self.samples_since_reset < self.n_threshold:
+        if self.updates_since_reset < self.n_threshold:
             return
 
         if (
@@ -133,12 +130,12 @@ class DDM(DriftDetector):
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
-            self._retraining_recs[0] = self.total_samples - 1
+            self._retraining_recs[0] = self.total_updates - 1
 
         if self.drift_state == "drift":
-            self._retraining_recs[1] = self.total_samples - 1
+            self._retraining_recs[1] = self.total_updates - 1
             if self._retraining_recs[0] is None:
-                self._retraining_recs[0] = self.total_samples - 1
+                self._retraining_recs[0] = self.total_updates - 1
 
     @property
     def retraining_recs(self):

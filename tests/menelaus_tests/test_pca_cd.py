@@ -93,7 +93,7 @@ def test_reset():
     det.update(drift.iloc[[i]])
     assert det._build_reference_and_test is True
     assert det._drift_state is None
-    assert det.samples_since_reset == 1
+    assert det.updates_since_reset == 1
 
 
 def test_kl_no_drift():
@@ -154,7 +154,9 @@ def test_kl_drift():
     # adding drift
     col1_ = np.random.uniform(9, 10, size)
     col2_ = np.random.normal(1, 3, size)
-    col3_ = np.random.randint(20, 30, size) # categorical data may not be appropriate for PCA-CD
+    col3_ = np.random.randint(
+        20, 30, size
+    )  # categorical data may not be appropriate for PCA-CD
     drift = pd.DataFrame(data=[col1_, col2_, col3_]).T
 
     # Setup detector

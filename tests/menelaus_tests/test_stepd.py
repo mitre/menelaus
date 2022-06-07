@@ -32,32 +32,40 @@ def test_retraining_recs():
 
     n_window = 5
     n_errors = 3
-    total_samples = 0
+    total_updates = 0
     warning_ix = None
 
     for _ in range(n_window):
-        total_samples += 1
+        total_updates += 1
         det.update(y_pred=1, y_true=1)
 
-        total_samples += 1
+        total_updates += 1
         det.update(y_pred=0, y_true=1)
     for _ in range(n_errors):
-        total_samples += 1
+        total_updates += 1
         det.update(y_pred=0, y_true=1)
 
         # the detector should only enter the warning region once and stay there
         if det.drift_state is not None and warning_ix is None:
-            warning_ix = total_samples - 1
+            warning_ix = total_updates - 1
 
     # should enter drift region after this sample
-    total_samples += 1
+    total_updates += 1
     det.update(y_pred=1, y_true=1)
-    assert det.retraining_recs.size == 2 and det.retraining_recs[0] == warning_ix and det.retraining_recs[1] == total_samples - 1
+    assert (
+        det.retraining_recs.size == 2
+        and det.retraining_recs[0] == warning_ix
+        and det.retraining_recs[1] == total_updates - 1
+    )
 
     # should reset the detector and retraining recs
-    total_samples += 1
+    total_updates += 1
     det.update(y_pred=1, y_true=1)
-    assert det.retraining_recs.size == 2 and det.retraining_recs[0] == None and det.retraining_recs[1] == None
+    assert (
+        det.retraining_recs.size == 2
+        and det.retraining_recs[0] == None
+        and det.retraining_recs[1] == None
+    )
 
 
 def test_accuracies():

@@ -22,16 +22,14 @@ class EDDM(DriftDetector):
     distance for "large" samples.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``.
+    (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
 
-    Ref. M. Baena-Garcia, J. del Campo-avila, R. Fidalgo, a. Bifet, R. gavalda,
-    and R. Morales-Bueno, "Early drift detection method," in Proc. 4th Int.
-    Workshop Knowledge Discovery from Data Streams, 2006, Conference Paper.
+    Ref. [C5]_
 
     Attributes:
-        total_samples (int): number of samples the drift detector has ever
+        total_updates (int): number of samples the drift detector has ever
             been updated with
-        samples_since_reset (int): number of samples since the last time the
+        updates_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             ``"drift"``, ``"warning"``, or ``None``.
@@ -94,7 +92,7 @@ class EDDM(DriftDetector):
             # calculate the distance between two errors
             self._index_error_last = self._index_error_curr
             self._index_error_curr = (
-                self.samples_since_reset - 1
+                self.updates_since_reset - 1
             )  # n is count, not index!
             dist = self._index_error_curr - self._index_error_last
 
@@ -144,12 +142,12 @@ class EDDM(DriftDetector):
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
-            self._retraining_recs[0] = self.total_samples - 1
+            self._retraining_recs[0] = self.total_updates - 1
 
         if self.drift_state == "drift":
-            self._retraining_recs[1] = self.total_samples - 1
+            self._retraining_recs[1] = self.total_updates - 1
             if self._retraining_recs[0] is None:
-                self._retraining_recs[0] = self.total_samples - 1
+                self._retraining_recs[0] = self.total_updates - 1
 
     @property
     def retraining_recs(self):

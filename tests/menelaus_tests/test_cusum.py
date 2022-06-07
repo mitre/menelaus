@@ -8,12 +8,14 @@ def test_no_drift():
     cusum = CUSUM(threshold=50)
     stream_size = 0
     for _ in range(40):  # test burn-in period (30) + post-burn-in (10)
-        cusum.update(np.random.normal(size = 1))  # shouldn't detect drift, but cant inject same number
+        cusum.update(
+            np.random.normal(size=1)
+        )  # shouldn't detect drift, but cant inject same number
         stream_size += 1
         assert cusum.drift_state is None
         assert len(cusum._stream) == stream_size
         assert (
-            cusum.samples_since_reset == stream_size
+            cusum.updates_since_reset == stream_size
         )  # no reset til at least after burn in
 
 
@@ -58,10 +60,10 @@ def test_with_drift():
 
 def test_positive_drift():
     """Test build / sliding with drift-y stream in the positive direction."""
-    cusum = CUSUM(direction = 'positive')
+    cusum = CUSUM(direction="positive")
     stream_size = 0
     # wait for burn-in, induce drift, test
-    for i in range(75):  
+    for i in range(75):
         stream_size += 1
         # set positive drift at 31st location , negative drift at 62nd
         if i != 30:
@@ -70,7 +72,9 @@ def test_positive_drift():
             cusum.update(100)
             assert cusum.drift_state == "drift"
         elif i == 61:
-            cusum.update(-100) # drift in the negative direction should not induce alarm
+            cusum.update(
+                -100
+            )  # drift in the negative direction should not induce alarm
             assert cusum.drift_state is None
         else:
             pass
@@ -78,10 +82,10 @@ def test_positive_drift():
 
 def test_negative_drift():
     """Test build / sliding with drift-y stream in the negative direction."""
-    cusum = CUSUM(direction = 'negative')
+    cusum = CUSUM(direction="negative")
     stream_size = 0
     # wait for burn-in, induce drift, test
-    for i in range(75):  
+    for i in range(75):
         stream_size += 1
         # set negative drift at 31st location , positive drift at 62nd
         if i != 30:
@@ -90,7 +94,7 @@ def test_negative_drift():
             cusum.update(-100)
             assert cusum.drift_state == "drift"
         elif i == 61:
-            cusum.update(100) # drift in the positive direction should not induce alarm
+            cusum.update(100)  # drift in the positive direction should not induce alarm
             assert cusum.drift_state is None
         else:
             pass

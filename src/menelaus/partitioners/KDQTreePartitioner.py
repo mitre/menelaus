@@ -53,14 +53,6 @@ class KDQTreePartitioner:
 
         Returns:
             KDQTreeNode: root node of constructed KDQ-Tree
-
-        >>> # TODO - write a short but nice doctest using below as a guide
-        >>> import numpy as np
-        >>> x = np.array([])
-        >>> kp = KDQTreePartitioner(count_ubound=200, cutpoint_proportion_lbound=0.25)
-        >>> root = kp.build(x)
-        >>> root is None
-        True
         """
         if len(data.shape) <= 1:
             return None
@@ -80,8 +72,6 @@ class KDQTreePartitioner:
         Args:
             value (int, optional): value to be written for each node. Default ``0``.
             tree_id (str, optional): identifier for set of counts to be overwritten. Default ``'build'``.
-
-        >>> # TODO - write a short but nice doctest
         """
         KDQTreeNode.reset(self.node, value=value, tree_id=tree_id)
 
@@ -97,8 +87,6 @@ class KDQTreePartitioner:
 
         Returns:
             KDQTreeNode: root node of KDQ-Tree
-
-        >>> # TODO - write a short but nice doctest
         """
         if self.node is None or len(data.shape) <= 1:
             return None  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
@@ -113,8 +101,6 @@ class KDQTreePartitioner:
 
         Returns:
             list: list of counts at leaves of KDQ-Tree
-
-        >>> # TODO - write a short but nice doctest
         """
         ret = None
         if self.leaves:
@@ -134,8 +120,6 @@ class KDQTreePartitioner:
 
         Returns:
             float: Kullback-Leibler divergence among trees
-
-        >>> # TODO - write a short but nice doctest
         """
         if self.leaves == []:
             return None  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
@@ -156,8 +140,6 @@ class KDQTreePartitioner:
 
         Returns:
             numpy.array: array of frequencies
-
-        >>> # TODO - write a short but nice doctest
         """
         total = np.sum(counts)
         hist = np.array(counts) + 0.5
@@ -187,8 +169,6 @@ class KDQTreePartitioner:
 
         Returns:
             pandas.DataFrame: where each row represents a node
-
-        >>> # TODO - write a short but nice doctest
         """
         arr = []
         KDQTreeNode.as_flattened_array(
@@ -227,8 +207,6 @@ class KDQTreePartitioner:
 
         Returns:
             float: KSS from test data to reference data
-
-        >>> # TODO - write a short but nice doctest
         """
         ref_dist = KDQTreePartitioner._distn_from_counts(
             np.array([df["node_count_ref"], ref_max - df["node_count_ref"]])
@@ -346,7 +324,7 @@ class KDQTreeNode:
             return  # this line shows as dead to coverage statistics, but that should be a bug, since otherwise this function wouldn't terminate
         n = data.shape[0]
         axis = node.axis
-        # basically, matches the return Node(n, None) case above (see next # TODO)
+        # basically, matches the return Node(n, None) case above
         if (node is not None) and node.axis is None:
             # update by ID
             if tree_id not in node.num_samples_in_compared_subtrees.keys() or reset:
@@ -390,9 +368,6 @@ class KDQTreeNode:
         Args:
             node (KDQTreeNode): root node of desired subtree
             tree_id (str, optional): identifier for desired subtree. Default ``build``.
-
-        >>> 2 # TODO - write a short but nice doctest
-        2
         """
         # TODO - to avoid a recursive printing problem, this prints rather than storing an ongoing output string
         if node:
@@ -421,9 +396,6 @@ class KDQTreeNode:
             name (str): name of root node. Default ``'kdqTree'``.
             parent_idx (int, optional): unique ID for parent of current node. Default ``None``.
             depth (int, optional): depth of current subtree. Default ``0``.
-
-        >>> 2 # TODO - write a short but nice doctest
-        2
         """
         if node and (tree_id1 in node.num_samples_in_compared_subtrees.keys()):
             # basic plotting features

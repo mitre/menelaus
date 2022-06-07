@@ -119,19 +119,12 @@ class HistogramDensityMethod(DriftDetector):
               and samples since reset will be number of batches passed to HDM
               plus 1, due to splitting of reference batch
 
-    Ref.
-
-    * G. Ditzler and R. Polikar, "Hellinger distance based drift detection for nonstationary
-      environments," 2011 IEEE Symposium on Computational Intelligence in Dynamic and Uncertain
-      Environments (CIDUE), 2011, pp. 41-48, doi: 10.1109/CIDUE.2011.5948491.
-    * Lindstrom, P., Mac Namee, B., Delany, S. J., 2013. Drift detection
-      using uncertainty distribution divergence. Evolving Systems 4 (1),
-      13–25.
+    Ref. [C8]_ and [C9]_
 
     Attributes:
-        total_samples (int): number of batches the drift detector has ever
+        total_updates (int): number of batches the drift detector has ever
             been updated with.
-        samples_since_reset (int): number of batches since the last drift
+        updates_since_reset (int): number of batches since the last drift
             detection.
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
@@ -168,18 +161,18 @@ class HistogramDensityMethod(DriftDetector):
             divergence (str or function): divergence measure used to compute distance
                 between histograms. Default is "H".
 
-                    * "H"  - Hellinger distance, original use is for HDDDM
+                * "H"  - Hellinger distance, original use is for HDDDM
 
-                    * "KL" - Kullback-Leibler Divergence, original use is for CDBD
+                * "KL" - Kullback-Leibler Divergence, original use is for CDBD
 
-                    * User can pass in custom divergence function. Input is two
-                    two-dimensional arrays containing univariate histogram
-                    estimates of density, one for reference, one for test. It
-                    must return the distance value between histograms. To be
-                    a valid distance metric, it must satisfy the following
-                    properties: non-negativity, identity, symmetry,
-                    and triangle inequality, e.g. that in
-                    examples/cdbd_example.py or examples/hdddm_example.py.
+                * User can pass in custom divergence function. Input is two
+                  two-dimensional arrays containing univariate histogram
+                  estimates of density, one for reference, one for test. It
+                  must return the distance value between histograms. To be
+                  a valid distance metric, it must satisfy the following
+                  properties: non-negativity, identity, symmetry,
+                  and triangle inequality, e.g. that in
+                  examples/cdbd_example.py or examples/hdddm_example.py.
 
             detect_batch (int): the test batch on which drift will be detected.
                 See class docstrings for more information on this modification.
@@ -297,19 +290,19 @@ class HistogramDensityMethod(DriftDetector):
             total_distance += f_distance
             feature_distances.append(f_distance)
         self.current_distance = (1 / self._num_features) * total_distance
-        self.distances[self.total_samples] = self.current_distance
+        self.distances[self.total_updates] = self.current_distance
 
         # For each feature, calculate Epsilon, difference in distances
-        if self.total_samples > 1:
+        if self.total_updates > 1:
             self.feature_epsilons = [
                 a_i - b_i
                 for a_i, b_i in zip(feature_distances, self._prev_feature_distances)
             ]
 
         # Compute Epsilon and Beta
-        if self.samples_since_reset >= 2:
+        if self.updates_since_reset >= 2:
 
-            if self.samples_since_reset == 2 and self.detect_batch != 3:
+            if self.updates_since_reset == 2 and self.detect_batch != 3:
                 initial_epsilon = self._estimate_initial_epsilon(
                     self.reference, self.subsets, mins, maxes
                 )
@@ -317,14 +310,14 @@ class HistogramDensityMethod(DriftDetector):
 
             current_epsilon = abs(self.current_distance - self._prev_distance) * 1.0
             self.epsilon.append(current_epsilon)
-            self.epsilon_values[self.total_samples] = current_epsilon
+            self.epsilon_values[self.total_updates] = current_epsilon
 
-            condition1 = bool(self.samples_since_reset >= 2 and self.detect_batch != 3)
-            condition2 = bool(self.samples_since_reset >= 3 and self.detect_batch == 3)
+            condition1 = bool(self.updates_since_reset >= 2 and self.detect_batch != 3)
+            condition2 = bool(self.updates_since_reset >= 3 and self.detect_batch == 3)
             if condition1 or condition2:
 
                 self.beta = self._adaptive_threshold(self.statistic, test_n)
-                self.thresholds[self.total_samples] = self.beta
+                self.thresholds[self.total_updates] = self.beta
 
                 # Detect drift
                 if current_epsilon > self.beta:
@@ -342,7 +335,7 @@ class HistogramDensityMethod(DriftDetector):
 
                     self._drift_state = "drift"
                     self.reference = test_batch
-                    self._lambda = self.total_samples
+                    self._lambda = self.total_updates
 
         if self._drift_state != "drift":
             self._prev_distance = self.current_distance
@@ -355,7 +348,7 @@ class HistogramDensityMethod(DriftDetector):
     def reset(self):
         """
         Initialize relevant attributes to original values, to ensure information
-        only stored from samples_since_reset (lambda) onwards. Intended for use
+        only stored from updates_since_reset (lambda) onwards. Intended for use
         after ``drift_state == 'drift'``.
         """
 
@@ -449,22 +442,22 @@ class HistogramDensityMethod(DriftDetector):
             Adaptive threshold Beta.
         """
 
-        if self.samples_since_reset == 3 and self.detect_batch != 3:
+        if self.updates_since_reset == 3 and self.detect_batch != 3:
             self.total_epsilon -= self.epsilon[0]
             self.epsilon = self.epsilon[1:]
 
         # update scale for denominator (t - lambda - 1), accounting for our initial Epsilon estimate
-        if self.samples_since_reset == 2 and self.detect_batch != 3:
+        if self.updates_since_reset == 2 and self.detect_batch != 3:
             d_scale = 1
         else:
-            d_scale = self.total_samples - self._lambda - 1
+            d_scale = self.total_updates - self._lambda - 1
 
-        # Increment running mean of epsilon from samples_since_reset (lambda) -> t-1
+        # Increment running mean of epsilon from updates_since_reset (lambda) -> t-1
         self.total_epsilon += self.epsilon[-2]  # was -2 before total samples change...
 
         epsilon_hat = (1 / d_scale) * self.total_epsilon
 
-        # Compute standard deviation for samples_since_reset (lambda) -> t-1
+        # Compute standard deviation for updates_since_reset (lambda) -> t-1
         total_stdev = sum(
             (self.epsilon[i] - epsilon_hat) ** 2 for i in range(len(self.epsilon) - 1)
         )

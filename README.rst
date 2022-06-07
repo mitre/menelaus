@@ -11,29 +11,20 @@ Background
 ==========
 
 Menelaus implements algorithms for the purposes of drift detection. Drift
-detection is a branch of machine learning focused on the detection of
-unforeseen shifts in data. The relationships between variables in a dataset are
-rarely static and can be affected by changes in both internal and external
-factors, e.g. changes in data collection techniques, external protocols, and/or 
-population demographics.
- 
-When drift occurs, the data to which a model is applied can differ statistically
-from the data the model was trained on. This may lead to a decrease in the
-discrimination or calibration of a deployed model, or a decrease in the
-performance of even a simple rule-based system built for the original data. The
-goal of drift detection algorithms is to detect a change in either a model's
-error rate or in the distribution of features within a dataset. 
- 
-Both undetected changes in data and undetected model underperformance pose risks
-to the users thereof. The aim of this package is to enable monitoring of data
-and machine learning models. 
+detection is a branch of machine learning focused on the detection of unforeseen
+shifts in data. The relationships between variables in a dataset are rarely
+static and can be affected by changes in both internal and external factors,
+e.g. changes in data collection techniques, external protocols, and/or
+population demographics. Both undetected changes in data and undetected model
+underperformance pose risks to the users thereof. The aim of this package is to
+enable monitoring of data and machine learning model performance.
  
 The algorithms contained within this package were identified through a
 comprehensive literature survey. Menelaus' aim was to implement drift detection
 algorithms that cover a diverse range of statistical methodology. Of the
 algorithms identified, all are able to identify when drift is occurring; some
-can highlight suspicious regions of the dataspace in which drift is more
-significant; and others can also provide model retraining recommendations. 
+can highlight suspicious regions of the data in which drift is more significant;
+and others can also provide model retraining recommendations. 
  
 Menelaus implements drift detectors for both streaming and batch data. In a
 streaming setting, data is arriving continuously and is processed one
@@ -47,42 +38,43 @@ algorithms are typically used when it is more important to process large volumes
 of information simultaneously, where the speed of results after receiving data
 is of less concern.
 
-In The Odyssey, Menelaus seeks a secret known by the shapeshifter Proteus.
+In The Odyssey, Menelaus seeks a prophecy known by the shapeshifter Proteus.
 Menelaus holds Proteus down as he takes the form of a lion, a serpent, water,
 and so on. Eventually, Proteus relents, and Menelaus gains the answers he
-sought. Accordingly, this library provides tools to keep hold of the truth even 
-as the data might shift.
+sought. Accordingly, this library provides tools for "holding" data as it
+shifts.
 
 Detector List
 ============================
 
 Menelaus implements the following drift detectors.
 
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Type              | Detector                                                       | Abbreviation  | Streaming  | Batch  |
-+===================+================================================================+===============+============+========+
-| Change detection  | Cumulative Sum Test                                            | CUSUM         | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Change detection  | Page-Hinkley                                                   | PH            | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Concept drift     | ADaptive WINdowing                                             | ADWIN         | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Concept drift     | Drift Detection Method                                         | DDM           | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Concept drift     | Early Drift Detection Method                                   | EDDM          | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Concept drift     | Linear Four Rates                                              | LFR           | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Concept drift     | Statistical Test of Equal Proportions to Detect concept drift  | STEPD         | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Data drift        | Confidence Distribution Batch Detection                        | CDBD          |            | x      |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Data drift        | Hellinger Distance Drift Detection Method                      | HDDDM         |            | x      |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Data drift        | kdq-Tree Detection Method                                      | kdq-Tree      | x          | x      |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
-| Data drift        | PCA-Based Change Detection                                     | PCA-CD        | x          |        |
-+-------------------+----------------------------------------------------------------+---------------+------------+--------+
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Type              | Detector                                                       | Abbreviation  | Streaming  | Batch  | Ref.    |
++===================+================================================================+===============+============+========+=========+
+| Change detection  | Cumulative Sum Test                                            | CUSUM         | x          |        | [C1]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Change detection  | Page-Hinkley                                                   | PH            | x          |        | [C2]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Concept drift     | ADaptive WINdowing                                             | ADWIN         | x          |        | [C3]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Concept drift     | Drift Detection Method                                         | DDM           | x          |        | [C4]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Concept drift     | Early Drift Detection Method                                   | EDDM          | x          |        | [C5]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Concept drift     | Linear Four Rates                                              | LFR           | x          |        | [C6]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Concept drift     | Statistical Test of Equal Proportions to Detect concept drift  | STEPD         | x          |        | [C7]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Data drift        | Confidence Distribution Batch Detection                        | CDBD          |            | x      | [C8]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Data drift        | Hellinger Distance Drift Detection Method                      | HDDDM         |            | x      | [C9]_   |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Data drift        | kdq-Tree Detection Method                                      | kdq-Tree      | x          | x      | [C10]_  |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+| Data drift        | PCA-Based Change Detection                                     | PCA-CD        | x          |        | [C11]_  |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+---------+
+
 
 The three main types of detector are described below. More details can be found 
 in the respective module documentation:
