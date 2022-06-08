@@ -115,7 +115,7 @@ Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
 .. code-block:: python
 
    #for read-only, install from pypi:
-   pip install 
+   pip install menelaus
 
    #to allow editing, running tests, generating docs, etc.
    #First, clone the git repo, then:
