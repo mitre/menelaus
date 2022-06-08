@@ -1,10 +1,7 @@
-|pipeline| |coverage| |docs|
+|pipeline| |docs|
 
-.. |pipeline| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/pipeline.svg
-   :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
-
-.. |coverage| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/coverage.svg
-   :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
+.. |pipeline| image:: https://github.com/mitre/menelaus/actions/workflows/github_ci.yml/badge.svg
+   :target: https://github.com/mitre/menelaus/actions/workflows/github_ci.yml
 
 .. |docs| image:: https://readthedocs.org/projects/menelaus/badge/?version=latest
    :target: https://menelaus.readthedocs.io/en/latest/?badge=latest
@@ -171,9 +168,8 @@ HTML documentation can be generated at ``menelaus/docs/build/html/index.html`` w
 
 .. code-block:: python
 
-   cd docs
-   sphinx-apidoc -M --templatedir source/templates -f -o source ../src/menelaus && make clean && make html
-
+   cd docs/source
+   sphinx-build . ../build
 
 
 
