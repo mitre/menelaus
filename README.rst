@@ -1,4 +1,4 @@
-|pipeline| |coverage|
+|pipeline| |coverage| |docs|
 
 .. |pipeline| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/pipeline.svg
    :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
@@ -6,6 +6,9 @@
 .. |coverage| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/coverage.svg
    :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
 
+.. |docs| image:: https://readthedocs.org/projects/menelaus/badge/?version=latest
+   :target: https://menelaus.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 Background
 ==========
@@ -114,12 +117,12 @@ Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
 
 .. code-block:: python
 
-   cd ./menelaus/
-   
-   #for read-only:
-   pip install . 
+   #for read-only, install from pypi:
+   pip install menelaus
 
    #to allow editing, running tests, generating docs, etc.
+   #First, clone the git repo, then:
+   cd ./menelaus/
    pip install -e .[dev] 
 
 Menelaus will generally work with Python 3.7 or higher; more specific version
