@@ -31,7 +31,7 @@ from menelaus.data_drift.hdddm import HDDDM
 
 # Import data
 # assumes the script is being run from the root directory.
-data = pd.read_csv(
+df = pd.read_csv(
     os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
     index_col="id",
 )
