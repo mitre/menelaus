@@ -114,12 +114,12 @@ Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
 
 .. code-block:: python
 
-   cd ./menelaus/
-   
-   #for read-only:
-   pip install . 
+   #for read-only, install from pypi:
+   pip install 
 
    #to allow editing, running tests, generating docs, etc.
+   #First, clone the git repo, then:
+   cd ./menelaus/
    pip install -e .[dev] 
 
 Menelaus will generally work with Python 3.7 or higher; more specific version
