@@ -1,4 +1,4 @@
-|pipeline| |coverage|
+|pipeline| |coverage| |docs|
 
 .. |pipeline| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/pipeline.svg
    :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
@@ -6,6 +6,9 @@
 .. |coverage| image:: https://gitlab.mitre.org/lnicholl/molten/badges/dev/coverage.svg
    :target: https://gitlab.mitre.org/lnicholl/molten/-/commits/dev
 
+.. |docs| image:: https://readthedocs.org/projects/menelaus/badge/?version=latest
+   :target: https://menelaus.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 Background
 ==========

@@ -8,5 +8,7 @@ underperformance pose risks to the users thereof. The aim of this package is to
 enable monitoring of data and machine learning model performance.
 
 For full documentation, see:
-GitHub: https://github.com/mitre/menelaus
-ReadTheDocs: https://menelaus.readthedocs.io/en/latest/
+
+* GitHub: https://github.com/mitre/menelaus
+
+* ReadTheDocs: https://menelaus.readthedocs.io/en/latest/
