@@ -63,9 +63,10 @@ class DriftDetector(ABC):
         Raises:
             ValueError: raised if disallowed value is given
         """
-        if not value in ("drift", "warning", None):
+        if value not in ("drift", "warning", None):
             raise ValueError(
-                'DriftDetector._drift_state must be ``"drift"``, ``"warning"``, or ``None``.'
+                """DriftDetector._drift_state must be ``"drift"``, 
+                ``"warning"``, or ``None``."""
             )
         else:
             self._drift_state = value

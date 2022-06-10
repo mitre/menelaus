@@ -5,7 +5,10 @@ from numpy import (
     absolute,
     empty_like,
     zeros,
-)  # most of these get called within loops (or an outer loop on the detector) so this is more efficient
+)
+
+# most of these get called within loops (or an outer loop on the detector),
+# so this is more efficient
 from menelaus.drift_detector import DriftDetector
 
 
@@ -108,7 +111,8 @@ class ADWIN(DriftDetector):
           new_value: next sample in the stream of data being fed to ADWIN
         """
         if self.drift_state is not None:
-            self.reset()  # note that the other attributes should *not* be initialized after drift
+            # note that the other attributes should *not* be initialized after drift
+            self.reset()
 
         super().update()
         # add new sample to the head of the window
