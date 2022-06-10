@@ -24,7 +24,7 @@ class PCACD(DriftDetector):
     Once drift is detected, the reference window is replaced with the current
     test window, and the test window is initialized.
 
-    Ref. [C11]_
+    Ref. :cite:t:`qahtan2015pca`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever
@@ -56,7 +56,7 @@ class PCACD(DriftDetector):
         """
         Args:
             window_size (int): size of the reference window. Note that
-                ``PCA_CD``will only try to detect drift periodically, either
+                ``PCA_CD`` will only try to detect drift periodically, either
                 every 100 observations or 5% of the ``window_size``, whichever
                 is smaller.
             ev_threshold (float, optional): Threshold for percent explained

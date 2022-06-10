@@ -105,7 +105,7 @@ class HDDDM(HistogramDensityMethod):
               calculated using the first test batch, allowing for detection of
               drift on this batch.
 
-    Ref. [C9]_
+    Ref. :cite:t:`ditzler2011hellinger`
 
     Attributes:
         total_updates (int): number of batches the drift detector has ever

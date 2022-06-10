@@ -51,7 +51,7 @@ class KdqTree(DriftDetector):
     Note that the current implementation does not explicitly handle categorical
     data.
 
-    Ref. [C10]_
+    Ref. :cite:t:`dasu2006information`
 
 
     Attributes:
@@ -299,18 +299,18 @@ class KdqTree(DriftDetector):
 
                 * ``name``: a label corresponding to which feature this split is on
                 * ``idx``: a unique ID for the node, to pass
-                ``plotly.express.treemap``'s id argument
+                    ``plotly.express.treemap``'s id argument
                 * ``parent_idx``: the ID of the node's parent
                 * ``cell_count``: how many samples are in this node in the
-                  reference tree.
+                    reference tree.
                 * ``depth``: how deep the node is in the tree
                 * ``count_diff``: if ``tree_id2`` is specified, the change in
-                  counts from the reference tree.
+                    counts from the reference tree.
                 * ``kss``: the Kulldorff Spatial Scan Statistic for this node,
-                  defined as the Kullback-Leibler divergence for this node
-                  between the reference and test trees, using the individual
-                  node and all other nodes combined as the bins for the
-                  distributions.
+                    defined as the Kullback-Leibler divergence for this node
+                    between the reference and test trees, using the individual
+                    node and all other nodes combined as the bins for the
+                    distributions.
         """
 
         return self._kdqtree.to_plotly_dataframe(tree_id1, tree_id2, max_depth)

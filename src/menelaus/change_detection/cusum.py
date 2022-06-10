@@ -9,7 +9,7 @@ class CUSUM(DriftDetector):
     single model performance metric, or could be applied to the mean of a
     feature variable of interest.
 
-    Ref. [C1]_
+    Ref. :cite:t:`hinkley1971inference`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever
