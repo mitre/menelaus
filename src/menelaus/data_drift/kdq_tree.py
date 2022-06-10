@@ -92,18 +92,19 @@ class KdqTree(DriftDetector):
                 than this proportion, relative to the original feature length.
                 Defaults to 2e-10.
             window_size (int, optional): The minimum number of samples required
-                to test whether drift has occurred. Only meaningful if input_type is "stream".
-                If input_type is "batch", kdqTree uses all samples within each batch.
-            persistence (float, optional): Persistence factor. If stream is ``True``,
-                how many samples in a row, as a proportion of the window size,
-                must be in the "drift region" of K-L divergence, in order for
-                ``kdqTree`` to alarm and reset. Defaults to 0.05.
+                to test whether drift has occurred. Only meaningful if
+                input_type is "stream". If input_type is "batch", kdqTree uses
+                all samples within each batch.
+            persistence (float, optional): Persistence factor. If stream is
+                ``True``, how many samples in a row, as a proportion of the
+                window size, must be in the "drift region" of K-L divergence, in
+                order for ``kdqTree`` to alarm and reset. Defaults to 0.05.
             input_type (str, optional): Whether data will be received one sample
                 at a time, vs. received in batches of arbitrary size. For
-                ``input_type == "batch"``, the reference window is defined with the
-                first call to ``update()`` after a reset/initialization. For
-                ``input_type == "stream"``, new samples are passed to update one at
-                a time, and the reference data is defined by ``window_size``.
+                ``input_type == "batch"``, the reference window is defined with
+                the first call to ``update()`` after a reset/initialization. For
+                ``input_type == "stream"``, new samples are passed to update one
+                at a time, and the reference data is defined by ``window_size``.
                 Defaults to "stream".
         """
         if input_type == "stream" and window_size is None:
@@ -297,14 +298,14 @@ class KdqTree(DriftDetector):
             each column contains some information:
 
                 * ``name``: a label corresponding to which feature this split is on
-                * ``idx``: a unique ID for the node, to pass ``plotly.express.treemap``'s
-                  id argument
+                * ``idx``: a unique ID for the node, to pass
+                ``plotly.express.treemap``'s id argument
                 * ``parent_idx``: the ID of the node's parent
-                * ``cell_count``: how many samples are in this node in the reference
-                  tree.
+                * ``cell_count``: how many samples are in this node in the
+                  reference tree.
                 * ``depth``: how deep the node is in the tree
-                * ``count_diff``: if ``tree_id2`` is specified, the change in counts from
-                  the reference tree.
+                * ``count_diff``: if ``tree_id2`` is specified, the change in
+                  counts from the reference tree.
                 * ``kss``: the Kulldorff Spatial Scan Statistic for this node,
                   defined as the Kullback-Leibler divergence for this node
                   between the reference and test trees, using the individual

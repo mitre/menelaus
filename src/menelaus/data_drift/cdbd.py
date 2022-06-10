@@ -120,7 +120,8 @@ class CDBD(HistogramDensityMethod):
                 * if detect_batch = 3 - HDDDM can detect drift on the third test
                   batch passed to the update method.
 
-            statistic (str): statistical method used to compute adaptive threshold. Defaults to ``"tstat"``
+            statistic (str): statistical method used to compute adaptive
+                threshold. Defaults to ``"tstat"``
 
                 * ``"tstat"`` - t-statistic with desired significance level and
                   degrees of freedom = 2 for hypothesis testing on two
