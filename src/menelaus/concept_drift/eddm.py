@@ -24,7 +24,7 @@ class EDDM(DriftDetector):
     The index of the first sample which triggered a warning/drift state
     (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
 
-    Ref. [C5]_
+    Ref. :cite:t:`baena2006early`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever

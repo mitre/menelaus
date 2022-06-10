@@ -45,7 +45,7 @@ class CDBD(HistogramDensityMethod):
            drift is not detected. The reference batch is updated to include this
            most recent test batch. All statistics are maintained.
 
-    Ref. [C8]_
+    Ref. :cite:t:`lindstrom2013drift`
 
     Attributes:
             total_updates (int): number of batches the drift detector has ever

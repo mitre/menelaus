@@ -34,7 +34,7 @@ class ADWIN(DriftDetector):
     When drift occurs, the index of the element at the beginning of ADWIN's new
     window is stored in ``self.retraining_recs``.
 
-    Ref. [C3]_
+    Ref. :cite:t:`bifet2007learning`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever

@@ -23,7 +23,7 @@ class LinearFourRates(DriftDetector):
     of number of time steps and estimated empirical rate, if a given combination
     has been simulated before, the bounds are re-used.
 
-    Ref. [C6]_
+    Ref. :cite:t:`wang2015concept`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever

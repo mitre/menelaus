@@ -33,6 +33,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinxcontrib.bibtex",
 ]
 
 autodoc_default_options = {
@@ -41,6 +42,9 @@ autodoc_default_options = {
     "private-members": False,
     "special-members": "__init__",
 }
+
+bibtex_bibfiles = ["refs.bib"]
+bibtex_reference_style = "author_year"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

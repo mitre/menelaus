@@ -119,7 +119,7 @@ class HistogramDensityMethod(DriftDetector):
               and samples since reset will be number of batches passed to HDM
               plus 1, due to splitting of reference batch
 
-    Ref. [C8]_ and [C9]_
+    Ref. :cite:t:`lindstrom2013drift` and :cite:t:`ditzler2011hellinger`
 
     Attributes:
         total_updates (int): number of batches the drift detector has ever
