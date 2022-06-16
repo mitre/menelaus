@@ -56,10 +56,10 @@ class KDQTreePartitioner:
         """
         if len(data.shape) <= 1:
             return None
-        _, m = data.shape
+        _, num_cols = data.shape
         min_cutpoint_sizes = [
             int(self.cutpoint_proportion_lbound * np.ptp(data[:, axis]))
-            for axis in range(m)
+            for axis in range(num_cols)
         ]
         self.node = KDQTreeNode.build(
             data, self.count_ubound, min_cutpoint_sizes, self.leaves
@@ -149,7 +149,7 @@ class KDQTreePartitioner:
         hist = hist / (total + len(hist) / 2)
         return hist
 
-    def to_plotly_dataframe(self, tree_id1="build", tree_id2=None, max_depth=None):
+    def to_plotly_dataframe(self, tree_id1="build", tree_id2=None, max_depth=None, input_cols=None):
         """Generates a dataframe containing information about the kdqTree's structure
         and some node characteristics, intended for use with plotly. DataFrame columns
         capture:
@@ -173,13 +173,15 @@ class KDQTreePartitioner:
             tree_id2 (str): identifier for test tree. Default ``None``.
             max_depth (int, optional): tree depth up to which the method
                 recurses. Default ``None``.
+            input_cols (list, optional): list of column names for the input 
+                data. Default ``None``.
 
         Returns:
             pandas.DataFrame: where each row represents a node
         """
         arr = []
         KDQTreeNode.as_flattened_array(
-            self.node, tree_id1=tree_id1, tree_id2=tree_id2, output=arr
+            self.node, tree_id1=tree_id1, tree_id2=tree_id2, output=arr, input_cols=input_cols
         )
         df = pd.DataFrame.from_dict(arr)
         if max_depth:
@@ -398,7 +400,7 @@ class KDQTreeNode:
 
     @staticmethod
     def as_flattened_array(
-        node, tree_id1, tree_id2, output=[], name="kdqTree", parent_idx=None, depth=0
+        node, tree_id1, tree_id2, output=[], name="kdqTree", parent_idx=None, depth=0, input_cols=None
     ):
         """Generates a list containing dicts with information about each node's
         structure for the tree rooted at node.
@@ -413,6 +415,8 @@ class KDQTreeNode:
             parent_idx (int, optional): unique ID for parent of current node.
                 Default ``None``.
             depth (int, optional): depth of current subtree. Default ``0``.
+            input_cols (list, optional): list of column names for the input 
+                data. Default ``None``.
         """
         if node and (tree_id1 in node.num_samples_in_compared_subtrees.keys()):
             # basic plotting features
@@ -436,25 +440,34 @@ class KDQTreeNode:
             # append and recurse
             output.append(current_data)
             if node.left is not None:
-                child_name = f"ax {node.axis} <= {round(node.midpoint_at_axis, 3)}"
+                if input_cols is not None:
+                    axis_name = f"{input_cols[node.axis]} <= {round(node.midpoint_at_axis, 3)}"
+                else:
+                    axis_name = f"ax {node.axis} <= {round(node.midpoint_at_axis, 3)}"
 
                 KDQTreeNode.as_flattened_array(
                     node.left,
                     tree_id1,
                     tree_id2,
                     output,
-                    child_name,
+                    axis_name,
                     id(node),
                     depth + 1,
+                    input_cols,
                 )
             if node.right is not None:
-                child_name = f"ax {node.axis} > {round(node.midpoint_at_axis, 3)}"
+                if input_cols is not None:
+                    axis_name = f"{input_cols[node.axis]} > {round(node.midpoint_at_axis, 3)}"
+                else:
+                    axis_name = f"ax {node.axis} > {round(node.midpoint_at_axis, 3)}"
+
                 KDQTreeNode.as_flattened_array(
                     node.right,
                     tree_id1,
                     tree_id2,
                     output,
-                    child_name,
+                    axis_name,
                     id(node),
                     depth + 1,
+                    input_cols,
                 )

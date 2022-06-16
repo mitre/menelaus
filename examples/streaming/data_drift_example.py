@@ -139,7 +139,7 @@ data = df[["var1", "var2"]]
 
 plot_data = {}
 for i in range(len(df)):
-    det.update(data.iloc[[i]].values)
+    det.update(data.iloc[[i]])
     status.loc[i] = [i, data.iloc[i, 0], data.iloc[i, 1], det.drift_state]
     if det.drift_state is not None:
         # capture the visualization data
