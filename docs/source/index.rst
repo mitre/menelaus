@@ -14,6 +14,7 @@ Package structure
    :maxdepth: 5
 
    menelaus
+   cdbd_example.ipynb 
 
 
 References
