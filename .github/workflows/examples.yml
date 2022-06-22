@@ -4,7 +4,7 @@ name: examples
 
 on:
   push:
-    branches: [ "main", feature/8-examples-workflow" ] 
+    branches: [ "main", "feature/8-examples-workflow" ] 
   pull_request:
     branches: [ "main" ]
 
@@ -27,4 +27,5 @@ jobs:
     - name: Test examples
       run: |
         cd tests/examples
+        
         pytest
