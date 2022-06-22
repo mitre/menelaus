@@ -30,9 +30,8 @@ from menelaus.data_drift import PCACD, KdqTree
 
 
 # read in Circle dataset
-data_rel_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv")
-data_abs_path = os.path.abspath(data_rel_path)
-df = pd.read_csv(data_abs_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
+data_path = os.path.join('..', '..', 'src', 'menelaus', 'tools', 'artifacts', 'dataCircleGSev3Sp3Train.csv')
+df = pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
 
 ################################################################################
 ################################## PCA_CD ######################################

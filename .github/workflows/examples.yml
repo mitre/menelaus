@@ -4,9 +4,9 @@ name: examples
 
 on:
   push:
-    branches: [ "main", "dev", "feature/8-examples-workflow" ] 
+    branches: [ "main", feature/8-examples-workflow" ] 
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -26,4 +26,5 @@ jobs:
         pip install -e .[test]
     - name: Test examples
       run: |
-        pytest tests/examples
+        cd tests/examples
+        pytest
