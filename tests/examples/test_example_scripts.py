@@ -36,6 +36,6 @@ def test_script_execution(script):
 
     # clean output files appearing in current or parent directory
     output_file_pattern = 'example_*.*'
-    output_files = pathlib.Path(__file__, '..').resolve().rglob(output_file_pattern)
+    output_files = pathlib.Path(__file__, '..', '..').resolve().rglob(output_file_pattern)
     for output_file in output_files:
         os.remove(output_file)
