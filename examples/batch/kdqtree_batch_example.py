@@ -28,12 +28,9 @@ from menelaus.data_drift.kdq_tree import KdqTree
 np.random.seed(123)
 
 # Import data
-# assumes the script is being run from the root directory.
-df_orig = pd.read_csv(
-    os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
-    index_col="id",
-    dtype={"drift": bool},
-)
+data_rel_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
+data_abs_path = os.path.abspath(data_rel_path)
+df_orig = pd.read_csv(data_abs_path, index_col="id", dtype={"drift": bool})
 
 # Convert the categorical columns to dummy variables
 df = pd.concat([df_orig, pd.get_dummies(df_orig.cat, prefix="cat")], axis=1)
