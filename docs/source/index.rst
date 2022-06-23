@@ -1,12 +1,17 @@
 Menelaus
 ==================================
-.. include:: ../../README.rst
+.. include:: ../../README.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :hidden:
 
    Home <self>
 
+References
+==================================
+Each detector's documentation contains a reference link to the original paper.
+The bibliography is :ref:`here<references_page>`.
 
 Package structure
 ==================================
@@ -14,11 +19,6 @@ Package structure
    :maxdepth: 5
 
    menelaus
-
-References
-==================================
-
-* :ref:`references_page`
 
 Indices and tables
 ==================

@@ -34,6 +34,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
+    "sphinxcontrib.mermaid",
+    "myst_parser",
 ]
 
 autodoc_default_options = {
