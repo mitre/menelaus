@@ -87,15 +87,7 @@ then maintains a count of the number of samples from the given dataset that fall
 into each section of that partition. More details are given in the respective
 module.
 
-This is a placeholder for our flowchart:
-
-```mermaid
-  graph TD;
-      A-->B;
-      A-->C;
-      B-->D;
-      C-->D;
-```
+A flowchart breaking down these contexts can be found on the ReadTheDocs page under "Choosing a Detector."
 
 # Installation
 
