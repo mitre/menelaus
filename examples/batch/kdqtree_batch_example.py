@@ -29,7 +29,7 @@ np.random.seed(123)
 
 # Import data
 data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
-df_orig = pd.read_csv(data_path, index_col="id", dtype={"drift": bool})
+df = pd.read_csv(data_path, index_col="id", dtype={"drift": bool})
 
 # Capture the column which tells us when drift truly occurred
 drift_years = df.groupby("year")["drift"].apply(lambda x: x.unique()[0]).reset_index()
