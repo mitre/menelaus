@@ -157,5 +157,3 @@ hdddm = HDDDM(
 
 hdddm.set_reference(reference)
 hdddm.update(df[df.year == 2008].iloc[:, 1:-2])
-
-

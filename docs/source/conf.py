@@ -87,7 +87,8 @@ html_static_path = ["_static"]
 # -- Options for HTML output for notebooks -------------------------------------------------
 
 # Always execute notebooks prior to conversion
-nbsphinx_execute = "always"
+# TODO: maybe uncomment this
+# nbsphinx_execute = "always"
 
 
 # Get sphinx-apidocs to run on readthedocs pipeline

@@ -10,7 +10,7 @@ data_drift module. The parameters aren't necessarily tuned for best
 performance for the input data, just notional. These detectors are generally
 applied to the whole feature set for a given data source. 
 
-The example data for kdqTree, Circle,  is a synthetic data source, where drift
+The example data for kdqTree, Circle, is a synthetic data source, where drift
 occurs in both var1, var2, and the conditional distributions P(y|var1) and
 P(y|var2). The drift occurs from index 1000 to 1250, and affects 66% of the
 sample.
@@ -24,8 +24,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-from sklearn.naive_bayes import GaussianNB
-from sklearn.preprocessing import StandardScaler
 from menelaus.data_drift import PCACD, KdqTree
 
 
