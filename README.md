@@ -89,7 +89,7 @@ module.
 
 This is a placeholder for our flowchart:
 
-```{mermaid}
+```mermaid
   graph TD;
       A-->B;
       A-->C;
