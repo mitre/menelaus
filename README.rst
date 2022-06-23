@@ -1,4 +1,4 @@
-|pipeline| |docs| |examples| |lint|
+|tests| |docs| |examples| |lint|
 
 .. |pipeline| image:: https://github.com/mitre/menelaus/actions/workflows/tests.yml/badge.svg
    :target: https://github.com/mitre/menelaus/actions/workflows/tests.yml
