@@ -27,15 +27,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev]
-    - name: Format with black
-      run: |
-        black ./src/menelaus
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     - name: Unit and coverage tests
       run: |
         pytest tests/menelaus --cov=src/ --cov-report term
