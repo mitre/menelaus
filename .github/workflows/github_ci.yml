@@ -5,7 +5,7 @@ name: lint | tests | coverage
 
 on:
   push:
-    branches: [ "main", "dev", "feature/5-coverage-workflow" ]
+    branches: [ "main", "dev" ]
   pull_request:
     branches: [ "main", "dev" ]
 
