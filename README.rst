@@ -1,6 +1,6 @@
 |tests| |docs| |examples| |lint|
 
-.. |pipeline| image:: https://github.com/mitre/menelaus/actions/workflows/tests.yml/badge.svg
+.. |tests| image:: https://github.com/mitre/menelaus/actions/workflows/tests.yml/badge.svg
    :target: https://github.com/mitre/menelaus/actions/workflows/tests.yml
 
 .. |docs| image:: https://readthedocs.org/projects/menelaus/badge/?version=latest
