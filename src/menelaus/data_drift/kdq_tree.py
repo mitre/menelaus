@@ -181,7 +181,6 @@ class KdqTree(DriftDetector):
                 "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
             )
 
-
     def update(self, data):
         """
         Update the detector with a new sample/batch. Constructs the reference
@@ -244,7 +243,7 @@ class KdqTree(DriftDetector):
             if (
                 self.input_type == "stream" and len(self._ref_data) == self.window_size
             ) or self.input_type == "batch":
-        
+
                 self._inner_set_reference(self._ref_data)
 
         else:  # new test sample(s)

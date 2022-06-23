@@ -149,7 +149,9 @@ class KDQTreePartitioner:
         hist = hist / (total + len(hist) / 2)
         return hist
 
-    def to_plotly_dataframe(self, tree_id1="build", tree_id2=None, max_depth=None, input_cols=None):
+    def to_plotly_dataframe(
+        self, tree_id1="build", tree_id2=None, max_depth=None, input_cols=None
+    ):
         """Generates a dataframe containing information about the kdqTree's structure
         and some node characteristics, intended for use with plotly. DataFrame columns
         capture:
@@ -173,7 +175,7 @@ class KDQTreePartitioner:
             tree_id2 (str): identifier for test tree. Default ``None``.
             max_depth (int, optional): tree depth up to which the method
                 recurses. Default ``None``.
-            input_cols (list, optional): list of column names for the input 
+            input_cols (list, optional): list of column names for the input
                 data. Default ``None``.
 
         Returns:
@@ -181,7 +183,11 @@ class KDQTreePartitioner:
         """
         arr = []
         KDQTreeNode.as_flattened_array(
-            self.node, tree_id1=tree_id1, tree_id2=tree_id2, output=arr, input_cols=input_cols
+            self.node,
+            tree_id1=tree_id1,
+            tree_id2=tree_id2,
+            output=arr,
+            input_cols=input_cols,
         )
         df = pd.DataFrame.from_dict(arr)
         if max_depth:
@@ -400,7 +406,14 @@ class KDQTreeNode:
 
     @staticmethod
     def as_flattened_array(
-        node, tree_id1, tree_id2, output=[], name="kdqTree", parent_idx=None, depth=0, input_cols=None
+        node,
+        tree_id1,
+        tree_id2,
+        output=[],
+        name="kdqTree",
+        parent_idx=None,
+        depth=0,
+        input_cols=None,
     ):
         """Generates a list containing dicts with information about each node's
         structure for the tree rooted at node.
@@ -415,7 +428,7 @@ class KDQTreeNode:
             parent_idx (int, optional): unique ID for parent of current node.
                 Default ``None``.
             depth (int, optional): depth of current subtree. Default ``0``.
-            input_cols (list, optional): list of column names for the input 
+            input_cols (list, optional): list of column names for the input
                 data. Default ``None``.
         """
         if node and (tree_id1 in node.num_samples_in_compared_subtrees.keys()):
@@ -441,7 +454,9 @@ class KDQTreeNode:
             output.append(current_data)
             if node.left is not None:
                 if input_cols is not None:
-                    axis_name = f"{input_cols[node.axis]} <= {round(node.midpoint_at_axis, 3)}"
+                    axis_name = (
+                        f"{input_cols[node.axis]} <= {round(node.midpoint_at_axis, 3)}"
+                    )
                 else:
                     axis_name = f"ax {node.axis} <= {round(node.midpoint_at_axis, 3)}"
 
@@ -457,7 +472,9 @@ class KDQTreeNode:
                 )
             if node.right is not None:
                 if input_cols is not None:
-                    axis_name = f"{input_cols[node.axis]} > {round(node.midpoint_at_axis, 3)}"
+                    axis_name = (
+                        f"{input_cols[node.axis]} > {round(node.midpoint_at_axis, 3)}"
+                    )
                 else:
                     axis_name = f"ax {node.axis} > {round(node.midpoint_at_axis, 3)}"
 
