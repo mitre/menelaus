@@ -180,7 +180,7 @@ HTML documentation can be generated at ``menelaus/docs/build/html/index.html`` w
    sphinx-build . ../build
 
 
-Development
+Formatting
 ============================
 
 This project uses ``black`` and ``flake8`` for code formatting and linting, respectively. To satisfy these requirements when contributing, you may run the following from the root directory:
