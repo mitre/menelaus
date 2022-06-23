@@ -28,12 +28,8 @@ from menelaus.data_drift.kdq_tree import KdqTree
 np.random.seed(123)
 
 # Import data
-# assumes the script is being run from the root directory.
-df = pd.read_csv(
-    os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
-    index_col="id",
-    dtype={"drift": bool},
-)
+data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
+df = pd.read_csv(data_path, index_col="id", dtype={"drift": bool})
 
 # Capture the column which tells us when drift truly occurred
 drift_years = df.groupby("year")["drift"].apply(lambda x: x.unique()[0]).reset_index()
