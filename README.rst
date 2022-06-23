@@ -1,11 +1,18 @@
 |pipeline| |docs|
 
-.. |pipeline| image:: https://github.com/mitre/menelaus/actions/workflows/github_ci.yml/badge.svg
-   :target: https://github.com/mitre/menelaus/actions/workflows/github_ci.yml
+.. |pipeline| image:: https://github.com/mitre/menelaus/actions/workflows/tests.yml/badge.svg
+   :target: https://github.com/mitre/menelaus/actions/workflows/tests.yml
 
 .. |docs| image:: https://readthedocs.org/projects/menelaus/badge/?version=latest
    :target: https://menelaus.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
+
+.. |examples| image:: https://github.com/mitre/menelaus/actions/workflows/examples.yml/badge.svg?branch=main
+   :target: https://github.com/mitre/menelaus/actions/workflows/examples.yml
+
+.. |lint| image:: https://github.com/mitre/menelaus/actions/workflows/format.yml/badge.svg
+   :target: https://github.com/mitre/menelaus/actions/workflows/format.yml
+
 
 Background
 ==========
