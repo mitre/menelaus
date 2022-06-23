@@ -4,7 +4,7 @@ name: examples
 
 on:
   push:
-    branches: [ "main", "feature/8-examples-workflow" ] 
+    branches: [ "main" ] 
   pull_request:
     branches: [ "main" ]
 

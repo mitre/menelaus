@@ -14,10 +14,6 @@ import pytest
 from traitlets.config import Config
 
 
-# pip install jupyter (now in test installation)
-# ipython kernel install --name "venv" --user
-
-
 def run_notebook(path, timeout=120):
     """
     Execute a Jupyter Notebook and return any errors that it produces.
