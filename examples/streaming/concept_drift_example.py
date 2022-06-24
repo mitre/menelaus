@@ -578,6 +578,7 @@ status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accura
 correct = 0
 rec_list = []
 
+# run STEPD and retrain
 n = 1
 for i, row in df_ex.iloc[training_size:].iterrows():
     y_pred = clf.predict(np.array(row[["var1", "var2"]]).reshape(1, -1))

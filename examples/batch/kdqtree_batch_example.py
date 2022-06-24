@@ -23,10 +23,6 @@ import matplotlib.pyplot as plt
 from menelaus.data_drift.kdq_tree import KdqTree
 
 
-# kdq-Tree does use bootstrapping to define its critical thresholds, so setting
-# the seed is important to reproduce exact behavior.
-np.random.seed(123)
-
 # Import data
 # assumes the script is being run from the root directory.
 df_orig = pd.read_csv(
@@ -34,6 +30,10 @@ df_orig = pd.read_csv(
     index_col="id",
     dtype={"drift": bool},
 )
+
+# kdq-Tree does use bootstrapping to define its critical thresholds, so setting
+# the seed is important to reproduce exact behavior.
+np.random.seed(123)
 
 # Convert the categorical columns to dummy variables
 df = pd.concat([df_orig, pd.get_dummies(df_orig.cat, prefix="cat")], axis=1)
@@ -110,5 +110,3 @@ for year, df_plot in plot_data.items():
 # Drift 3: change the correlation of item e and f in 2015 (go from correlation of 0 to correlation of 0.5)
 # Drift 4: change mean and var of H and persist it from 2018 on
 # Drift 5: change mean and var just for a year of J in 2021
-
-

@@ -14,16 +14,10 @@ Package structure
    :maxdepth: 5
 
    menelaus
-   examples/data_drift_examples.ipynb
-
-
-.. toctree::
-   :caption: Data Drift Examples
-
-   examples/cdbd_example.ipynb
-   examples/hdddm_example.ipynb
-   examples/pca_cd_example.ipynb
-   examples/kdqtree_example.ipynb
+   examples/change_detection/change_detection_examples.ipynb
+   examples/concept_drift/concept_drift_examples.ipynb
+   examples/data_drift/data_drift_examples.ipynb
+   examples/partitioners/partitioner_plots_example.ipynb
 
 
 References
