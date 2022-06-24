@@ -49,13 +49,13 @@ class CDBD(HistogramDensityMethod):
 
     Attributes:
         total_updates (int): total number of batches the drift detector has
-            been updated with. If detect_batch = 1, attr refers to total 
-            number of batches + 1 to account for additional update call 
-            due to the initial splitting of the reference batch. 
+            been updated with. If detect_batch = 1, attr refers to total
+            number of batches + 1 to account for additional update call
+            due to the initial splitting of the reference batch.
         updates_since_reset (int): number of batches since the last drift
-            detection. If detect_batch = 1, attr refers to total 
-            number of batches + 1 to account for additional update call 
-            due to the initial splitting of the reference batch. 
+            detection. If detect_batch = 1, attr refers to total
+            number of batches + 1 to account for additional update call
+            due to the initial splitting of the reference batch.
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
             Epsilon (list): stores Epsilon values since the last drift detection.
