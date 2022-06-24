@@ -60,7 +60,7 @@ Menelaus implements the following drift detectors.
 
 The three main types of detector are described below. More details, including
 references to the original papers, can be found in the respective module
-documentation.
+documentation on [ReadTheDocs](https://menelaus.readthedocs.io/en/latest/).
 
 -   Change detectors monitor single variables in the streaming context,
     and alarm when that variable starts taking on values outside of a
