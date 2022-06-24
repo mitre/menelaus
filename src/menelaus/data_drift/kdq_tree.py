@@ -212,7 +212,7 @@ class KdqTree(DriftDetector):
             elif self.input_cols is not None:
                 if not data.columns.equals(self.input_cols):
                     raise ValueError(
-                        "Columns of new batch of data must match with columns of reference data."
+                        "Columns of new data must match with columns of reference data."
                     )
             ary = data.values
         elif isinstance(data, np.ndarray):
