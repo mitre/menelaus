@@ -228,7 +228,7 @@ class KdqTree(DriftDetector):
             if self.input_type == "batch":
                 # this will both reset the detector and initialize the reference
                 # kdq-tree.
-                self.set_reference(data)
+                self.set_reference(self.ref_data)
             else:
                 self.reset()
 
@@ -263,6 +263,8 @@ class KdqTree(DriftDetector):
 
                     else:
                         self.drift_state = "drift"
+                        if isinstance(data, pd.DataFrame):
+                            self.input_cols = data.columns
                         self.ref_data = ary
 
     def _get_critical_kld(self, ref_counts):
