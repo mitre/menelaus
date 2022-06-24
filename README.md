@@ -159,7 +159,8 @@ Install the library using the `[dev]` option, as above.
 
   This project uses `black` and `flake8` for code formatting and
   linting, respectively. To satisfy these requirements when contributing, you
-  may run the following from the root directory:
+  may use them as the linter/formatter in your IDE, or manually run the
+  following from the root directory:
   ```python
   flake8                 # lint
   black ./src/menelaus   # formatting
