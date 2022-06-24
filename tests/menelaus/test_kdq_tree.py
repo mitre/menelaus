@@ -1,6 +1,5 @@
 """Module to check correctness of kdqTree"""
 import copy
-from matplotlib.pyplot import new_figure_manager
 import pytest
 import numpy as np
 import pandas as pd
