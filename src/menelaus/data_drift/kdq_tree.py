@@ -210,13 +210,15 @@ class KdqTree(DriftDetector):
                 # input. This will also fire if set_reference has been used with
                 # a dataframe.
                 self.input_cols = data.columns
-            else:
+            elif self.input_cols is not None:
                 if not data.columns.equals(self.input_cols):
                     raise ValueError(
                         "Columns of new data must match with columns of reference data."
                     )
             ary = data.values
         elif isinstance(data, np.ndarray):
+            # This allows starting with a dataframe, then later passing bare
+            # numpy arrays. For now, assume users are not miscreants.
             ary = data
         else:
             raise ValueError(
