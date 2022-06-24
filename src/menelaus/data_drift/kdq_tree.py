@@ -147,8 +147,7 @@ class KdqTree(DriftDetector):
         Args:
             ary (numpy array): initial baseline dataset
         """
-        if self.drift_state == "drift":
-            self.reset()
+        self.reset()
 
         self._kdqtree = KDQTreePartitioner(
             count_ubound=self.count_ubound,
@@ -162,7 +161,8 @@ class KdqTree(DriftDetector):
     def set_reference(self, data):
         """
         Initialize detector with a reference batch. The user may specify an
-        alternate reference batch than the one maintained by kdq-Tree.
+        alternate reference batch than the one maintained by kdq-Tree. This will
+        reset the detector.
         If ``input_type`` is ``"stream"``, this method should not be used.
 
         Args:
@@ -205,19 +205,18 @@ class KdqTree(DriftDetector):
             reference window (if not streaming).
         """
         if isinstance(data, pd.DataFrame):
-            if self._kdqtree is None and self.input_cols is None:
-                # the first update with an empty reference tree OR a call to
-                # set_reference should constrain subsequent input
+            if self.input_cols is None:
+                # The first update with a dataframe will constrain subsequent
+                # input. This will also fire if set_reference has been used with
+                # a dataframe.
                 self.input_cols = data.columns
-            elif self.input_cols is not None:
+            else:
                 if not data.columns.equals(self.input_cols):
                     raise ValueError(
                         "Columns of new data must match with columns of reference data."
                     )
             ary = data.values
         elif isinstance(data, np.ndarray):
-            # This allows starting with a dataframe, then later passing bare
-            # numpy arrays. For now, assume users are not miscreants.
             ary = data
         else:
             raise ValueError(
@@ -226,11 +225,12 @@ class KdqTree(DriftDetector):
             )
 
         if self.drift_state == "drift":
-            self.reset()
-            if self._kdqtree is None and self.input_type == "batch":
-                if isinstance(data, pd.DataFrame) and self.input_cols is None:
-                    self.input_cols = data.columns
-                self._inner_set_reference(ary)
+            if self.input_type == "batch":
+                # this will both reset the detector and initialize the reference
+                # kdq-tree.
+                self.set_reference(data)
+            else:
+                self.reset()
 
         super().update()
 
