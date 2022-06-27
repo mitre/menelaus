@@ -43,3 +43,7 @@ jobs:
         options: "--check --verbose"
         src: "./src/menelaus"
         version: "22.3.0"
+
+    - name: Security check with bandit
+      run: |
+        bandit -q -r ./src/
