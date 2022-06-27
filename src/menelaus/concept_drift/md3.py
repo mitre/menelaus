@@ -38,8 +38,24 @@ class MD3(DriftDetector):
     input_type = "stream"
 
     def __init__(self, clf):
+        """
+        Args:
+            clf (sklearn.svm.SVC): the classifier for which we are tracking drift.
+                For now, assumed to be a Support Vector Machine (SVM). TODO: change
+                this after adding capability for other models.
+        """
+
         super().__init__()
         self.classifier = clf
+        self.process_svm()
+
+    def process_svm(self):
+        # get the separating hyperplane
+        self.w = np.array(self.clf.coef_[0])
+        self.b = -self.w[0] / self.w[1]
+
+        # calculate the magnitude of the margin
+        self.margin = 1 / np.sqrt(np.sum(self.clf.coef_**2))
 
     # TODO: two ways we can handle the update/drift detection:
     #       (1) after the detector has been updated with some number of samples
@@ -60,6 +76,24 @@ class MD3(DriftDetector):
         # TODO: in the formula for the forgetting factor in the paper, is N
         # the total number of samples so far, or the size of the reference batch?
         self.forgetting_factor = (len(reference_batch) - 1) / len(reference_batch)
+        self.reference_margin_density = self.calculate_margin_density(reference_batch)
+        self.curr_margin_density = self.reference_margin_density
+
+    def calculate_margin_density(self, data):
+        """
+        Calculate the total margin density of the batch of data passed in.
+
+        Args:
+            data (DataFrame): batch of data to calculate margin density for
+        """
+
+        signal_func = 0
+        for i in range(len(data)):
+            sample_np_array = data.loc[i, :].to_numpy()
+            margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
+            signal_func += margin_inclusion_signal
+        
+        return signal_func / len(data)
 
     def update(self, new_sample):
         """
@@ -69,7 +103,24 @@ class MD3(DriftDetector):
             new_sample (DataFrame): feature values/sample data for the new incoming sample
         """
 
-        margin_inclusion_signal = self.calculate_margin_inclusion_signal(new_sample)
+        if len(new_sample) != 1:
+            raise ValueError(
+                """This method is only available for data inputs in the form of 
+                a Pandas DataFrame with exactly 1 record."""
+            )
+
+        sample_np_array = new_sample.loc[0, :].to_numpy()
+        margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
+        self.curr_margin_density = self.forgetting_factor * self.curr_margin_density + (1 - self.forgetting_factor) * margin_inclusion_signal
+        # TODO: keep implementing the algorithm from here
+
+    def reset(self):
+        """
+        Initialize the detector's drift state and other relevant attributes.
+        Intended for use after ``drift_state == 'drift'``.
+        """
+        super().reset()
+        self.curr_margin_density = self.reference_margin_density
 
     def calculate_margin_inclusion_signal(self, sample):
         """
@@ -79,8 +130,11 @@ class MD3(DriftDetector):
         Otherwise, a value of 0 is returned.
 
         Args:
-            sample (DataFrame): feature values/sample data for the new incoming sample
+            sample (numpy.array): feature values/sample data for the new incoming sample
         """
 
-        # TODO: Write this function
-        return 1
+        if np.abs(np.dot(self.w, sample) + self.b) <= 1:
+            return 1
+        else:
+            return 0
+    

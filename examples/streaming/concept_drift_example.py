@@ -41,9 +41,10 @@ from menelaus.concept_drift import LinearFourRates, ADWIN, DDM, EDDM, STEPD
 
 # read in Circle dataset
 # assumes the script is being run from the root directory.
+# TODO: change this path back after done testing
 df = pd.read_csv(
     os.path.join(
-        "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
+        "..", "..", "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
     ),
     usecols=[0, 1, 2],
     names=["var1", "var2", "y"],
@@ -57,130 +58,130 @@ training_size = 500
 # Linear Four Rates monitors the four cells of the confusion matrix (TPR, FPR,
 # TNR, FNR) and alarms when one of these becomes different enough from earlier
 # performance.
-
+# TOOD: uncomment LFR code
 # Set up classifier: train on first training_size rows
-X_train = df.loc[0:training_size, ["var1", "var2"]]
-y_train = df.loc[0:training_size, "y"]
-clf = GaussianNB()
-clf.fit(X_train, y_train)
+# X_train = df.loc[0:training_size, ["var1", "var2"]]
+# y_train = df.loc[0:training_size, "y"]
+# clf = GaussianNB()
+# clf.fit(X_train, y_train)
 
-# Set up LFR detector to detect at significance of .001. 5000 Monte Carlo
-# simulations will be run every 10 samples to detect drift.
-lfr = LinearFourRates(
-    time_decay_factor=0.6,
-    warning_level=0.01,
-    detect_level=0.001,
-    num_mc=5000,
-    burn_in=10,
-    subsample=10,
-)
+# # Set up LFR detector to detect at significance of .001. 5000 Monte Carlo
+# # simulations will be run every 10 samples to detect drift.
+# lfr = LinearFourRates(
+#     time_decay_factor=0.6,
+#     warning_level=0.01,
+#     detect_level=0.001,
+#     num_mc=5000,
+#     burn_in=10,
+#     subsample=10,
+# )
 
-# Set up DF to store results.
-status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
-correct = 0
+# # Set up DF to store results.
+# status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
+# correct = 0
 
-np.random.seed(123)  # set seed for this example
+# np.random.seed(123)  # set seed for this example
 
-# Run LFR and retrain.
+# # Run LFR and retrain.
 
-rec_list = []
-n = 1
-for i in range(training_size, len(df)):
-    X_test = df.loc[[i], ["var1", "var2"]]
-    y_pred = int(clf.predict(X_test))
-    y_true = int(df.loc[[i], "y"])
+# rec_list = []
+# n = 1
+# for i in range(training_size, len(df)):
+#     X_test = df.loc[[i], ["var1", "var2"]]
+#     y_pred = int(clf.predict(X_test))
+#     y_true = int(df.loc[[i], "y"])
 
-    # increment accuracy
-    if y_pred == y_true:
-        correct += 1
-    accuracy = correct / n
+#     # increment accuracy
+#     if y_pred == y_true:
+#         correct += 1
+#     accuracy = correct / n
 
-    lfr.update(y_pred, y_true)
-    status.loc[i] = [i, y_true, y_pred, lfr.drift_state, accuracy]
+#     lfr.update(y_pred, y_true)
+#     status.loc[i] = [i, y_true, y_pred, lfr.drift_state, accuracy]
 
-    # If drift is detected, examine the retraining recommendations and retrain.
-    if lfr.drift_state == "drift":
+#     # If drift is detected, examine the retraining recommendations and retrain.
+#     if lfr.drift_state == "drift":
 
-        retrain_start = lfr.retraining_recs[0] + training_size
-        retrain_end = lfr.retraining_recs[1] + training_size
-        if (
-            retrain_start == retrain_end
-        ):  # minimum retraining window in case of sudden drift
-            retrain_start = max(0, retrain_start - 300)
-        rec_list.append([retrain_start, retrain_end])
+#         retrain_start = lfr.retraining_recs[0] + training_size
+#         retrain_end = lfr.retraining_recs[1] + training_size
+#         if (
+#             retrain_start == retrain_end
+#         ):  # minimum retraining window in case of sudden drift
+#             retrain_start = max(0, retrain_start - 300)
+#         rec_list.append([retrain_start, retrain_end])
 
-        # If retraining is not desired, omit the next four lines.
-        X_train = df.loc[retrain_start:retrain_end, ["var1", "var2"]]
-        y_train = df.loc[retrain_start:retrain_end, "y"]
-        clf = GaussianNB()
-        clf.fit(X_train, y_train)
+#         # If retraining is not desired, omit the next four lines.
+#         X_train = df.loc[retrain_start:retrain_end, ["var1", "var2"]]
+#         y_train = df.loc[retrain_start:retrain_end, "y"]
+#         clf = GaussianNB()
+#         clf.fit(X_train, y_train)
 
-    n += 1
+#     n += 1
 
-plt.figure(figsize=(20, 5))
-plt.scatter("index", "accuracy", data=status, label="Accuracy")
-plt.grid(False, axis="x")
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-plt.title("LFR Results: Accuracy", fontsize=22)
-plt.ylabel("Value", fontsize=18)
-plt.xlabel("Index", fontsize=18)
-ylims = [-0.05, 1.1]
-plt.ylim(ylims)
+# plt.figure(figsize=(20, 5))
+# plt.scatter("index", "accuracy", data=status, label="Accuracy")
+# plt.grid(False, axis="x")
+# plt.xticks(fontsize=16)
+# plt.yticks(fontsize=16)
+# plt.title("LFR Results: Accuracy", fontsize=22)
+# plt.ylabel("Value", fontsize=18)
+# plt.xlabel("Index", fontsize=18)
+# ylims = [-0.05, 1.1]
+# plt.ylim(ylims)
 
-plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
+# plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
 
-# Draw red lines that indicate where drift was detected
-plt.vlines(
-    x=status.loc[status["drift_detected"] == "drift"]["index"],
-    ymin=ylims[0],
-    ymax=ylims[1],
-    label="Drift Detected",
-    color="red",
-)
+# # Draw red lines that indicate where drift was detected
+# plt.vlines(
+#     x=status.loc[status["drift_detected"] == "drift"]["index"],
+#     ymin=ylims[0],
+#     ymax=ylims[1],
+#     label="Drift Detected",
+#     color="red",
+# )
 
-# Draw orange lines that indicate where warnings of drift were provided
-plt.vlines(
-    x=status.loc[status["drift_detected"] == "warning"]["index"],
-    ymin=ylims[0],
-    ymax=ylims[1],
-    label="Warning",
-    color="orange",
-    alpha=0.3,
-)
+# # Draw orange lines that indicate where warnings of drift were provided
+# plt.vlines(
+#     x=status.loc[status["drift_detected"] == "warning"]["index"],
+#     ymin=ylims[0],
+#     ymax=ylims[1],
+#     label="Warning",
+#     color="orange",
+#     alpha=0.3,
+# )
 
-# Create a list of lines that indicate the retraining windows.
-# Space them evenly, vertically.
-rec_list = pd.DataFrame(rec_list)
-rec_list["y_val"] = np.linspace(
-    start=0.05 * (ylims[1] - ylims[0]) + ylims[0],
-    stop=0.2 * ylims[1],
-    num=len(rec_list),
-)
+# # Create a list of lines that indicate the retraining windows.
+# # Space them evenly, vertically.
+# rec_list = pd.DataFrame(rec_list)
+# rec_list["y_val"] = np.linspace(
+#     start=0.05 * (ylims[1] - ylims[0]) + ylims[0],
+#     stop=0.2 * ylims[1],
+#     num=len(rec_list),
+# )
 
-# Draw green lines that indicate where retraining occurred
-plt.hlines(
-    y=rec_list["y_val"],
-    xmin=rec_list[0],
-    xmax=rec_list[1],
-    color="green",
-    label="Retraining Windows",
-)
+# # Draw green lines that indicate where retraining occurred
+# plt.hlines(
+#     y=rec_list["y_val"],
+#     xmin=rec_list[0],
+#     xmax=rec_list[1],
+#     color="green",
+#     label="Retraining Windows",
+# )
 
-plt.legend()
-# plt.show()
+# plt.legend()
+# # plt.show()
 
-# One of the four rates immediately passes outside its threshold when drift is
-# induced. The same occurs shortly after leaving the drift region. The
-# recommended retraining data includes most of the drift induction window and
-# the data after regime change.
-#
-# The classifier's accuracy decreases again later, which causes the detector to
-# enter a "warning" state. Note that the retraining recommendations *begin* with
-# the index corresponding to the warning state, and end where drift is detected.
-#
+# # One of the four rates immediately passes outside its threshold when drift is
+# # induced. The same occurs shortly after leaving the drift region. The
+# # recommended retraining data includes most of the drift induction window and
+# # the data after regime change.
+# #
+# # The classifier's accuracy decreases again later, which causes the detector to
+# # enter a "warning" state. Note that the retraining recommendations *begin* with
+# # the index corresponding to the warning state, and end where drift is detected.
+# #
 
-plt.savefig("example_LFR.png")
+# plt.savefig("example_LFR.png")
 
 
 ################################################################################
