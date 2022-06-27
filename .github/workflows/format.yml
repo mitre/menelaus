@@ -46,4 +46,5 @@ jobs:
 
     - name: Security check with bandit
       run: |
+        # exits with code 0 if there are no errors, otherwise complains
         bandit -q -r ./src/
