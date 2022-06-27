@@ -16,3 +16,4 @@ applicable in unsupervised learning settings.
 from menelaus.data_drift.hdddm import HDDDM
 from menelaus.data_drift.kdq_tree import KdqTree
 from menelaus.data_drift.pca_cd import PCACD
+from menelaus.data_drift.nndvi import NNDVI
