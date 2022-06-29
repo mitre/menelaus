@@ -52,7 +52,7 @@ fig = px.treemap(
 )
 fig.update_traces(root_color="lightgrey")
 # fig.show()
-fig.write_html(f"example_partitioner_lots_basic_plot.html")
+fig.write_html(f"example_partitioner_plots_basic_plot.html")
 
 ############## Filter by depth ##############
 kp = KDQTreePartitioner(count_ubound=25)
@@ -72,7 +72,7 @@ fig = px.treemap(
 )
 fig.update_traces(root_color="lightgrey")
 # fig.show()
-fig.write_html(f"example_partitioner_lots_basic_plot_depth.html")
+fig.write_html(f"example_partitioner_plots_basic_plot_depth.html")
 
 
 ################################################################################
@@ -99,7 +99,7 @@ fig = px.treemap(
 )
 fig.update_traces(root_color="lightgrey")
 # fig.show()
-fig.write_html(f"example_partitioner_lots_modifications1_count.html")
+fig.write_html(f"example_partitioner_plots_modifications1_count.html")
 
 
 ############## Display additional information ##############
@@ -114,7 +114,7 @@ fig.update_traces(
     root_color="lightgrey", textinfo="label+current path"
 )  # see textinfo in https://plotly.com/python/reference/treemap/
 # fig.show()
-fig.write_html(f"example_partitioner_lots_modifications2_path.html")
+fig.write_html(f"example_partitioner_plots_modifications2_path.html")
 
 
 ##### Access the plot and color using the Kulldorff Spatial Scan Statistic (KSS) #####
@@ -130,7 +130,7 @@ fig = px.treemap(
 )
 fig.update_traces(root_color="lightgrey")
 # fig.show()
-fig.write_html(f"example_partitioner_lots_modifications3_kss.html")
+fig.write_html(f"example_partitioner_plots_modifications3_kss.html")
 
 
 ############# Outline the cells according to the direction of change in counts #############
@@ -155,7 +155,7 @@ fig.update_traces(
     root_color="lightgrey",
 )
 # fig.show()
-fig.write_html(f"example_partitioner_lots_modifications4_outline.html")
+fig.write_html(f"example_partitioner_plots_modifications4_outline.html")
 
 
 ################################################################################
@@ -190,7 +190,7 @@ fig.update_traces(
     root_color="lightgrey",
 )
 # fig.show()
-fig.write_html(f"example_partitioner_lots_alternatives_sunburst.html")
+fig.write_html(f"example_partitioner_plots_alternatives_sunburst.html")
 
 
 ############# Icicle Plot #############
@@ -207,4 +207,4 @@ fig.update_traces(
     root_color="lightgrey",
 )
 # fig.show()
-fig.write_html(f"example_partitioner_lots_alternatives_icicle.html")
+fig.write_html(f"example_partitioner_plots_alternatives_icicle.html")

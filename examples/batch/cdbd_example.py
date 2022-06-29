@@ -26,11 +26,8 @@ from menelaus.data_drift.cdbd import CDBD
 ## Setup ##
 
 # Import data
-# assumes the script is being run from the root directory.
-data = pd.read_csv(
-    os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
-    index_col="id",
-)
+data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
+data = pd.read_csv(data_path, index_col="id")
 
 # Set up reference and test batches, using 2007 as reference year
 reference = pd.DataFrame(data[data.year == 2007].loc[:, "confidence"])

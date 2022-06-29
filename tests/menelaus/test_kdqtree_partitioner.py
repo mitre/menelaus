@@ -178,6 +178,22 @@ def test_to_plotly_dataframe():
     assert set(df_plot.columns) == set(
         ["name", "idx", "parent_idx", "cell_count", "depth", "count_diff", "kss"]
     )
+    assert df_plot.loc[1:, "name"].apply(lambda x: True if ("ax" in x) else False).all()
+    df_plot = kp.to_plotly_dataframe(
+        tree_id2="fill1", max_depth=1, input_cols=["col1", "col2", "col3"]
+    )
+    assert df_plot.shape[0] == 3
+    assert set(df_plot.columns) == set(
+        ["name", "idx", "parent_idx", "cell_count", "depth", "count_diff", "kss"]
+    )
+    assert (
+        df_plot.loc[1:, "name"].apply(lambda x: True if ("col" in x) else False).all()
+    )
+    assert (
+        df_plot.loc[1:, "name"]
+        .apply(lambda x: True if ("ax" not in x) else False)
+        .all()
+    )
 
 
 def test_as_text():
@@ -213,3 +229,7 @@ def test_missing_tree_flattened_array():
         root, tree_id1="build", tree_id2="garbage", output=out
     )
     assert all([guy["count_diff"] <= 0 for guy in out])
+
+
+def test_empty_node_fill():
+    assert KDQTreeNode.fill(np.array([]), None, 10, "foo") is None

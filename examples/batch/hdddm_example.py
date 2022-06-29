@@ -30,11 +30,8 @@ from menelaus.data_drift.hdddm import HDDDM
 ## Setup ##
 
 # Import data
-# assumes the script is being run from the root directory.
-df = pd.read_csv(
-    os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
-    index_col="id",
-)
+data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
+df = pd.read_csv(data_path, index_col="id")
 
 # Set up reference and test batches, using 2007 as reference year
 # -2 indexing removes columns "drift" and "confidence"

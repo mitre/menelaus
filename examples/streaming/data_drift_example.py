@@ -28,14 +28,8 @@ from menelaus.data_drift import PCACD, KdqTree
 
 
 # read in Circle dataset
-# assumes the script is being run from the root directory.
-df = pd.read_csv(
-    os.path.join(
-        "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
-    ),
-    usecols=[0, 1, 2],
-    names=["var1", "var2", "y"],
-)
+data_path = os.path.join('..', '..', 'src', 'menelaus', 'tools', 'artifacts', 'dataCircleGSev3Sp3Train.csv')
+df = pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
 
 ################################################################################
 ################################## PCA_CD ######################################
@@ -137,7 +131,7 @@ data = df[["var1", "var2"]]
 
 plot_data = {}
 for i in range(len(df)):
-    det.update(data.iloc[[i]].values)
+    det.update(data.iloc[[i]])
     status.loc[i] = [i, data.iloc[i, 0], data.iloc[i, 1], det.drift_state]
     if det.drift_state is not None:
         # capture the visualization data

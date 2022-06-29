@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import scipy.stats
 from pandas import DataFrame  # more efficient for later for loop
 from numpy import unique
@@ -135,6 +136,7 @@ class KdqTree(DriftDetector):
         self._kdqtree = None
         self._critical_dist = None
         self._drift_counter = 0  # samples consecutively in the drift region
+        self.input_cols = None
 
     def _inner_set_reference(self, ary):
         """
@@ -145,8 +147,7 @@ class KdqTree(DriftDetector):
         Args:
             ary (numpy array): initial baseline dataset
         """
-        if self.drift_state == "drift":
-            self.reset()
+        self.reset()
 
         self._kdqtree = KDQTreePartitioner(
             count_ubound=self.count_ubound,
@@ -157,21 +158,30 @@ class KdqTree(DriftDetector):
         ref_counts = self._kdqtree.leaf_counts("build")
         self._critical_dist = self._get_critical_kld(ref_counts)
 
-    def set_reference(self, ary):
+    def set_reference(self, data):
         """
         Initialize detector with a reference batch. The user may specify an
-        alternate reference batch than the one maintained by kdq-Tree.
+        alternate reference batch than the one maintained by kdq-Tree. This will
+        reset the detector.
         If ``input_type`` is ``"stream"``, this method should not be used.
 
         Args:
-            ary (numpy array): initial baseline dataset
+            data (pandas.DataFrame or numpy array): initial baseline dataset
         """
         if self.input_type == "stream":
             raise ValueError("This method is only available for batch data.")
 
-        self._inner_set_reference(ary)
+        if isinstance(data, pd.DataFrame):
+            self._inner_set_reference(data.values)
+            self.input_cols = data.columns
+        elif isinstance(data, np.ndarray):
+            self._inner_set_reference(data)
+        else:
+            raise ValueError(
+                "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
+            )
 
-    def update(self, ary):
+    def update(self, data):
         """
         Update the detector with a new sample/batch. Constructs the reference
         data's kdqtree; then, when sufficient samples have been received, puts
@@ -189,15 +199,40 @@ class KdqTree(DriftDetector):
         then continue passing new batches to ``update``.
 
         Args:
-            ary (numpy array): If just reset/initialized, the reference data.
-            Otherwise, a new sample to put into the test window (if streaming)
-            or a new batch of data to be compared to the reference window (if
-            not streaming).
+            data (pandas.DataFrame or numpy array): If just reset/initialized,
+            the reference data. Otherwise, a new sample to put into the test
+            window (if streaming) or a new batch of data to be compared to the
+            reference window (if not streaming).
         """
+        if isinstance(data, pd.DataFrame):
+            if self.input_cols is None:
+                # The first update with a dataframe will constrain subsequent
+                # input. This will also fire if set_reference has been used with
+                # a dataframe.
+                self.input_cols = data.columns
+            elif self.input_cols is not None:
+                if not data.columns.equals(self.input_cols):
+                    raise ValueError(
+                        "Columns of new data must match with columns of reference data."
+                    )
+            ary = data.values
+        elif isinstance(data, np.ndarray):
+            # This allows starting with a dataframe, then later passing bare
+            # numpy arrays. For now, assume users are not miscreants.
+            ary = data
+        else:
+            raise ValueError(
+                """This method is only available for data inputs in the form of 
+                a Pandas DataFrame or a Numpy Array."""
+            )
+
         if self.drift_state == "drift":
-            self.reset()
-            if self._kdqtree is None and self.input_type == "batch":
-                self._inner_set_reference(ary)
+            if self.input_type == "batch":
+                # this will both reset the detector and initialize the reference
+                # kdq-tree.
+                self.set_reference(self.ref_data)
+            else:
+                self.reset()
 
         super().update()
 
@@ -230,6 +265,8 @@ class KdqTree(DriftDetector):
 
                     else:
                         self.drift_state = "drift"
+                        if isinstance(data, pd.DataFrame):
+                            self.input_cols = data.columns
                         self.ref_data = ary
 
     def _get_critical_kld(self, ref_counts):
@@ -279,7 +316,9 @@ class KdqTree(DriftDetector):
         critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
         return np.quantile(critical_distances, 1 - self.alpha, method="nearest")
 
-    def to_plotly_dataframe(self, tree_id1="build", tree_id2="test", max_depth=None):
+    def to_plotly_dataframe(
+        self, tree_id1="build", tree_id2="test", max_depth=None, input_cols=None
+    ):
         """Generates a dataframe containing information about the kdqTree's structure
         and some node characteristics, intended for use with plotly.
 
@@ -292,6 +331,8 @@ class KdqTree(DriftDetector):
                 Defaults to ``"test"``.
             max_depth (int, optional): Depth in the tree to which to recurse.
                 Defaults to ``None``.
+            input_cols (list, optional): List of column names for the input
+                data. Defaults to ``None``.
 
         Returns:
             pd.DataFrame: A dataframe where each row corresponds to a node, and
@@ -313,4 +354,11 @@ class KdqTree(DriftDetector):
                     distributions.
         """
 
-        return self._kdqtree.to_plotly_dataframe(tree_id1, tree_id2, max_depth)
+        if input_cols is not None:
+            return self._kdqtree.to_plotly_dataframe(
+                tree_id1, tree_id2, max_depth, input_cols
+            )
+        else:
+            return self._kdqtree.to_plotly_dataframe(
+                tree_id1, tree_id2, max_depth, self.input_cols
+            )

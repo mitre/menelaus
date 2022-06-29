@@ -1,11 +1,18 @@
-|pipeline| |docs|
+|tests| |docs| |examples| |lint|
 
-.. |pipeline| image:: https://github.com/mitre/menelaus/actions/workflows/github_ci.yml/badge.svg
-   :target: https://github.com/mitre/menelaus/actions/workflows/github_ci.yml
+.. |tests| image:: https://github.com/mitre/menelaus/actions/workflows/tests.yml/badge.svg
+   :target: https://github.com/mitre/menelaus/actions/workflows/tests.yml
 
 .. |docs| image:: https://readthedocs.org/projects/menelaus/badge/?version=latest
    :target: https://menelaus.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
+
+.. |examples| image:: https://github.com/mitre/menelaus/actions/workflows/examples.yml/badge.svg?branch=main
+   :target: https://github.com/mitre/menelaus/actions/workflows/examples.yml
+
+.. |lint| image:: https://github.com/mitre/menelaus/actions/workflows/format.yml/badge.svg
+   :target: https://github.com/mitre/menelaus/actions/workflows/format.yml
+
 
 Background
 ==========
@@ -173,6 +180,16 @@ HTML documentation can be generated at ``menelaus/docs/build/html/index.html`` w
    cd docs/source
    sphinx-build . ../build
 
+
+Formatting
+============================
+
+This project uses ``black`` and ``flake8`` for code formatting and linting, respectively. To satisfy these requirements when contributing, you may run the following from the root directory:
+
+.. code-block:: python
+
+   flake8                 # lint
+   black ./src/menelaus   # formatting
 
 
 Copyright

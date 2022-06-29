@@ -62,9 +62,15 @@ def test_reset_stream(kdq_det_stream):
     det = copy.copy(kdq_det_stream)
 
     # given that the detector just drifted, next step ought not to regardless of input
-    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values
+    new_input_col_names = list(range(5, 5 + NUM_FEATURES))
+    new_sample = pd.DataFrame(
+        np.random.sample((1, NUM_FEATURES)), columns=new_input_col_names
+    )
     det.update(new_sample)
     assert det.drift_state is None
+    det.reset()
+    det.update(new_sample)
+    assert det.input_cols.equals(new_sample.columns)
 
 
 def test_reset_batch(kdq_det_batch):
@@ -74,14 +80,59 @@ def test_reset_batch(kdq_det_batch):
     assert det.drift_state is None
 
 
-def test_validation(kdq_det_stream):
+def test_set_reference(kdq_det_batch):
+    det = copy.copy(kdq_det_batch)
+    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values
+    det.set_reference(new_sample)
+    det.update(new_sample)
+    assert det.drift_state is None
+
+    # make sure that input_cols is set appropriately when initialized
+    det = det = KdqTree(input_type="batch", count_ubound=1, bootstrap_samples=10)
+    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES)))
+    det.set_reference(new_sample)
+    assert det.input_cols.equals(new_sample.columns)
+
+
+def test_init_validation_stream(kdq_det_stream):
     with pytest.raises(ValueError) as _:
         det = KdqTree(window_size=None, input_type="stream")
     with pytest.raises(ValueError) as _:
         det = KdqTree(window_size=-5, input_type="stream")
+
+
+def test_set_reference_validation_stream(kdq_det_stream):
     with pytest.raises(ValueError) as _:
         det = copy.copy(kdq_det_stream)
-        det.set_reference(pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values)
+        det.set_reference("garbage input")
+
+
+def test_set_reference_validation_batch(kdq_det_batch):
+    det = copy.copy(kdq_det_batch)
+    with pytest.raises(ValueError) as _:
+        det.set_reference("garbage input")
+
+
+def test_update_validation_batch(kdq_det_batch):
+    det = copy.copy(kdq_det_batch)
+    with pytest.raises(ValueError) as _:
+        det.update("garbage input")
+
+    # this should not raise a ValueError in the current implementation
+    # since the kdq_det_batch fixture is initialized with a numpy array
+    new_name_df = pd.DataFrame(
+        np.random.sample((10, NUM_FEATURES)), columns=list(range(5, 5 + NUM_FEATURES))
+    )
+    det.update(new_name_df)
+
+    # this *should* raise a ValueError in the current implementation
+    with pytest.raises(ValueError) as _:
+        det.set_reference(new_name_df)
+        bad_name_df = pd.DataFrame(
+            np.random.sample((10, NUM_FEATURES)),
+            columns=list(range(10, 10 + NUM_FEATURES)),
+        )
+        det.update(bad_name_df)
 
 
 def test_viz_dataframe(kdq_det_batch):
@@ -92,11 +143,8 @@ def test_viz_dataframe(kdq_det_batch):
     assert set(plot_df.columns) == set(
         ["name", "idx", "parent_idx", "cell_count", "depth", "count_diff", "kss"]
     )
-
-
-def test_set_reference_batch(kdq_det_batch):
-    det = copy.copy(kdq_det_batch)
-    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values
-    det.set_reference(new_sample)
-    det.update(new_sample)
-    assert det.drift_state is None
+    new_input_col_names = list(range(5, 5 + NUM_FEATURES))
+    plot_df = kdq_det_batch.to_plotly_dataframe(input_cols=new_input_col_names)
+    assert set(new_input_col_names) == set(
+        set(plot_df["name"].str.split(" ").str[0][1:].astype("int").unique())
+    )
