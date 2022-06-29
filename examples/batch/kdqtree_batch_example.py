@@ -23,6 +23,10 @@ import matplotlib.pyplot as plt
 from menelaus.data_drift.kdq_tree import KdqTree
 
 
+# kdq-Tree does use bootstrapping to define its critical thresholds, so setting
+# the seed is important to reproduce exact behavior.
+np.random.seed(123)
+
 # Import data
 data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
 df = pd.read_csv(data_path, index_col="id", dtype={"drift": bool})
