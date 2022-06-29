@@ -1,3 +1,9 @@
 python:
-   version: "3.8"
-   setup_py_install: true
+  version: "3.8"
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - dev
+    - method: setuptools
+      path: package
