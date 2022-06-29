@@ -197,13 +197,16 @@ class MD3(DriftDetector):
 
         sample_np_array = new_sample.loc[0, :].to_numpy()
         margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
-        self.curr_margin_density = self.forgetting_factor * self.curr_margin_density + (1 - self.forgetting_factor) * margin_inclusion_signal
+        self.curr_margin_density = (self.forgetting_factor * self.curr_margin_density + 
+                                    (1 - self.forgetting_factor) * margin_inclusion_signal)
         
-        if np.abs(self.curr_margin_density - self.reference_distribution["md"]) > self.sensitivity * self.reference_distribution["md_std"]:
+        if (np.abs(self.curr_margin_density - self.reference_distribution["md"]) > 
+                    self.sensitivity * self.reference_distribution["md_std"]):
             self.drift_state = "warning"
 
         # TODO: continue implementing algorithm from here
         # Next step is to collect labeled samples to confirm that drift is occurring
+        # Make an "oracle" function which the user can use to input a set of labeled samples
 
     def reset(self):
         """
