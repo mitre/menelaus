@@ -59,11 +59,10 @@ np.random.seed(123)
 clf = svm.SVC(kernel='linear')
 clf.fit(X_train, y_train)
 
-# md3 = MD3()
+md3 = MD3()
 
 i = 650
 X_test = df.loc[[i], ["var1", "var2"]]
 y_pred = int(clf.predict(X_test))
-y_pred_proba = clf.predict_proba(X_test)
 y_true = int(df.loc[[i], "y"])
 
