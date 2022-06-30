@@ -61,8 +61,9 @@ clf.fit(X_train, y_train)
 
 md3 = MD3()
 
-i = 650
-X_test = df.loc[[i], ["var1", "var2"]]
-y_pred = int(clf.predict(X_test))
-y_true = int(df.loc[[i], "y"])
+# Set up DF to record results.
+status = pd.DataFrame(
+    columns=["index", "y", "margin_inclusion_signal", "margin_density", "drift_detected"]
+)
 
+# TODO: continue writing example for MD3

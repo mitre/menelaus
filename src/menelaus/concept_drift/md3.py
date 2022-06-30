@@ -98,22 +98,23 @@ class MD3(DriftDetector):
                 dataframe which is the target variable
         """
 
+        self.reference_distribution = self.calculate_distribution_statistics(reference_batch)
         self.reference_batch_features = reference_batch.loc[:, reference_batch.columns != target_name]
         self.reference_batch_target = reference_batch[target_name]
         # TODO: in the formula for the forgetting factor in the paper, is N
         # the total number of samples so far, or the size of the reference batch?
-        self.forgetting_factor = (len(reference_batch) - 1) / len(reference_batch)
-        self.reference_distribution = self.calculate_distribution_statistics(reference_batch)
+        self.forgetting_factor = (self.reference_distribution["len"] - 1) / self.reference_distribution["len"]
         self.curr_margin_density = self.reference_distribution["md"]
 
     def calculate_distribution_statistics(self, data):
         """
-        Calculate the following four statistics for the data distribution
+        Calculate the following five statistics for the data distribution
         passed in:
-            1. Margin Density (md)
-            2. Standard Deviation of Margin Density (md_std)
-            3. Accuracy (acc)
-            4. Standard Deivation of Accuracy (acc_std)
+            1. Length/Number of Samples (len)
+            2. Margin Density (md)
+            3. Standard Deviation of Margin Density (md_std)
+            4. Accuracy (acc)
+            5. Standard Deivation of Accuracy (acc_std)
 
         Args:
             data (DataFrame): batch of data to calculate distribution
@@ -159,6 +160,7 @@ class MD3(DriftDetector):
 
         # return reference distribution statistics
         return {
+            "len": len(data),
             "md": md,
             "md_std": md_std,
             "acc": acc,
@@ -188,6 +190,12 @@ class MD3(DriftDetector):
         Args:
             new_sample (DataFrame): feature values/sample data for the new incoming sample
         """
+        
+        if self.drift_state == "warning":
+            raise ValueError(
+                """give_oracle_labels method must be called to provide detector with
+                labeled samples to confirm or rule out drift."""
+            )
 
         if len(new_sample) != 1:
             raise ValueError(
@@ -203,18 +211,59 @@ class MD3(DriftDetector):
         if (np.abs(self.curr_margin_density - self.reference_distribution["md"]) > 
                     self.sensitivity * self.reference_distribution["md_std"]):
             self.drift_state = "warning"
+        
+    def give_oracle_labels(self, labeled_samples):
+        """
+        Provide the detector with labeled samples to confirm or rule out drift. If drift
+        is confirmed, retraining will be initiated using these samples, and the reference
+        distribution will be updated accordingly.
 
-        # TODO: continue implementing algorithm from here
-        # Next step is to collect labeled samples to confirm that drift is occurring
-        # Make an "oracle" function which the user can use to input a set of labeled samples
-
+        Args:
+            labeled_samples (DataFrame): labeled sample data
+        """
+        
+        if self.drift_state != "warning":
+            raise ValueError(
+                """give_oracle_labels method can be called only when a drift warning has
+                been issued and drift needs to be confirmed or ruled out."""
+            )
+            
+        if len(labeled_samples) != self.reference_distribution["len"]:
+            raise ValueError(
+                """give_oracle_labels method can be called only with a dataset of the same
+                size as the original reference distribution."""
+            )
+            
+        labeled_columns = list(labeled_samples.columns)
+        feature_columns = list(self.reference_batch_features.columns)
+        target_column = list(self.reference_batch_target.columns)
+        reference_columns = feature_columns + target_column
+        if len(labeled_columns) != len(reference_columns) or set(labeled_columns) != set(reference_columns):
+            raise ValueError(
+                """give_oracle_labels method can be called only with a dataset containing
+                the same number and names of columns as the original reference distribution."""
+            )
+            
+        X_test, y_test = labeled_samples[feature_columns], labeled_samples[target_column]
+        y_pred = self.classifier.predict(X_test)
+        acc_labeled_samples = accuracy_score(y_test, y_pred)
+        
+        if self.reference_distribution["acc"] - acc_labeled_samples > self.sensitivity * self.reference_distribution["acc_std"]:
+            self.drift_state = "drift"
+            self.classifier.fit(X_test, y_test)
+            
+        # update classifer margin values, update reference distribution, set drift state to None
+        self.process_svm()
+        self.set_reference(labeled_samples, target_column[0])
+        self.reset()
+        
     def reset(self):
         """
         Initialize the detector's drift state and other relevant attributes.
         Intended for use after ``drift_state == 'drift'``.
         """
         super().reset()
-        self.curr_margin_density = self.reference_margin_density
+        self.curr_margin_density = self.reference_distribution["md"]
 
     def calculate_margin_inclusion_signal(self, sample):
         """
