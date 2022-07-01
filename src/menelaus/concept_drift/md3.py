@@ -69,6 +69,7 @@ class MD3(DriftDetector):
         self.sensitivity = sensitivity
         self.k = k
         self.oracle_data_length_required = oracle_data_length_required
+        self.oracle_data = None
         self.process_svm()
 
     def process_svm(self):
@@ -225,8 +226,12 @@ class MD3(DriftDetector):
         self.curr_margin_density = (self.forgetting_factor * self.curr_margin_density + 
                                     (1 - self.forgetting_factor) * margin_inclusion_signal)
         
-        if (np.abs(self.curr_margin_density - self.reference_distribution["md"]) > 
-                    self.sensitivity * self.reference_distribution["md_std"]):
+        warning_level = np.abs(self.curr_margin_density - self.reference_distribution["md"])
+        warning_threshold = self.sensitivity * self.reference_distribution["md_std"]
+        print("warning level:", warning_level)
+        print("warning threshold:", warning_threshold)
+        
+        if warning_level > warning_threshold:
             self.drift_state = "warning"
         
     def give_oracle_label(self, labeled_sample):
@@ -280,7 +285,12 @@ class MD3(DriftDetector):
             y_pred = self.classifier.predict(X_test)
             acc_labeled_samples = accuracy_score(y_test, y_pred)
             
-            if self.reference_distribution["acc"] - acc_labeled_samples > self.sensitivity * self.reference_distribution["acc_std"]:
+            drift_level = self.reference_distribution["acc"] - acc_labeled_samples
+            drift_threshold = self.sensitivity * self.reference_distribution["acc_std"]
+            print("drift level:", drift_level)
+            print("drift threshold:", drift_threshold)
+            
+            if drift_level > drift_threshold:
                 self.drift_state = "drift"
                 self.classifier.fit(X_test, y_test.values.ravel())
             else:
@@ -309,8 +319,11 @@ class MD3(DriftDetector):
         Args:
             sample (numpy.array): feature values/sample data for the new incoming sample
         """
-
-        if np.abs(np.dot(self.w, sample) + self.b) <= 1:
+        
+        mis = np.abs(np.dot(self.w, sample) + self.b)
+        print("margin inclusion signal:", mis)
+        
+        if mis <= 1:
             return 1
         else:
             return 0
@@ -333,8 +346,11 @@ class MD3(DriftDetector):
         w = np.array(clf.coef_[0])
         intercept = np.array(clf.intercept_)
         b = intercept[0] / w[1]
+        
+        mis = np.abs(np.dot(w, sample) + b)
+        print("margin inclusion signal for other classifier:", mis)
 
-        if np.abs(np.dot(w, sample) + b) <= 1:
+        if mis <= 1:
             return 1
         else:
             return 0

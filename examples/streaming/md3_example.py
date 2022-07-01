@@ -62,7 +62,10 @@ clf.fit(X_train, y_train.values.ravel())
 
 oracle_retrain_labels = 200
 
-md3 = MD3(clf=clf, oracle_data_length_required=oracle_retrain_labels)
+# TODO: play around more with this sensitivity
+# it also seems like it doesn't make sense to have the default value be 2 --> see what the paper
+# says again, i thought they said a value in the range [1, 3] should work but apparently not
+md3 = MD3(clf=clf, sensitivity=0.05, oracle_data_length_required=oracle_retrain_labels)
 md3.set_reference(training_data, "y")
 
 # Set up DF to record results.
@@ -79,7 +82,7 @@ for i in range(training_size, len(df)):
 
     # call give_oracle_label if detector is currently in warning state
     if md3.drift_state == "warning":
-        oracle_label = df.loc[i, ["var1", "var2", "y"]]
+        oracle_label = df.loc[[i], ["var1", "var2", "y"]]
         md3.give_oracle_label(oracle_label)
     # call update otherwise
     else:
