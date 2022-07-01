@@ -129,8 +129,16 @@ Create a virtual environment as desired, e.g. ``python -m venv ./venv``, then:
    #First, clone the git repo, then:
    cd ./menelaus/
    pip install -e .[dev] 
+   
 
-Menelaus should work with Python 3.8 or higher.
+Menelaus should work with Python 3.8 or higher. You may use the ``pyenv`` library to accomplish this.
+
+.. code-block:: python
+
+   pyenv install 3.7.4
+   pyenv virtualenv 3.7.4 menelaus
+   pyenv local menelaus
+   
 
 Getting Started
 ============================
