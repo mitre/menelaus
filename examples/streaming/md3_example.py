@@ -58,9 +58,11 @@ y_train = df.loc[0:training_size, "y"]
 
 np.random.seed(123)
 clf = svm.SVC(kernel='linear')
-clf.fit(X_train, y_train)
+clf.fit(X_train, y_train.values.ravel())
 
-md3 = MD3(clf=clf, oracle_data_length_required=200)
+oracle_retrain_labels = 200
+
+md3 = MD3(clf=clf, oracle_data_length_required=oracle_retrain_labels)
 md3.set_reference(training_data, "y")
 
 # Set up DF to record results.
@@ -90,8 +92,18 @@ for i in range(training_size, len(df)):
         md3.drift_state,
     ]
     
+    # If drift is detected, examine the window and retrain.
+    if md3.drift_state == "drift":
+        retrain_start = i + 1
+        retrain_end = i + oracle_retrain_labels
+
+        rec_list.append([retrain_start, retrain_end])
+
+# TODO: delete this after drift is actually being detected
+rec_list = [[1000, 1250]]
+    
 plt.figure(figsize=(20, 6))
-plt.scatter("index", "margin density", data=status, label="Margin Density")
+plt.scatter("index", "margin_density", data=status, label="Margin Density")
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)

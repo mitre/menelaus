@@ -105,11 +105,13 @@ class MD3(DriftDetector):
                 dataframe which is the target variable
         """
 
+        self.reference_batch_features = reference_batch.loc[:, reference_batch.columns != target_name]
+        self.reference_batch_target = reference_batch.loc[:, reference_batch.columns == target_name]
+        
         self.reference_distribution = self.calculate_distribution_statistics(reference_batch)
+        
         if self.oracle_data_length_required is None:
             self.oracle_data_length_required = self.reference_distribution["len"]
-        self.reference_batch_features = reference_batch.loc[:, reference_batch.columns != target_name]
-        self.reference_batch_target = reference_batch[target_name]
         # TODO: in the formula for the forgetting factor in the paper, is N
         # the total number of samples so far, or the size of the reference batch?
         self.forgetting_factor = (self.reference_distribution["len"] - 1) / self.reference_distribution["len"]
@@ -139,14 +141,15 @@ class MD3(DriftDetector):
         cv = KFold(n_splits=self.k, random_state=1, shuffle=True)
         # perform k-fold cross validation to acquire distribution margin density and acuracy values
         for train_index, test_index in cv.split(self.reference_batch_features):
-            X_train, X_test = self.reference_batch_features[train_index], self.reference_batch_features[test_index]
-            y_train, y_test = self.reference_batch_target[train_index], self.reference_batch_target[test_index]
-            duplicate_classifier.fit(X_train, y_train)
+            X_train, X_test = self.reference_batch_features.iloc[train_index], self.reference_batch_features.iloc[test_index]
+            y_train, y_test = self.reference_batch_target.iloc[train_index], self.reference_batch_target.iloc[test_index]
+            
+            duplicate_classifier.fit(X_train, y_train.values.ravel())
 
             # record margin inclusion signals for all samples in this test band
             signal_func_values = []
             for i in range(len(X_test)):
-                sample_np_array = X_test.loc[i, :].to_numpy()
+                sample_np_array = X_test.iloc[i].to_numpy()
                 margin_inclusion_signal = self.calculate_margin_inclusion_signal_other_classifier(sample_np_array, duplicate_classifier)
                 signal_func_values.append(margin_inclusion_signal)
 
@@ -186,7 +189,7 @@ class MD3(DriftDetector):
 
         signal_func = 0
         for i in range(len(data)):
-            sample_np_array = data.loc[i, :].to_numpy()
+            sample_np_array = data.iloc[i].to_numpy()
             margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
             signal_func += margin_inclusion_signal
         
@@ -217,7 +220,7 @@ class MD3(DriftDetector):
             
         super().update()
 
-        sample_np_array = new_sample.loc[0, :].to_numpy()
+        sample_np_array = new_sample.iloc[0].to_numpy()
         margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
         self.curr_margin_density = (self.forgetting_factor * self.curr_margin_density + 
                                     (1 - self.forgetting_factor) * margin_inclusion_signal)
@@ -279,7 +282,7 @@ class MD3(DriftDetector):
             
             if self.reference_distribution["acc"] - acc_labeled_samples > self.sensitivity * self.reference_distribution["acc_std"]:
                 self.drift_state = "drift"
-                self.classifier.fit(X_test, y_test)
+                self.classifier.fit(X_test, y_test.values.ravel())
             else:
                 self.drift_state = None
                 
