@@ -20,14 +20,14 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from menelaus.data_drift.cdbd import CDBD
 
+from menelaus.data_drift.cdbd import CDBD
+from menelaus.datasets import make_example_batch_data
 
 ## Setup ##
 
 # Import data
-data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
-data = pd.read_csv(data_path, index_col="id")
+data = make_example_batch_data()
 
 # Set up reference and test batches, using 2007 as reference year
 reference = pd.DataFrame(data[data.year == 2007].loc[:, "confidence"])
