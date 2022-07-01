@@ -101,9 +101,6 @@ for i in range(training_size, len(df)):
         retrain_end = i + oracle_retrain_labels
 
         rec_list.append([retrain_start, retrain_end])
-
-# TODO: delete this after drift is actually being detected
-rec_list = [[1000, 1250]]
     
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "margin_density", data=status, label="Margin Density")
