@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
 from menelaus.drift_detector import DriftDetector
@@ -39,7 +40,7 @@ class MD3(DriftDetector):
 
     input_type = "stream"
 
-    def __init__(self, clf, sensitivity=2, k=10):
+    def __init__(self, clf, sensitivity=2, k=10, oracle_data_length_required=None):
         """
         Args:
             clf (sklearn.svm.SVC): the classifier for which we are tracking drift.
@@ -56,12 +57,18 @@ class MD3(DriftDetector):
             k (int): the number of folds that will be used in k-fold cross validation
                 when measuring the distribution statistics of the reference batch
                 of data. Defaults to 10.
+            oracle_data_length_required (int): the number of samples that will need to
+                be collected by the oracle when drift is suspected, for the purpose of
+                either confirming or ruling out drift, and then retraining the classifier
+                if drift is confirmed. Defaults to the length of the reference distribution
+                (this is set in the set_reference method).
         """
 
         super().__init__()
         self.classifier = clf
         self.sensitivity = sensitivity
         self.k = k
+        self.oracle_data_length_required = oracle_data_length_required
         self.process_svm()
 
     def process_svm(self):
@@ -99,6 +106,8 @@ class MD3(DriftDetector):
         """
 
         self.reference_distribution = self.calculate_distribution_statistics(reference_batch)
+        if self.oracle_data_length_required is None:
+            self.oracle_data_length_required = self.reference_distribution["len"]
         self.reference_batch_features = reference_batch.loc[:, reference_batch.columns != target_name]
         self.reference_batch_target = reference_batch[target_name]
         # TODO: in the formula for the forgetting factor in the paper, is N
@@ -202,6 +211,11 @@ class MD3(DriftDetector):
                 """This method is only available for data inputs in the form of 
                 a Pandas DataFrame with exactly 1 record."""
             )
+            
+        if self.drift_state == "drift":
+            self.reset()
+            
+        super().update()
 
         sample_np_array = new_sample.loc[0, :].to_numpy()
         margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
@@ -212,14 +226,15 @@ class MD3(DriftDetector):
                     self.sensitivity * self.reference_distribution["md_std"]):
             self.drift_state = "warning"
         
-    def give_oracle_labels(self, labeled_samples):
+    def give_oracle_label(self, labeled_sample):
         """
-        Provide the detector with labeled samples to confirm or rule out drift. If drift
-        is confirmed, retraining will be initiated using these samples, and the reference
-        distribution will be updated accordingly.
+        Provide the detector with a labeled sample to confirm or rule out drift. Once a
+        certain number of samples is accumulated, drift can be confirmed or ruled out. If
+        drift is confirmed, retraining will be initiated using these samples, and the 
+        reference distribution will be updated accordingly.
 
         Args:
-            labeled_samples (DataFrame): labeled sample data
+            labeled_sample (DataFrame): labeled data sample
         """
         
         if self.drift_state != "warning":
@@ -228,34 +243,50 @@ class MD3(DriftDetector):
                 been issued and drift needs to be confirmed or ruled out."""
             )
             
-        if len(labeled_samples) != self.reference_distribution["len"]:
+        if len(labeled_sample) != 1:
             raise ValueError(
-                """give_oracle_labels method can be called only with a dataset of the same
-                size as the original reference distribution."""
+                """This method is only available for data inputs in the form of 
+                a Pandas DataFrame with exactly 1 record."""
             )
             
-        labeled_columns = list(labeled_samples.columns)
+        # TODO: maybe bring this back - makes the example difficult though because the
+        # training size there is 500 and we only have 2000 samples total
+        # if len(labeled_samples) != self.reference_distribution["len"]:
+        #     raise ValueError(
+        #         """give_oracle_labels method can be called only with a dataset of the same
+        #         size as the original reference distribution."""
+        #     )
+            
+        labeled_columns = list(labeled_sample.columns)
         feature_columns = list(self.reference_batch_features.columns)
         target_column = list(self.reference_batch_target.columns)
         reference_columns = feature_columns + target_column
         if len(labeled_columns) != len(reference_columns) or set(labeled_columns) != set(reference_columns):
             raise ValueError(
-                """give_oracle_labels method can be called only with a dataset containing
+                """give_oracle_labels method can be called only with a sample containing
                 the same number and names of columns as the original reference distribution."""
             )
             
-        X_test, y_test = labeled_samples[feature_columns], labeled_samples[target_column]
-        y_pred = self.classifier.predict(X_test)
-        acc_labeled_samples = accuracy_score(y_test, y_pred)
-        
-        if self.reference_distribution["acc"] - acc_labeled_samples > self.sensitivity * self.reference_distribution["acc_std"]:
-            self.drift_state = "drift"
-            self.classifier.fit(X_test, y_test)
+        if self.oracle_data is None:
+            self.oracle_data = labeled_sample
+        else:
+            self.oracle_data = pd.concat([self.oracle_data, labeled_sample], ignore_index = True)
             
-        # update classifer margin values, update reference distribution, set drift state to None
-        self.process_svm()
-        self.set_reference(labeled_samples, target_column[0])
-        self.reset()
+        if len(self.oracle_data) == self.oracle_data_length_required:
+            X_test, y_test = self.oracle_data[feature_columns], self.oracle_data[target_column]
+            y_pred = self.classifier.predict(X_test)
+            acc_labeled_samples = accuracy_score(y_test, y_pred)
+            
+            if self.reference_distribution["acc"] - acc_labeled_samples > self.sensitivity * self.reference_distribution["acc_std"]:
+                self.drift_state = "drift"
+                self.classifier.fit(X_test, y_test)
+            else:
+                self.drift_state = None
+                
+            # update classifer margin values and update reference distribution
+            self.process_svm()
+            self.set_reference(self.oracle_data, target_column[0])
+            self.oracle_data = None
         
     def reset(self):
         """
