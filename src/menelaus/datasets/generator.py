@@ -1,7 +1,8 @@
 
 
-# TODO  Develop a DataGenerator which can yield batch/streaming-format records,
-#       and uses the 
+# XXX   A DataGenerator may yield batch/streaming-format records, and uses
+#       user-provided settings to draw from distributions, or introduce
+#       drift - @Anmol-Srivastava
 class DataGenerator():
     def __init__(self, mode, config):
         self.mode = mode

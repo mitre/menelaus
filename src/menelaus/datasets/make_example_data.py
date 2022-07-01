@@ -1,6 +1,5 @@
 # TODO:
 # - confirm consistent distributions with the R version's output. parameterization may not match
-# - fool with location in the repo and corresponding import
 # - update examples and docs notebooks to import from here
 
 import pandas as pd
@@ -53,12 +52,12 @@ def make_example_batch_data():
 
     # subtle change, every 10 obs
     df.loc[(df.year == 2012) & (df.index % 10 == 0), "c"] = mu_c + np.random.normal(
-        loc=0, scale=10, size=year_size / 10
-    )  # TODO: location assignment in R may not work exactly the same, differently-sized vec in that version
-
+        loc=0, scale=10, size=year_size // 10
+    ) 
+    
     # bigger change, every other obs
     df.loc[(df.year == 2012) & (df.index % 2 == 0), "c"] = mu_d + np.random.normal(
-        loc=0, scale=10, size=year_size / 2
+        loc=0, scale=10, size=year_size // 2
     )
 
     ######################################################################
