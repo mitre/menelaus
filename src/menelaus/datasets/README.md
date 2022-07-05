@@ -1,3 +1,16 @@
+### Circle Dataset
+
+circleG dataset.
+Synthetic data containing drift due to both a change in the feature distribution and a change in the 
+conditional target distribution. Drift occurs from index 1000-1250 and affects 66% of the data points.
+
+Source: 
+Minku, Leandro L. “Datasets.” Leandro L. Minku's Lab Open Source / Data, https://www.cs.bham.ac.uk/~minkull/open-source.html.
+
+### Example Dataset
+
+*Note that this section will eventually be removed, as the documentation will go in the new Python function generating this data.*
+
 2022-04-15
 
 README for example_data.csv.
@@ -15,4 +28,3 @@ Drift 4 (2018 - 2021): H changes in mean and variance, range of Confidence Score
 Drift 5 (2021): J change mean and variance 
 
 With the except of drift 4, all instances of drift are only for that single year of data. 
-
