@@ -9,10 +9,16 @@ def make_example_batch_data():
     This function returns a dataframe containing synthetic batch data for use
     with the repo's examples:
 
-        #. add a persistent drift (never reverting back to ref for one var)
-        #. add an extra year between true drift
-        #. make change in variance more dramatic
-        #. add categorical variable (1-7)
+        #. Change the mean of column 'b' in 2009. Reverts to original distribution
+            in 2010.
+        #. Change the variance of columns 'c' and 'd' in 2012 by replacing
+            some samples with the mean. Reverts to original distribution in 2013.
+        #. Change the correlation of columns 'e' and 'f' in 2015 (0 correlation
+            to 0.5 correlation).
+        #. Change the mean and variance of column 'h' in 2018, and maintain this
+            new distribution going forward. Change the range of the "confidence"
+            column going forward.
+        #. Change the mean and variance of column 'j' in 2021.
     """
     np.random.seed(123)
     year_size = 20000

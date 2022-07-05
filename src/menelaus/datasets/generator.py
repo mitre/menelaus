@@ -1,3 +1,4 @@
+"""This submodule is not yet implemented."""
 # XXX   A DataGenerator may yield batch/streaming-format records, and uses
 #       user-provided settings to draw from distributions, or introduce
 #       drift - @Anmol-Srivastava
