@@ -70,6 +70,7 @@ class MD3(DriftDetector):
         self.k = k
         self.oracle_data_length_required = oracle_data_length_required
         self.oracle_data = None
+        self.waiting_for_oracle = False
         self.process_svm()
 
     def process_svm(self):
@@ -204,7 +205,7 @@ class MD3(DriftDetector):
             new_sample (DataFrame): feature values/sample data for the new incoming sample
         """
         
-        if self.drift_state == "warning":
+        if self.waiting_for_oracle == True:
             raise ValueError(
                 """give_oracle_labels method must be called to provide detector with
                 labeled samples to confirm or rule out drift."""
@@ -233,6 +234,7 @@ class MD3(DriftDetector):
         
         if warning_level > warning_threshold:
             self.drift_state = "warning"
+            self.waiting_for_oracle = True
         
     def give_oracle_label(self, labeled_sample):
         """
@@ -245,7 +247,7 @@ class MD3(DriftDetector):
             labeled_sample (DataFrame): labeled data sample
         """
         
-        if self.drift_state != "warning":
+        if self.waiting_for_oracle != True:
             raise ValueError(
                 """give_oracle_labels method can be called only when a drift warning has
                 been issued and drift needs to be confirmed or ruled out."""
@@ -263,8 +265,8 @@ class MD3(DriftDetector):
         #     raise ValueError(
         #         """give_oracle_labels method can be called only with a dataset of the same
         #         size as the original reference distribution."""
-        #     )
-            
+        #     )  
+        
         labeled_columns = list(labeled_sample.columns)
         feature_columns = list(self.reference_batch_features.columns)
         target_column = list(self.reference_batch_target.columns)
@@ -274,6 +276,8 @@ class MD3(DriftDetector):
                 """give_oracle_labels method can be called only with a sample containing
                 the same number and names of columns as the original reference distribution."""
             )
+            
+        self.drift_state = None
             
         if self.oracle_data is None:
             self.oracle_data = labeled_sample
@@ -285,7 +289,8 @@ class MD3(DriftDetector):
             y_pred = self.classifier.predict(X_test)
             acc_labeled_samples = accuracy_score(y_test, y_pred)
             
-            drift_level = self.reference_distribution["acc"] - acc_labeled_samples
+            # TODO: do absolute value here or no? algo in paper does not use absolute value
+            drift_level = np.abs(self.reference_distribution["acc"] - acc_labeled_samples)
             drift_threshold = self.sensitivity * self.reference_distribution["acc_std"]
             print("drift level:", drift_level)
             print("drift threshold:", drift_threshold)
@@ -293,6 +298,13 @@ class MD3(DriftDetector):
             if drift_level > drift_threshold:
                 self.drift_state = "drift"
                 self.classifier.fit(X_test, y_test.values.ravel())
+                
+                # TODO: recalculate SVM margin values and reset the reference data only
+                # after drift is confirmed (commented out here) or at the end of this function
+                # regardless of whether drift is confirmed or not (below)?
+                # algo in the paper does it the second way
+                # self.process_svm()
+                # self.set_reference(self.oracle_data, target_column[0])
             else:
                 self.drift_state = None
                 
@@ -300,6 +312,7 @@ class MD3(DriftDetector):
             self.process_svm()
             self.set_reference(self.oracle_data, target_column[0])
             self.oracle_data = None
+            self.waiting_for_oracle = False
         
     def reset(self):
         """

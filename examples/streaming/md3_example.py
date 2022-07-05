@@ -65,7 +65,7 @@ oracle_retrain_labels = 200
 # TODO: play around more with this sensitivity
 # it also seems like it doesn't make sense to have the default value be 2 --> see what the paper
 # says again, i thought they said a value in the range [1, 3] should work but apparently not
-md3 = MD3(clf=clf, sensitivity=0.05, oracle_data_length_required=oracle_retrain_labels)
+md3 = MD3(clf=clf, sensitivity=0.25, oracle_data_length_required=oracle_retrain_labels)
 md3.set_reference(training_data, "y")
 
 # Set up DF to record results.
@@ -73,6 +73,7 @@ status = pd.DataFrame(
     columns=["index", "y", "margin_density", "drift_detected"]
 )
 rec_list = []
+oracle_list = []
 
 # run MD3
 for i in range(training_size, len(df)):
@@ -80,8 +81,8 @@ for i in range(training_size, len(df)):
     X_test = df.loc[[i], ["var1", "var2"]]
     y_true = int(df.loc[[i], "y"])
 
-    # call give_oracle_label if detector is currently in warning state
-    if md3.drift_state == "warning":
+    # call give_oracle_label if detector is currently waiting for oracle data
+    if md3.waiting_for_oracle == True:
         oracle_label = df.loc[[i], ["var1", "var2", "y"]]
         md3.give_oracle_label(oracle_label)
     # call update otherwise
@@ -94,6 +95,14 @@ for i in range(training_size, len(df)):
         md3.curr_margin_density,
         md3.drift_state,
     ]
+    
+    # If there was a drift warning, track the window of the labeled
+    # oracle data used
+    if md3.drift_state == "warning":
+        oracle_start = i + 1
+        oracle_end = i + md3.oracle_data_length_required
+        
+        oracle_list.append([oracle_start, oracle_end])
     
     # If drift is detected, examine the window and retrain.
     if md3.drift_state == "drift":
@@ -151,6 +160,26 @@ plt.hlines(
     color="green",
     label="Retraining Windows",
 )
+
+# TODO: maybe we want the oracle data windows to be shown?
+# Create a list of lines that indicate the oracle data windows.
+# Space them evenly, vertically.
+# oracle_list = pd.DataFrame(oracle_list)
+# oracle_list["y_val"] = np.linspace(
+#     start=0.05 * (ylims[1] - ylims[0]) + ylims[0],
+#     stop=0.2 * ylims[1],
+#     num=len(oracle_list),
+# )
+
+# Draw purple lines that indicate the windows of labeled data that were 
+# provided by the oracle for confirming or ruling out drift
+# plt.hlines(
+#     y=oracle_list["y_val"],
+#     xmin=oracle_list[0],
+#     xmax=oracle_list[1],
+#     color="purple",
+#     label="Oracle Data Windows",
+# )
 
 plt.legend()
 
