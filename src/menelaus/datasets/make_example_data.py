@@ -1,3 +1,5 @@
+''' Functions to generate example data according to a fixed scheme. '''
+
 import pandas as pd
 import numpy as np
 
