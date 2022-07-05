@@ -55,7 +55,7 @@ def make_example_batch_data():
     ) 
     
     # bigger change, every other obs
-    df.loc[(df.year == 2012) & (df.index % 2 == 0), "c"] = mu_d + np.random.normal(
+    df.loc[(df.year == 2012) & (df.index % 2 == 0), "d"] = mu_d + np.random.normal(
         loc=0, scale=10, size=year_size // 2
     )
 
@@ -79,5 +79,5 @@ def make_example_batch_data():
     df.loc[df.year == 2021, "j"] = np.random.gamma(shape=10, size=year_size) * 10
 
     df["drift"] = df["year"].isin([2009, 2012, 2015, 2018, 2021])
-
+    df.drop('index', axis=1, inplace=True)
     return df
