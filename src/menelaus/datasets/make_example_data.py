@@ -1,6 +1,3 @@
-# TODO:
-# - confirm consistent distributions with the R version's output. parameterization may not match
-
 import pandas as pd
 import numpy as np
 
