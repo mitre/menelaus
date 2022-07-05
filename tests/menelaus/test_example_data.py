@@ -24,6 +24,6 @@ def test_example_batch_data_2():
     assert df.dtypes['year'] == int64
     for char in 'abcdefghij':
         assert df.dtypes[char] == float64
-    assert df.dtypes['cat'] == int32
+    assert (df.dtypes['cat'] == int32) or (df.dtypes['cat'] == int64)
     assert df.dtypes['confidence'] == float64
     assert df.dtypes['drift'] == bool
