@@ -18,6 +18,7 @@ then divided by that partition, in order to compare the two distributions.
 
 import numpy as np
 import plotly.express as px
+
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner, KDQTreeNode
 
 
