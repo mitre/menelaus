@@ -1,6 +1,74 @@
 from abc import ABC, abstractmethod
 
 
+class StreamingDetector(ABC):
+    def __init__(self, *args, **kwargs):
+        self.total_samples = 0
+        self.samples_since_reset = 0
+        self._drift_state = None
+        self._input_type = 'streaming'
+
+    @abstractmethod
+    def update(self, *args, **kwargs):
+        self.total_samples += 1
+        self.samples_since_reset += 1
+
+    @abstractmethod
+    def reset(self, *args, **kwargs):
+        self.samples_since_reset = 0
+        self.drift_state = None
+
+    @property
+    def drift_state(self):
+        return self._drift_state
+
+    @drift_state.setter
+    def drift_state(self, value):
+        if value not in ('drift', 'warning', None):
+            raise ValueError('tbd')
+        else:
+            self._drift_state = value
+    
+    @property
+    @abstractmethod
+    def input_type(self):
+        return self._input_type
+
+
+class BatchDetector(ABC):
+    def __init__(self, *args, **kwargs):
+        self.total_batches = 0
+        self.batches_since_reset = 0
+        self._drift_state = None
+        self._input_type = 'batch'
+
+    @abstractmethod
+    def update(self, *args, **kwargs):
+        self.total_batches += 1
+        self.batches_since_reset += 1
+
+    @abstractmethod
+    def reset(self, *args, **kwargs):
+        self.batches_since_reset = 0
+        self.drift_state = None
+
+    @property
+    def drift_state(self):
+        return self._drift_state
+
+    @drift_state.setter
+    def drift_state(self, value):
+        if value not in ('drift', 'warning', None):
+            raise ValueError('tbd')
+        else:
+            self._drift_state = value
+    
+    @property
+    @abstractmethod
+    def input_type(self):
+        return self._input_type
+
+
 class DriftDetector(ABC):
     """Base class for Menelaus drift detectors.
     A DriftDetector object implements the ``update`` and ``reset`` methods and
