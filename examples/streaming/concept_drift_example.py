@@ -41,10 +41,9 @@ from menelaus.concept_drift import LinearFourRates, ADWIN, DDM, EDDM, STEPD
 
 # read in Circle dataset
 # assumes the script is being run from the root directory.
-# TODO: change this path back after done testing
 df = pd.read_csv(
     os.path.join(
-        "..", "..", "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
+        "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
     ),
     usecols=[0, 1, 2],
     names=["var1", "var2", "y"],
