@@ -165,26 +165,6 @@ plt.hlines(
     label="Retraining Data",
 )
 
-# TODO: maybe we want the oracle data windows to be shown?
-# Create a list of lines that indicate the oracle data windows.
-# Space them evenly, vertically.
-# oracle_list = pd.DataFrame(oracle_list)
-# oracle_list["y_val"] = np.linspace(
-#     start=0.05 * (ylims[1] - ylims[0]) + ylims[0],
-#     stop=0.2 * ylims[1],
-#     num=len(oracle_list),
-# )
-
-# Draw purple lines that indicate the windows of labeled data that were 
-# provided by the oracle for confirming or ruling out drift
-# plt.hlines(
-#     y=oracle_list["y_val"],
-#     xmin=oracle_list[0],
-#     xmax=oracle_list[1],
-#     color="purple",
-#     label="Oracle Data Windows",
-# )
-
 plt.legend()
 
 # TODO: write a description here for MD3 instead of ADWIN

@@ -74,7 +74,6 @@ class MD3(DriftDetector):
         self.process_svm()
 
     def process_svm(self):
-        # TODO: make sure these calculations are correct
         # get the separating hyperplane
         # The decision boundary is the line y = a*x - b
         # Sources:
@@ -114,8 +113,7 @@ class MD3(DriftDetector):
         
         if self.oracle_data_length_required is None:
             self.oracle_data_length_required = self.reference_distribution["len"]
-        # TODO: in the formula for the forgetting factor in the paper, is N
-        # the total number of samples so far, or the size of the reference batch?
+
         self.forgetting_factor = (self.reference_distribution["len"] - 1) / self.reference_distribution["len"]
         self.curr_margin_density = self.reference_distribution["md"]
 
@@ -258,14 +256,6 @@ class MD3(DriftDetector):
                 """This method is only available for data inputs in the form of 
                 a Pandas DataFrame with exactly 1 record."""
             )
-            
-        # TODO: maybe bring this back - makes the example difficult though because the
-        # training size there is 500 and we only have 2000 samples total
-        # if len(labeled_samples) != self.reference_distribution["len"]:
-        #     raise ValueError(
-        #         """give_oracle_labels method can be called only with a dataset of the same
-        #         size as the original reference distribution."""
-        #     )  
         
         labeled_columns = list(labeled_sample.columns)
         feature_columns = list(self.reference_batch_features.columns)
@@ -355,7 +345,6 @@ class MD3(DriftDetector):
                 inclusion signal. TODO: add compatibility with other types of models.
         """
 
-        # TODO: make sure calculations for decision boundary here are correct (like above)
         w = np.array(clf.coef_[0])
         intercept = np.array(clf.intercept_)
         b = intercept[0] / w[1]
