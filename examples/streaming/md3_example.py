@@ -85,16 +85,22 @@ for i in range(training_size, len(df)):
     if md3.waiting_for_oracle == True:
         oracle_label = df.loc[[i], ["var1", "var2", "y"]]
         md3.give_oracle_label(oracle_label)
+        status.loc[i] = [
+            i,
+            y_true,
+            None,
+            md3.drift_state,
+        ]
+
     # call update otherwise
     else:
         md3.update(X_test)
-
-    status.loc[i] = [
-        i,
-        y_true,
-        md3.curr_margin_density,
-        md3.drift_state,
-    ]
+        status.loc[i] = [
+            i,
+            y_true,
+            md3.curr_margin_density,
+            md3.drift_state,
+        ]
     
     # If there was a drift warning, track the window of the labeled
     # oracle data used
@@ -106,10 +112,8 @@ for i in range(training_size, len(df)):
     
     # If drift is detected, examine the window and retrain.
     if md3.drift_state == "drift":
-        retrain_start = i + 1
-        retrain_end = i + oracle_retrain_labels
-
-        rec_list.append([retrain_start, retrain_end])
+        retrain_data = oracle_list[-1]
+        rec_list.append(retrain_data)
     
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "margin_density", data=status, label="Margin Density")
@@ -158,7 +162,7 @@ plt.hlines(
     xmin=rec_list[0],
     xmax=rec_list[1],
     color="green",
-    label="Retraining Windows",
+    label="Retraining Data",
 )
 
 # TODO: maybe we want the oracle data windows to be shown?
