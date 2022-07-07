@@ -35,7 +35,7 @@ from menelaus.concept_drift import MD3
 
 # read in Circle dataset
 # assumes the script is being run from the root directory.
-# TODO: change this path back after done testing
+# TODO: before merging in PR, change this path to match dev
 df = pd.read_csv(
     os.path.join(
         "..", "..", "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
@@ -110,11 +110,6 @@ for i in range(training_size, len(df)):
         
         oracle_list.append([oracle_start, oracle_end])
     
-    # If drift is detected, examine the window and retrain.
-    if md3.drift_state == "drift":
-        retrain_data = oracle_list[-1]
-        rec_list.append(retrain_data)
-    
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "margin_density", data=status, label="Margin Density")
 plt.grid(False, axis="x")
@@ -149,20 +144,20 @@ plt.vlines(
 
 # Create a list of lines that indicate the retraining windows.
 # Space them evenly, vertically.
-rec_list = pd.DataFrame(rec_list)
-rec_list["y_val"] = np.linspace(
+oracle_list = pd.DataFrame(oracle_list)
+oracle_list["y_val"] = np.linspace(
     start=0.05 * (ylims[1] - ylims[0]) + ylims[0],
     stop=0.2 * ylims[1],
-    num=len(rec_list),
+    num=len(oracle_list),
 )
 
 # Draw green lines that indicate where retraining occurred
 plt.hlines(
-    y=rec_list["y_val"],
-    xmin=rec_list[0],
-    xmax=rec_list[1],
+    y=oracle_list["y_val"],
+    xmin=oracle_list[0],
+    xmax=oracle_list[1],
     color="green",
-    label="Retraining Data",
+    label="Labeled Oracle Data",
 )
 
 plt.legend()

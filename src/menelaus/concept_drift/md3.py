@@ -2,9 +2,11 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
+from sklearn.base import clone
 from menelaus.drift_detector import DriftDetector
 
 class MD3(DriftDetector):
+    # TODO: write up own summary here (or clearly quote paper)
     """The Margin Density Drift Detection (MD3) method is a drift detection
     algorithm based on the number of samples in the uncertainty region
     of a classifier, intended for an online classifier.
@@ -28,6 +30,8 @@ class MD3(DriftDetector):
     be added to the MD3 implementation later on). For now, this algorithm
     is designed specifically for SVMs (and potentially logistic regression) 
     for the sake of simplicity.
+    
+    Ref. :cite:t:`sethi2017reliable`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever
@@ -48,10 +52,10 @@ class MD3(DriftDetector):
                 this after adding capability for other models.
             sensitivity (float): the sensitivity at which a change in margin density
                 will be detected. Change is signaled when the margin density at a
-                time t, given by MD sub t, deviates by more than sensitivity 
-                standard deviations from the reference margin density value MD sub Ref.
-                A larger value can be set if frequent signaling is not desired, 
-                alternatively a lower value could be used for critical applications
+                time t, given by MD_t, deviates by more than ``sensitivity``
+                standard deviations from the reference margin density value MD_Ref.
+                A larger value can be set if frequent signaling is not desired. 
+                Alternatively, a lower value could be used for applications
                 where small changes could be harmful, if undetected. Defaults to 2. 
                 TODO: suggested by paper to be picked in the range of [0, 3]
             k (int): the number of folds that will be used in k-fold cross validation
@@ -76,11 +80,6 @@ class MD3(DriftDetector):
     def process_svm(self):
         # get the separating hyperplane
         # The decision boundary is the line y = a*x - b
-        # Sources:
-        #    (1) MD3 Paper
-        #    (2) https://scikit-learn.org/stable/auto_examples/svm/plot_svm_margin.html#sphx-glr-download-auto-examples-svm-plot-svm-margin-py
-        #    (3) https://scikit-learn.org/stable/auto_examples/svm/plot_separating_hyperplane.html#example-svm-plot-separating-hyperplane-py
-        #    (4) https://stackoverflow.com/questions/23794277/extract-decision-boundary-with-scikit-learn-linear-svm
         self.w = np.array(self.classifier.coef_[0])
         self.intercept = np.array(self.classifier.intercept_)
         self.a = -self.w[0] / self.w[1]
@@ -132,7 +131,7 @@ class MD3(DriftDetector):
                 statistics for
         """
 
-        duplicate_classifier = self.classifier
+        duplicate_classifier = clone(self.classifier)
 
         # prepare the cross-validation procedure
         margin_densities = []
@@ -280,14 +279,14 @@ class MD3(DriftDetector):
             acc_labeled_samples = accuracy_score(y_test, y_pred)
             
             # TODO: do absolute value here or no? algo in paper does not use absolute value
-            drift_level = np.abs(self.reference_distribution["acc"] - acc_labeled_samples)
+            drift_level = self.reference_distribution["acc"] - acc_labeled_samples
             drift_threshold = self.sensitivity * self.reference_distribution["acc_std"]
             print("drift level:", drift_level)
             print("drift threshold:", drift_threshold)
             
             if drift_level > drift_threshold:
                 self.drift_state = "drift"
-                self.classifier.fit(X_test, y_test.values.ravel())
+                # self.classifier.fit(X_test, y_test.values.ravel())
                 
                 # TODO: recalculate SVM margin values and reset the reference data only
                 # after drift is confirmed (commented out here) or at the end of this function
@@ -324,7 +323,6 @@ class MD3(DriftDetector):
         """
         
         mis = np.abs(np.dot(self.w, sample) + self.b)
-        print("margin inclusion signal:", mis)
         
         if mis <= 1:
             return 1
@@ -350,7 +348,6 @@ class MD3(DriftDetector):
         b = intercept[0] / w[1]
         
         mis = np.abs(np.dot(w, sample) + b)
-        print("margin inclusion signal for other classifier:", mis)
 
         if mis <= 1:
             return 1
