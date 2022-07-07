@@ -1,123 +1,25 @@
 import numpy as np
-import pandas as pd
-import scipy.stats
-from pandas import DataFrame  # more efficient for later for loop
 from numpy import unique
-from menelaus.drift_detector import DriftDetector
+import pandas as pd
+from pandas import DataFrame
+import scipy.stats
+
+from menelaus.drift_detector import StreamingDetector, BatchDetector
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
-
-class KdqTree(DriftDetector):
-    """kdqTree is a drift detection algorithm which detects drift via the
-    Kullback-Leibler divergence, calculated after partitioning the data space
-    via constructing a k-d-quad-tree (kdq-tree). A reference window of initial
-    data is compared to a test window of later data. The Kullback-Leibler
-    divergence between the empirical distributions of the reference and test
-    windows is calculated, and drift is alarmed when a threshold is reached.
-
-    A kdqtree is a combination of k-d trees and quad-trees; it is a binary tree
-    (k-d) whose nodes contain square cells (quad) which are created via
-    sequential splits along each dimension. This structure allows the
-    calculation of the K-L divergence for continuous distributions, as the K-L
-    divergence is defined on prwobability mass functions. The number of samples
-    in each leaf of the tree is an empirical distribution for either dataset;
-    this allows us to calculate the K-L divergence.
-
-    If used in a streaming data setting, the reference window is used to
-    construct a kdq-tree, and the data in both the reference and test window are
-    filed into it. If used in a batch data setting, the reference window, the
-    first batch passed in, is used to construct a kdq-tree, and data in test
-    batches are compared to it. When drift is detected on a test batch, that
-    test batch is set to be the new reference window - unless the user specifies
-    a reference window using the set_reference method.
-
-    The threshold for drift is determined using the desired alpha level by a
-    bootstrap estimate for the critical value of the K-L divergence, drawing
-    num_bootstrap_samples samples, ``2 * window_size times``, from the reference
-    window.
-
-    Additionally, the Kulldorff spatial scan statistic, which is a special case
-    of the KL-divergence, can be calculated at each node of the kdq-tree, which
-    gives a measure of the regions of the data space which have the greatest
-    divergence between the reference and test windows. This can be used to
-    visualize which regions of data space have the greatest drift. Note that
-    these statistics are specific to the partitions of the data space by the
-    kdq-tree, rather than (necessarily) the maximally different region in
-    general. KSS is made available via ``to_plotly_dataframe``, which produces
-    output structured for use with ``plotly.express.treemap``.
-
-    Note that this algorithm could be used with other types of trees; the
-    reference paper and this implementation use kdq-trees.
-
-    Note that the current implementation does not explicitly handle categorical
-    data.
-
-    Ref. :cite:t:`dasu2006information`
-
-
-    Attributes:
-        total_updates (int): number of samples/batches the drift detector has
-            ever been updated with.
-        updates_since_reset (int): number of samples/batches since the last time
-            the drift detector was reset
-        drift_state (str): detector's current drift state. Can take values
-            ``"drift"`` or ``None``.
-    """
-
-    input_type = None
-
+class KdqTreeStreaming(StreamingDetector):
     def __init__(
         self,
+        window_size,
+        persistence=0.05,
         alpha=0.01,
         bootstrap_samples=500,
         count_ubound=100,
-        cutpoint_proportion_lbound=2e-10,
-        window_size=None,
-        persistence=0.05,
-        input_type="stream",
+        cutpoint_proportion_lbound=2e-10
     ):
-        """
-        Args:
-            alpha (float, optional): Achievable significance level. Defaults to
-                0.01.
-            bootstrap_samples (int, optional): The number of bootstrap samples
-                to use to approximate the empirical distributions. Equivalent to
-                kappa in Dasu (2006), which recommends 500-1000 samples.
-                Defaults to 500.
-            count_ubound (int, optional): An upper bound for the number of
-                samples stored in a leaf node of the kdqTree. No leaf shall
-                contain more samples than this value, unless further divisions
-                violate the cutpoint_proportion_lbound restriction. Default 100.
-            cutpoint_proportion_lbound (float, optional): A lower bound for the
-                size of the leaf nodes. No node shall have a size length smaller
-                than this proportion, relative to the original feature length.
-                Defaults to 2e-10.
-            window_size (int, optional): The minimum number of samples required
-                to test whether drift has occurred. Only meaningful if
-                input_type is "stream". If input_type is "batch", kdqTree uses
-                all samples within each batch.
-            persistence (float, optional): Persistence factor. If stream is
-                ``True``, how many samples in a row, as a proportion of the
-                window size, must be in the "drift region" of K-L divergence, in
-                order for ``kdqTree`` to alarm and reset. Defaults to 0.05.
-            input_type (str, optional): Whether data will be received one sample
-                at a time, vs. received in batches of arbitrary size. For
-                ``input_type == "batch"``, the reference window is defined with
-                the first call to ``update()`` after a reset/initialization. For
-                ``input_type == "stream"``, new samples are passed to update one
-                at a time, and the reference data is defined by ``window_size``.
-                Defaults to "stream".
-        """
-        if input_type == "stream" and window_size is None:
-            raise ValueError(
-                "Streaming kdqTree's window_size must be a positive integer."
-            )
-        if window_size is not None and window_size < 1 and input_type == "stream":
-            raise ValueError(
-                "Streaming kdqTree's window_size must be a positive integer."
-            )
+        if not isinstance(window_size, int) or window_size < 1:
+            raise ValueError(f'window_size must be positive integer, was {window_size}')
         super().__init__()
-        self.input_type = input_type
         self.window_size = window_size
         self.persistence = persistence
         self.alpha = alpha
@@ -127,171 +29,65 @@ class KdqTree(DriftDetector):
         self.reset()
 
     def reset(self):
-        """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after ``drift_state == 'drift'`` or initialization.
-        """
         super().reset()
         self._ref_data = np.array([])
         self._test_data_size = 0
         self._kdqtree = None
         self._critical_dist = None
-        self._drift_counter = 0  # samples consecutively in the drift region
+        self._drift_counter = 0 # samples consecutively in the drift region
         self.input_cols = None
 
     def _inner_set_reference(self, ary):
-        """
-        Initialize detector with a reference batch. This does not perform
-        validation, and is therefore not intended to be called directly by the
-        user - instead, use ``set_reference``.
-
-        Args:
-            ary (numpy array): initial baseline dataset
-        """
         self.reset()
-
         self._kdqtree = KDQTreePartitioner(
             count_ubound=self.count_ubound,
-            cutpoint_proportion_lbound=self.cutpoint_proportion_lbound,
+            cutpoint_proportion_lbound=self.cutpoint_proportion_lbound
         )
         self._kdqtree.build(ary)
-
-        ref_counts = self._kdqtree.leaf_counts("build")
+        ref_counts = self._kdqtree.leaf_counts('build')
         self._critical_dist = self._get_critical_kld(ref_counts)
 
-    def set_reference(self, data):
-        """
-        Initialize detector with a reference batch. The user may specify an
-        alternate reference batch than the one maintained by kdq-Tree. This will
-        reset the detector.
-        If ``input_type`` is ``"stream"``, this method should not be used.
-
-        Args:
-            data (pandas.DataFrame or numpy array): initial baseline dataset
-        """
-        if self.input_type == "stream":
-            raise ValueError("This method is only available for batch data.")
-
-        if isinstance(data, pd.DataFrame):
-            self._inner_set_reference(data.values)
-            self.input_cols = data.columns
-        elif isinstance(data, np.ndarray):
-            self._inner_set_reference(data)
-        else:
-            raise ValueError(
-                "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
-            )
-
     def update(self, data):
-        """
-        Update the detector with a new sample/batch. Constructs the reference
-        data's kdqtree; then, when sufficient samples have been received, puts
-        the test data into the same tree; then, checks divergence between the
-        reference and test data.
-
-        If ``input_type`` is ``"stream"``, the reference window is maintained as
-        the initial window until drift. Upon drift, the user may continue
-        passing streaming data to update and new reference windows will be
-        constructed once sufficient samples have been received.
-
-        If ``input_type`` is ``"batch"``, the initial batch will be used as the
-        reference at each update step, regardless of drift state.  If the user
-        wishes to change reference batch, use the ``set_reference`` method and
-        then continue passing new batches to ``update``.
-
-        Args:
-            data (pandas.DataFrame or numpy array): If just reset/initialized,
-            the reference data. Otherwise, a new sample to put into the test
-            window (if streaming) or a new batch of data to be compared to the
-            reference window (if not streaming).
-        """
-        if isinstance(data, pd.DataFrame):
+        if isinstance(data, DataFrame):
             if self.input_cols is None:
-                # The first update with a dataframe will constrain subsequent
-                # input. This will also fire if set_reference has been used with
-                # a dataframe.
                 self.input_cols = data.columns
             elif self.input_cols is not None:
                 if not data.columns.equals(self.input_cols):
-                    raise ValueError(
-                        "Columns of new data must match with columns of reference data."
-                    )
+                    raise ValueError(f'Columns {data.columns} != reference data columns {self.input_cols}')
             ary = data.values
         elif isinstance(data, np.ndarray):
-            # This allows starting with a dataframe, then later passing bare
-            # numpy arrays. For now, assume users are not miscreants.
             ary = data
         else:
-            raise ValueError(
-                """This method is only available for data inputs in the form of 
-                a Pandas DataFrame or a Numpy Array."""
-            )
+            raise ValueError(f'Invalid data type {type(data)}')
 
-        if self.drift_state == "drift":
-            if self.input_type == "batch":
-                # this will both reset the detector and initialize the reference
-                # kdq-tree.
-                self.set_reference(self.ref_data)
-            else:
-                self.reset()
+        if self.drift_state == 'drift':
+            self.reset()
 
         super().update()
 
-        if self._kdqtree is None:  # ary is part of the new reference tree
-
-            self._ref_data = (
-                np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
-            )
-
-            if (
-                self.input_type == "stream" and len(self._ref_data) == self.window_size
-            ) or self.input_type == "batch":
-
+        if self._kdqtree is None:
+            self._ref_data = np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
+            if len(self._ref_data) == self.window_size:
                 self._inner_set_reference(self._ref_data)
-
-        else:  # new test sample(s)
-
-            self._kdqtree.fill(ary, tree_id="test", reset=(self.input_type == "batch"))
-            if self.input_type == "stream":
-                self._test_data_size += 1
-            # check for drift if either: we're streaming and the reference
-            # window is full, or we're doing batch detection
-            if self.input_type == "batch" or (self._test_data_size >= self.window_size):
+        else:
+            self._kdqtree.fill(ary, tree_id="test", reset=False) # F, b/c input type is streaming
+            self._test_data_size += 1
+            
+            if self._test_data_size >= self.window_size:
                 test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
                 if test_dist > self._critical_dist:
-                    if self.input_type == "stream":
-                        self._drift_counter += 1
-                        if self._drift_counter > self.persistence * self.window_size:
-                            self.drift_state = "drift"
-
-                    else:
+                    self._drift_counter += 1
+                    if self._drift_counter > self.persistence * self.window_size:
                         self.drift_state = "drift"
-                        if isinstance(data, pd.DataFrame):
-                            self.input_cols = data.columns
-                        self.ref_data = ary
 
-    def _get_critical_kld(self, ref_counts):
-        """Find the critical value of the Kullback-Leibler divergence, using the
-        empirical distribution defined by the counts of the reference tree
-        across the leaves.
-
-        Args:
-            ref_counts (numpy array): The counts from the reference tree across
-                its leaves.
-
-        Returns:
-            float: the critical distance corresponding to ``self.alpha``, the
-                achievable significance level.
-        """
+    def _get_critical_kd(self, ref_counts):
         ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
-
-        if self.input_type == "stream":
-            sample_size = self.window_size
-        else:
-            sample_size = sum(ref_counts)
-
+        sample_size = self.window_size
+     
         b_dist_pairs = []
         bin_indices = list(range(len(ref_counts)))
         bin_indices_df = DataFrame({"leaf": bin_indices})
+
         for _ in range(self.bootstrap_samples):
             # note the maintenance of the leaf order!
             b_sample = np.random.choice(bin_indices, size=2 * sample_size, p=ref_dist)
@@ -317,43 +113,12 @@ class KdqTree(DriftDetector):
         return np.quantile(critical_distances, 1 - self.alpha, method="nearest")
 
     def to_plotly_dataframe(
-        self, tree_id1="build", tree_id2="test", max_depth=None, input_cols=None
+        self,
+        tree_id1="build",
+        tree_id2="test",
+        max_depth=None,
+        input_cols=None
     ):
-        """Generates a dataframe containing information about the kdqTree's structure
-        and some node characteristics, intended for use with plotly.
-
-        Args:
-            tree_id1 (str, optional): Reference tree. If ``tree_id2`` is not
-                specified, the only tree described. Defaults to ``"build"``.
-            tree_id2 (str, optional): Test tree. If this is specified, the
-                dataframe will also contain information about the difference
-                between counts in each node for the reference vs. the test tree.
-                Defaults to ``"test"``.
-            max_depth (int, optional): Depth in the tree to which to recurse.
-                Defaults to ``None``.
-            input_cols (list, optional): List of column names for the input
-                data. Defaults to ``None``.
-
-        Returns:
-            pd.DataFrame: A dataframe where each row corresponds to a node, and
-            each column contains some information:
-
-                * ``name``: a label corresponding to which feature this split is on
-                * ``idx``: a unique ID for the node, to pass
-                    ``plotly.express.treemap``'s id argument
-                * ``parent_idx``: the ID of the node's parent
-                * ``cell_count``: how many samples are in this node in the
-                    reference tree.
-                * ``depth``: how deep the node is in the tree
-                * ``count_diff``: if ``tree_id2`` is specified, the change in
-                    counts from the reference tree.
-                * ``kss``: the Kulldorff Spatial Scan Statistic for this node,
-                    defined as the Kullback-Leibler divergence for this node
-                    between the reference and test trees, using the individual
-                    node and all other nodes combined as the bins for the
-                    distributions.
-        """
-
         if input_cols is not None:
             return self._kdqtree.to_plotly_dataframe(
                 tree_id1, tree_id2, max_depth, input_cols
@@ -362,3 +127,8 @@ class KdqTree(DriftDetector):
             return self._kdqtree.to_plotly_dataframe(
                 tree_id1, tree_id2, max_depth, self.input_cols
             )
+
+
+class KdqTreeBatch(BatchDetector):
+    pass
+

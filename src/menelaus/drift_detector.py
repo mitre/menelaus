@@ -69,6 +69,9 @@ class BatchDetector(ABC):
         return self._input_type
 
 
+#######################
+# Deprecated in 0.2.0
+#######################
 class DriftDetector(ABC):
     """Base class for Menelaus drift detectors.
     A DriftDetector object implements the ``update`` and ``reset`` methods and
