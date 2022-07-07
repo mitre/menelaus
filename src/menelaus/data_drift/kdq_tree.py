@@ -33,9 +33,58 @@ class KdqTreeDetector():
         self._drift_counter = 0 # samples consecutively in the drift region
         self.input_cols = None
 
-    def update(self, data):
-        # same problems as in reset
-        pass
+    def _prepare_data(self, data):
+        if isinstance(data, pd.DataFrame):
+            if self.input_cols is None:
+                # The first update with a dataframe will constrain subsequent
+                # input. This will also fire if set_reference has been used with
+                # a dataframe.
+                self.input_cols = data.columns
+            elif self.input_cols is not None:
+                if not data.columns.equals(self.input_cols):
+                    raise ValueError(
+                        "Columns of new data must match with columns of reference data."
+                    )
+            ary = data.values
+        elif isinstance(data, np.ndarray):
+            # This allows starting with a dataframe, then later passing bare
+            # numpy arrays. For now, assume users are not miscreants.
+            ary = data
+        else:
+            raise ValueError(
+                """This method is only available for data inputs in the form of 
+                a Pandas DataFrame or a Numpy Array."""
+            )
+        return ary
+
+    def _evaluate_kdqtree(self, ary, input_type):
+        # XXX - This is one final spot where we are still technically
+        #       'branching' on input_type. However, in practice, this
+        #       decomposes the update function so much that the two
+        #       classes always call this with their respective input
+        #       type - so it may not be much of an issue? @Anmol-Srivastava
+        if self._kdqtree is None: # ary part of new ref tree
+            self._ref_data = np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
+            
+            if (input_type == 'stream' and len(self._ref_data) == self.window_size) or input_type == 'batch':
+                self._inner_set_reference(self._ref_data)
+
+        else: # new test sample(s)
+            self._kdqtree.fill(ary, tree_id='test', reset=(input_type == 'batch'))
+            if input_type == 'stream':
+                self._test_data_size += 1
+            # check for drift if either: we're streaming and the reference
+            # window is full, or we're doing batch detection
+            if input_type == "batch" or (self._test_data_size >= self.window_size):
+                test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
+                if test_dist > self._critical_dist:
+                    if input_type == "stream":
+                        self._drift_counter += 1
+                        if self._drift_counter > self.persistence * self.window_size:
+                            self.drift_state = "drift"
+                    else:
+                        self.drift_state = "drift"
+                        self.ref_data = ary
 
     def _inner_set_reference(self, ary):
         # TODO ensure self.reset (or e.g. any function in that place uses right local version)
@@ -125,37 +174,13 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         KdqTreeDetector.reset(self)
 
     def update(self, data):
-        if isinstance(data, DataFrame):
-            if self.input_cols is None:
-                self.input_cols = data.columns
-            elif self.input_cols is not None:
-                if not data.columns.equals(self.input_cols):
-                    raise ValueError(f'Columns {data.columns} != reference data columns {self.input_cols}')
-            ary = data.values
-        elif isinstance(data, np.ndarray):
-            ary = data
-        else:
-            raise ValueError(f'Invalid data type {type(data)}')
+        ary = self._prepare_data(data)
 
         if self.drift_state == 'drift':
             self.reset()
 
-        super().update()
-
-        if self._kdqtree is None:
-            self._ref_data = np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
-            if len(self._ref_data) == self.window_size:
-                self._inner_set_reference(self._ref_data)
-        else:
-            self._kdqtree.fill(ary, tree_id="test", reset=False) # F, b/c input type is streaming
-            self._test_data_size += 1
-            
-            if self._test_data_size >= self.window_size:
-                test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
-                if test_dist > self._critical_dist:
-                    self._drift_counter += 1
-                    if self._drift_counter > self.persistence * self.window_size:
-                        self.drift_state = "drift"
+        StreamingDetector.update(self)
+        KdqTreeDetector._evaluate_kdqtree(self, ary, 'stream')
 
     def _get_critical_kd(self, ref_counts):
         sample_size = self.window_size
@@ -200,52 +225,17 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             )
 
     def update(self, data):
-        if isinstance(data, pd.DataFrame):
-            if self.input_cols is None:
-                # The first update with a dataframe will constrain subsequent
-                # input. This will also fire if set_reference has been used with
-                # a dataframe.
-                self.input_cols = data.columns
-            elif self.input_cols is not None:
-                if not data.columns.equals(self.input_cols):
-                    raise ValueError(
-                        "Columns of new data must match with columns of reference data."
-                    )
-            ary = data.values
-        elif isinstance(data, np.ndarray):
-            # This allows starting with a dataframe, then later passing bare
-            # numpy arrays. For now, assume users are not miscreants.
-            ary = data
-        else:
-            raise ValueError(
-                """This method is only available for data inputs in the form of 
-                a Pandas DataFrame or a Numpy Array."""
-            )
+        ary = self._prepare_data(data)
 
         if self.drift_state == "drift":
             self.set_reference(self.ref_data)
 
-        super().update()
+        BatchDetector.update(self)
+        KdqTreeDetector._evaluate_kdqtree(self, ary, 'batch')
 
-        if self._kdqtree is None:  # ary is part of the new reference tree
-
-            self._ref_data = (
-                np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
-            )
-
-            self._inner_set_reference(self._ref_data)
-
-        else:  # new test sample(s)
-
-            self._kdqtree.fill(ary, tree_id="test", reset=(True)) # T b/c batch
-            # check for drift if either: we're streaming and the reference
-            # window is full, or we're doing batch detection
-            test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
-            if test_dist > self._critical_dist:
-                self.drift_state = "drift"
-                if isinstance(data, pd.DataFrame):
-                    self.input_cols = data.columns
-                self.ref_data = ary
+        # if _evaluate_kdqtree resulted in drift for batch data, do a redundant check
+        if self.drift_state == 'drift' and isinstance(data, pd.DataFrame):
+            self.input_cols = data.columns
 
     def _get_critical_kld(self, ref_counts):
         sample_size = sum(ref_counts)
