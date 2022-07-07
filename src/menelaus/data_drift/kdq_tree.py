@@ -67,7 +67,9 @@ class KdqTreeDetector():
             self._ref_data = np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
             
             if (input_type == 'stream' and len(self._ref_data) == self.window_size) or input_type == 'batch':
-                self._inner_set_reference(self._ref_data)
+                # XXX - _inner_set_reference calls KLD itself, so needs to know sample_size
+                #       We may streamline this later - Anmol-Srivastava
+                self._inner_set_reference(self._ref_data, input_type)
 
         else: # new test sample(s)
             self._kdqtree.fill(ary, tree_id='test', reset=(input_type == 'batch'))
@@ -86,7 +88,7 @@ class KdqTreeDetector():
                         self.drift_state = "drift"
                         self.ref_data = ary
 
-    def _inner_set_reference(self, ary):
+    def _inner_set_reference(self, ary, input_type):
         # TODO ensure self.reset (or e.g. any function in that place uses right local version)
         self.reset()
         self._kdqtree = KDQTreePartitioner(
@@ -95,7 +97,8 @@ class KdqTreeDetector():
         )
         self._kdqtree.build(ary)
         ref_counts = self._kdqtree.leaf_counts('build')
-        self._critical_dist = self._get_critical_kld(ref_counts)
+        sample_size = self.window_size if input_type == 'stream' else sum(ref_counts)
+        self._critical_dist = self._get_critical_kld(ref_counts, sample_size)
 
     def to_plotly_dataframe(
         self,
@@ -113,7 +116,7 @@ class KdqTreeDetector():
                 tree_id1, tree_id2, max_depth, self.input_cols
             )
 
-    def _get_critical_kd(self, ref_counts, sample_size):
+    def _get_critical_kld(self, ref_counts, sample_size):
         ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
         b_dist_pairs = []
         bin_indices = list(range(len(ref_counts)))
@@ -157,7 +160,7 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         if not isinstance(window_size, int) or window_size < 1:
             raise ValueError(f'window_size must be positive integer, was {window_size}')
 
-        StreamingDetector.__init__()
+        StreamingDetector.__init__(self)
         KdqTreeDetector.__init__(
             self,
             window_size,
@@ -182,10 +185,6 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         StreamingDetector.update(self)
         KdqTreeDetector._evaluate_kdqtree(self, ary, 'stream')
 
-    def _get_critical_kd(self, ref_counts):
-        sample_size = self.window_size
-        return KdqTreeDetector._get_critical_kd(self, ref_counts, sample_size)
- 
 
 class KdqTreeBatch(KdqTreeDetector, BatchDetector):
     def __init__(
@@ -215,10 +214,12 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
 
     def set_reference(self, data):
         if isinstance(data, pd.DataFrame):
-            self._inner_set_reference(data.values)
+            # XXX - notice how inner_set calling KLD requires us to continue
+            #       branching on input_type, which is not ideal - Anmol Srivastava
+            self._inner_set_reference(data.values, input_type='batch')
             self.input_cols = data.columns
         elif isinstance(data, np.ndarray):
-            self._inner_set_reference(data)
+            self._inner_set_reference(data, input_type='batch')
         else:
             raise ValueError(
                 "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
@@ -236,7 +237,3 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         # if _evaluate_kdqtree resulted in drift for batch data, do a redundant check
         if self.drift_state == 'drift' and isinstance(data, pd.DataFrame):
             self.input_cols = data.columns
-
-    def _get_critical_kld(self, ref_counts):
-        sample_size = sum(ref_counts)
-        return KdqTreeDetector._get_critical_kd(self, ref_counts, sample_size)

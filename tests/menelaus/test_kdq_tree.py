@@ -101,12 +101,6 @@ def test_init_validation_stream(kdq_det_stream):
         det = KdqTreeStreaming(window_size=-5)
 
 
-def test_set_reference_validation_stream(kdq_det_stream):
-    with pytest.raises(ValueError) as _:
-        det = copy.copy(kdq_det_stream)
-        det.set_reference("garbage input")
-
-
 def test_set_reference_validation_batch(kdq_det_batch):
     det = copy.copy(kdq_det_batch)
     with pytest.raises(ValueError) as _:

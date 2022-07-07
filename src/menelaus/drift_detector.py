@@ -30,7 +30,6 @@ class StreamingDetector(ABC):
             self._drift_state = value
     
     @property
-    @abstractmethod
     def input_type(self):
         return self._input_type
 
@@ -64,7 +63,6 @@ class BatchDetector(ABC):
             self._drift_state = value
     
     @property
-    @abstractmethod
     def input_type(self):
         return self._input_type
 
