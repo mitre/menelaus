@@ -1,4 +1,3 @@
-from itertools import count
 import numpy as np
 from numpy import unique
 import pandas as pd
@@ -10,13 +9,23 @@ from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
 
 class KdqTreeDetector():
-    def __init__():
-        pass # TODO - this is the init that super() below should use
+    def __init__(
+        self,
+        window_size,
+        persistence=0.05,
+        alpha=0.01,
+        bootstrap_samples=500,
+        count_ubound=100,
+        cutpoint_proportion_lbound=2e-10
+    ):
+        self.window_size = window_size
+        self.persistence = persistence
+        self.alpha = alpha
+        self.bootstrap_samples = bootstrap_samples
+        self.count_ubound = count_ubound
+        self.cutpoint_proportion_lbound = cutpoint_proportion_lbound
 
     def reset(self):
-        # TODO - complicated because this calls streaming/batch reset 
-        # TODO - super reset(), maybe goes in sub classes reset()
-        # TODO - you can test order of super execution hehe
         self._ref_data = np.array([])
         self._test_data_size = 0
         self._kdqtree = None
@@ -55,9 +64,35 @@ class KdqTreeDetector():
                 tree_id1, tree_id2, max_depth, self.input_cols
             )
 
-    def _get_critical_kd(self, ref_counts):
-        # TODO - same problems as in reset
-        pass
+    def _get_critical_kd(self, ref_counts, sample_size):
+        ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
+        b_dist_pairs = []
+        bin_indices = list(range(len(ref_counts)))
+        bin_indices_df = DataFrame({"leaf": bin_indices})
+
+        for _ in range(self.bootstrap_samples):
+            # note the maintenance of the leaf order!
+            b_sample = np.random.choice(bin_indices, size=2 * sample_size, p=ref_dist)
+            b_hist1 = unique(b_sample[:sample_size], return_counts=True)
+            b_hist2 = unique(b_sample[sample_size:], return_counts=True)
+            b_hist1 = DataFrame({"leaf": b_hist1[0], "count": b_hist1[1]})
+            b_hist2 = DataFrame({"leaf": b_hist2[0], "count": b_hist2[1]})
+            b_hist1 = (
+                b_hist1.merge(bin_indices_df, on="leaf", how="outer")
+                .fillna(0)
+                .sort_values(by="leaf")
+            )
+            b_hist2 = (
+                b_hist2.merge(bin_indices_df, on="leaf", how="outer")
+                .fillna(0)
+                .sort_values(by="leaf")
+            )
+            b_hist1 = KDQTreePartitioner._distn_from_counts(b_hist1["count"])
+            b_hist2 = KDQTreePartitioner._distn_from_counts(b_hist2["count"])
+            b_dist_pairs.append([b_hist1, b_hist2])
+
+        critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
+        return np.quantile(critical_distances, 1 - self.alpha, method="nearest")
 
 
 class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
@@ -72,19 +107,22 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
     ):
         if not isinstance(window_size, int) or window_size < 1:
             raise ValueError(f'window_size must be positive integer, was {window_size}')
-        super().__init__()
-        self.window_size = window_size
-        self.persistence = persistence
-        self.alpha = alpha
-        self.bootstrap_samples = bootstrap_samples
-        self.count_ubound = count_ubound
-        self.cutpoint_proportion_lbound = cutpoint_proportion_lbound
+
+        StreamingDetector.__init__()
+        KdqTreeDetector.__init__(
+            self,
+            window_size,
+            persistence,
+            alpha,
+            bootstrap_samples,
+            count_ubound,
+            cutpoint_proportion_lbound
+        )
         self.reset()
 
     def reset(self):
-        super().reset()
-        # other super(reset)?
-        pass
+        StreamingDetector.reset(self)
+        KdqTreeDetector.reset(self)
 
     def update(self, data):
         if isinstance(data, DataFrame):
@@ -120,36 +158,8 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
                         self.drift_state = "drift"
 
     def _get_critical_kd(self, ref_counts):
-        ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
         sample_size = self.window_size
-     
-        b_dist_pairs = []
-        bin_indices = list(range(len(ref_counts)))
-        bin_indices_df = DataFrame({"leaf": bin_indices})
-
-        for _ in range(self.bootstrap_samples):
-            # note the maintenance of the leaf order!
-            b_sample = np.random.choice(bin_indices, size=2 * sample_size, p=ref_dist)
-            b_hist1 = unique(b_sample[:sample_size], return_counts=True)
-            b_hist2 = unique(b_sample[sample_size:], return_counts=True)
-            b_hist1 = DataFrame({"leaf": b_hist1[0], "count": b_hist1[1]})
-            b_hist2 = DataFrame({"leaf": b_hist2[0], "count": b_hist2[1]})
-            b_hist1 = (
-                b_hist1.merge(bin_indices_df, on="leaf", how="outer")
-                .fillna(0)
-                .sort_values(by="leaf")
-            )
-            b_hist2 = (
-                b_hist2.merge(bin_indices_df, on="leaf", how="outer")
-                .fillna(0)
-                .sort_values(by="leaf")
-            )
-            b_hist1 = KDQTreePartitioner._distn_from_counts(b_hist1["count"])
-            b_hist2 = KDQTreePartitioner._distn_from_counts(b_hist2["count"])
-            b_dist_pairs.append([b_hist1, b_hist2])
-
-        critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
-        return np.quantile(critical_distances, 1 - self.alpha, method="nearest")
+        return KdqTreeDetector._get_critical_kd(self, ref_counts, sample_size)
  
 
 class KdqTreeBatch(KdqTreeDetector, BatchDetector):
@@ -162,19 +172,21 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         window_size=None,
         persistence=0.05
     ):
-        super().__init__()
-        self.alpha = alpha
-        self.bootstrap_samples = bootstrap_samples
-        self.count_ubound = count_ubound
-        self.cutpoint_proportion_lbound = cutpoint_proportion_lbound
-        self.window_size = window_size
-        self.persistence = persistence
+        BatchDetector.__init__(self)
+        KdqTreeDetector.__init__(
+            self,
+            window_size,
+            persistence,
+            alpha,
+            bootstrap_samples,
+            count_ubound,
+            cutpoint_proportion_lbound
+        )
         self.reset()
 
     def reset(self):
-        super().reset()
-        # other super reset()?
-        pass
+        BatchDetector.reset(self)
+        KdqTreeDetector.reset(self)
 
     def set_reference(self, data):
         if isinstance(data, pd.DataFrame):
@@ -236,32 +248,5 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
                 self.ref_data = ary
 
     def _get_critical_kld(self, ref_counts):
-        ref_dist = KDQTreePartitioner._distn_from_counts(ref_counts)
         sample_size = sum(ref_counts)
-
-        b_dist_pairs = []
-        bin_indices = list(range(len(ref_counts)))
-        bin_indices_df = DataFrame({"leaf": bin_indices})
-        for _ in range(self.bootstrap_samples):
-            # note the maintenance of the leaf order!
-            b_sample = np.random.choice(bin_indices, size=2 * sample_size, p=ref_dist)
-            b_hist1 = unique(b_sample[:sample_size], return_counts=True)
-            b_hist2 = unique(b_sample[sample_size:], return_counts=True)
-            b_hist1 = DataFrame({"leaf": b_hist1[0], "count": b_hist1[1]})
-            b_hist2 = DataFrame({"leaf": b_hist2[0], "count": b_hist2[1]})
-            b_hist1 = (
-                b_hist1.merge(bin_indices_df, on="leaf", how="outer")
-                .fillna(0)
-                .sort_values(by="leaf")
-            )
-            b_hist2 = (
-                b_hist2.merge(bin_indices_df, on="leaf", how="outer")
-                .fillna(0)
-                .sort_values(by="leaf")
-            )
-            b_hist1 = KDQTreePartitioner._distn_from_counts(b_hist1["count"])
-            b_hist2 = KDQTreePartitioner._distn_from_counts(b_hist2["count"])
-            b_dist_pairs.append([b_hist1, b_hist2])
-
-        critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
-        return np.quantile(critical_distances, 1 - self.alpha, method="nearest")
+        return KdqTreeDetector._get_critical_kd(self, ref_counts, sample_size)
