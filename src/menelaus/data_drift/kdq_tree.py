@@ -8,7 +8,59 @@ import scipy.stats
 from menelaus.drift_detector import StreamingDetector, BatchDetector
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
-class KdqTreeStreaming(StreamingDetector):
+
+class KdqTreeDetector():
+    def __init__():
+        pass # TODO - this is the init that super() below should use
+
+    def reset(self):
+        # TODO - complicated because this calls streaming/batch reset 
+        # TODO - super reset(), maybe goes in sub classes reset()
+        # TODO - you can test order of super execution hehe
+        self._ref_data = np.array([])
+        self._test_data_size = 0
+        self._kdqtree = None
+        self._critical_dist = None
+        self._drift_counter = 0 # samples consecutively in the drift region
+        self.input_cols = None
+
+    def update(self, data):
+        # same problems as in reset
+        pass
+
+    def _inner_set_reference(self, ary):
+        # TODO ensure self.reset (or e.g. any function in that place uses right local version)
+        self.reset()
+        self._kdqtree = KDQTreePartitioner(
+            count_ubound=self.count_ubound,
+            cutpoint_proportion_lbound=self.cutpoint_proportion_lbound
+        )
+        self._kdqtree.build(ary)
+        ref_counts = self._kdqtree.leaf_counts('build')
+        self._critical_dist = self._get_critical_kld(ref_counts)
+
+    def to_plotly_dataframe(
+        self,
+        tree_id1="build",
+        tree_id2="test",
+        max_depth=None,
+        input_cols=None
+    ):
+        if input_cols is not None:
+            return self._kdqtree.to_plotly_dataframe(
+                tree_id1, tree_id2, max_depth, input_cols
+            )
+        else:
+            return self._kdqtree.to_plotly_dataframe(
+                tree_id1, tree_id2, max_depth, self.input_cols
+            )
+
+    def _get_critical_kd(self, ref_counts):
+        # TODO - same problems as in reset
+        pass
+
+
+class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
     def __init__(
         self,
         window_size,
@@ -31,22 +83,8 @@ class KdqTreeStreaming(StreamingDetector):
 
     def reset(self):
         super().reset()
-        self._ref_data = np.array([])
-        self._test_data_size = 0
-        self._kdqtree = None
-        self._critical_dist = None
-        self._drift_counter = 0 # samples consecutively in the drift region
-        self.input_cols = None
-
-    def _inner_set_reference(self, ary):
-        self.reset()
-        self._kdqtree = KDQTreePartitioner(
-            count_ubound=self.count_ubound,
-            cutpoint_proportion_lbound=self.cutpoint_proportion_lbound
-        )
-        self._kdqtree.build(ary)
-        ref_counts = self._kdqtree.leaf_counts('build')
-        self._critical_dist = self._get_critical_kld(ref_counts)
+        # other super(reset)?
+        pass
 
     def update(self, data):
         if isinstance(data, DataFrame):
@@ -112,25 +150,9 @@ class KdqTreeStreaming(StreamingDetector):
 
         critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
         return np.quantile(critical_distances, 1 - self.alpha, method="nearest")
+ 
 
-    def to_plotly_dataframe(
-        self,
-        tree_id1="build",
-        tree_id2="test",
-        max_depth=None,
-        input_cols=None
-    ):
-        if input_cols is not None:
-            return self._kdqtree.to_plotly_dataframe(
-                tree_id1, tree_id2, max_depth, input_cols
-            )
-        else:
-            return self._kdqtree.to_plotly_dataframe(
-                tree_id1, tree_id2, max_depth, self.input_cols
-            )
-
-
-class KdqTreeBatch(BatchDetector):
+class KdqTreeBatch(KdqTreeDetector, BatchDetector):
     def __init__(
         self,
         alpha=0.01,
@@ -151,24 +173,8 @@ class KdqTreeBatch(BatchDetector):
 
     def reset(self):
         super().reset()
-        self._ref_data = np.array([])
-        self._test_data_size = 0
-        self._kdqtree = None
-        self._critical_dist = None
-        self._drift_counter = 0  # samples consecutively in the drift region
-        self.input_cols = None
-
-    def _inner_set_reference(self, ary):
-        self.reset()
-
-        self._kdqtree = KDQTreePartitioner(
-            count_ubound=self.count_ubound,
-            cutpoint_proportion_lbound=self.cutpoint_proportion_lbound,
-        )
-        self._kdqtree.build(ary)
-
-        ref_counts = self._kdqtree.leaf_counts("build")
-        self._critical_dist = self._get_critical_kld(ref_counts)
+        # other super reset()?
+        pass
 
     def set_reference(self, data):
         if isinstance(data, pd.DataFrame):
@@ -259,17 +265,3 @@ class KdqTreeBatch(BatchDetector):
 
         critical_distances = [scipy.stats.entropy(a, b) for a, b in b_dist_pairs]
         return np.quantile(critical_distances, 1 - self.alpha, method="nearest")
-
-    def to_plotly_dataframe(
-        self, tree_id1="build", tree_id2="test", max_depth=None, input_cols=None
-    ):
-
-        if input_cols is not None:
-            return self._kdqtree.to_plotly_dataframe(
-                tree_id1, tree_id2, max_depth, input_cols
-            )
-        else:
-            return self._kdqtree.to_plotly_dataframe(
-                tree_id1, tree_id2, max_depth, self.input_cols
-            )
-
