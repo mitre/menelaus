@@ -3,7 +3,7 @@ import copy
 import pytest
 import numpy as np
 import pandas as pd
-from menelaus.data_drift.kdq_tree import KdqTree
+from menelaus.data_drift.kdq_tree import KdqTreeStreaming, KdqTreeBatch
 
 
 NUM_FEATURES = 3
@@ -19,7 +19,7 @@ def fixture_kdq_det_stream():
     # instance of KdqTree detector which has been updated with a
     # stream of data which triggers drift detection twice
     np.random.seed(123)
-    det = KdqTree(window_size=50, count_ubound=3)
+    det = KdqTreeStreaming(window_size=50, count_ubound=3)
 
     # could be much faster if kdqTree accepted non-df args; numpy array, itertuples, ...
     input_df = pd.DataFrame(np.random.sample((60, NUM_FEATURES)))
@@ -46,7 +46,7 @@ def fixture_kdq_det_batch():
     """
     np.random.seed(123)
     in_df = np.random.sample((10, NUM_FEATURES))
-    det = KdqTree(input_type="batch", count_ubound=1, bootstrap_samples=10)
+    det = KdqTreeBatch(count_ubound=1, bootstrap_samples=10)
     det.set_reference(in_df)
     det.update(in_df)
     det.update(50 * in_df)
@@ -88,7 +88,7 @@ def test_set_reference(kdq_det_batch):
     assert det.drift_state is None
 
     # make sure that input_cols is set appropriately when initialized
-    det = det = KdqTree(input_type="batch", count_ubound=1, bootstrap_samples=10)
+    det = det = KdqTreeBatch(count_ubound=1, bootstrap_samples=10)
     new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES)))
     det.set_reference(new_sample)
     assert det.input_cols.equals(new_sample.columns)
@@ -96,15 +96,9 @@ def test_set_reference(kdq_det_batch):
 
 def test_init_validation_stream(kdq_det_stream):
     with pytest.raises(ValueError) as _:
-        det = KdqTree(window_size=None, input_type="stream")
+        det = KdqTreeStreaming(window_size=None)
     with pytest.raises(ValueError) as _:
-        det = KdqTree(window_size=-5, input_type="stream")
-
-
-def test_set_reference_validation_stream(kdq_det_stream):
-    with pytest.raises(ValueError) as _:
-        det = copy.copy(kdq_det_stream)
-        det.set_reference("garbage input")
+        det = KdqTreeStreaming(window_size=-5)
 
 
 def test_set_reference_validation_batch(kdq_det_batch):

@@ -1,6 +1,121 @@
 from abc import ABC, abstractmethod
 
 
+class StreamingDetector(ABC):
+    """
+    Abstract base class for all streaming data-based detectors.
+    Minimally implements abstract methods common to all stream
+    based detection algorithms.
+
+    Attributes:
+        total_samples (int): total number of samples the drift
+            detector has been updated with
+        samples_since_reset (int): number of samples since last
+            drift detection
+        drift_state (str): detector's current drift state, can
+            take ``str`` values ``"drift"``, ``"warning"``, or ``None``.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.total_samples = 0
+        self.samples_since_reset = 0
+        self._drift_state = None
+
+    @abstractmethod
+    def update(self, *args, **kwargs):
+        """Update detector with new sample (data point)."""
+        self.total_samples += 1
+        self.samples_since_reset += 1
+
+    @abstractmethod
+    def reset(self, *args, **kwargs):
+        """
+        Initialize the detector's drift state and other relevant attributes.
+        Intended for use after ``drift_state == "drift"``.
+        """
+        self.samples_since_reset = 0
+        self.drift_state = None
+
+    @property
+    def drift_state(self):
+        """Set detector's drift state to ``"drift"``, ``"warning"``, or ``None``."""
+        return self._drift_state
+
+    @drift_state.setter
+    def drift_state(self, value):
+        """Set detector's drift state to ``"drift"``, ``"warning"``, or ``None``.
+
+        Args:
+            value (str): ``"drift"``, ``"warning"``, or ``None``
+
+        Raises:
+            ValueError: raised if disallowed value is given
+        """
+        if value not in ("drift", "warning", None):
+            raise ValueError("tbd")
+        else:
+            self._drift_state = value
+
+
+class BatchDetector(ABC):
+    """
+    Abstract base class for all batch data-based detectors.
+    Minimally implements abstract methods common to all batch
+    based detection algorithms.
+
+    Attributes:
+        total_batches (int): total number of batches the drift
+            detector has been updated with
+        batches_since_reset (int): number of batches since last
+            drift detection
+        drift_state (str): detector's current drift state, can
+            take ``str`` values ``"drift"``, ``"warning"``, or ``None``.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.total_batches = 0
+        self.batches_since_reset = 0
+        self._drift_state = None
+
+    @abstractmethod
+    def update(self, *args, **kwargs):
+        """Update detector with new batch of data"""
+        self.total_batches += 1
+        self.batches_since_reset += 1
+
+    @abstractmethod
+    def reset(self, *args, **kwargs):
+        """
+        Initialize the detector's drift state and other relevant attributes.
+        Intended for use after ``drift_state == 'drift'``.
+        """
+        self.batches_since_reset = 0
+        self.drift_state = None
+
+    @property
+    def drift_state(self):
+        """Set detector's drift state to ``"drift"``, ``"warning"``, or ``None``."""
+        return self._drift_state
+
+    @drift_state.setter
+    def drift_state(self, value):
+        """Set detector's drift state to ``"drift"``, ``"warning"``, or ``None``.
+
+        Args:
+            value (str): ``"drift"``, ``"warning"``, or ``None``
+
+        Raises:
+            ValueError: raised if disallowed value is given
+        """
+        if value not in ("drift", "warning", None):
+            raise ValueError("tbd")
+        else:
+            self._drift_state = value
+
+
+#######################
+# Deprecated in 0.2.0
+#######################
 class DriftDetector(ABC):
     """Base class for Menelaus drift detectors.
     A DriftDetector object implements the ``update`` and ``reset`` methods and
@@ -21,7 +136,6 @@ class DriftDetector(ABC):
             has ever been updated with
         updates_since_reset (int): number of samples/batches since the last
             time the drift detector was reset
-
     """
 
     def __init__(self, *args, **kwargs):

@@ -104,8 +104,7 @@ cd ./menelaus/
 pip install -e .[dev] 
 ```
 
-Menelaus will generally work with Python 3.7 or higher; more specific
-version testing is in the works.
+Menelaus should work with Python 3.8 or higher. 
 
 # Getting Started
 
@@ -134,8 +133,9 @@ For this example, because ADWIN is a concept drift detector, it requires
 both a predicted value (`y_predicted`) and a true value (`y_true`), at
 each update step. Note that this requirement is not true for the
 detectors in other modules. More detailed examples, including code for
-visualizating drift locations, may be found in the `examples` directory,
-as stand-alone python scripts.
+visualizating drift locations, may be found in the ``examples`` directory, as
+stand-alone python scripts. The examples along with output can also be viewed on
+the RTD website.
 
 # Contributing
 Install the library using the `[dev]` option, as above.

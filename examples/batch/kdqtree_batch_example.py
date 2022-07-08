@@ -19,17 +19,16 @@ import os
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import matplotlib.pyplot as plt
-from menelaus.data_drift.kdq_tree import KdqTree
 
+from menelaus.data_drift.kdq_tree import KdqTreeBatch
+from menelaus.datasets import make_example_batch_data
 
 # kdq-Tree does use bootstrapping to define its critical thresholds, so setting
 # the seed is important to reproduce exact behavior.
 np.random.seed(123)
 
 # Import data
-data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "example_data.csv")
-df = pd.read_csv(data_path, index_col="id", dtype={"drift": bool})
+df = make_example_batch_data()
 
 # Capture the column which tells us when drift truly occurred
 drift_years = df.groupby("year")["drift"].apply(lambda x: x.unique()[0]).reset_index()
@@ -44,7 +43,7 @@ df.drop(columns=["cat", "confidence", "drift"], inplace=True)
 
 plot_data = {}
 status = pd.DataFrame(columns=["year", "drift"])
-det = KdqTree(input_type="batch")
+det = KdqTreeBatch()
 
 # Set up reference batch, using 2007 as reference year
 det.set_reference(df[df.year == 2007].drop(columns=['year']))

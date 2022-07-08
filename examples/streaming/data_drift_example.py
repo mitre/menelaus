@@ -10,7 +10,7 @@ data_drift module. The parameters aren't necessarily tuned for best
 performance for the input data, just notional. These detectors are generally
 applied to the whole feature set for a given data source. 
 
-The example data for kdqTree, Circle,  is a synthetic data source, where drift
+The example data for kdqTree, Circle, is a synthetic data source, where drift
 occurs in both var1, var2, and the conditional distributions P(y|var1) and
 P(y|var2). The drift occurs from index 1000 to 1250, and affects 66% of the
 sample.
@@ -24,13 +24,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-from sklearn.naive_bayes import GaussianNB
-from sklearn.preprocessing import StandardScaler
-from menelaus.data_drift import PCACD, KdqTree
+from menelaus.data_drift import PCACD, KdqTreeStreaming
 
 
 # read in Circle dataset
-data_path = os.path.join('..', '..', 'src', 'menelaus', 'tools', 'artifacts', 'dataCircleGSev3Sp3Train.csv')
+data_path = os.path.join('..', '..', 'src', 'menelaus', 'datasets', 'dataCircleGSev3Sp3Train.csv')
 df = pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
 
 ################################################################################
@@ -123,7 +121,7 @@ np.random.seed(1)
 # Note that the default input_type for KDQTree is "stream".
 # The window size, corresponding to the portion of the stream which KDQTree
 # monitors, must be specified.
-det = KdqTree(window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50)
+det = KdqTreeStreaming(window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50)
 
 # setup DF to record results
 status = pd.DataFrame(columns=["index", "var1", "var2", "drift_detected"])
