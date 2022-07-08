@@ -11,15 +11,11 @@ from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 class KdqTreeDetector():
     def __init__(
         self,
-        window_size,
-        persistence=0.05,
         alpha=0.01,
         bootstrap_samples=500,
         count_ubound=100,
         cutpoint_proportion_lbound=2e-10
     ):
-        self.window_size = window_size
-        self.persistence = persistence
         self.alpha = alpha
         self.bootstrap_samples = bootstrap_samples
         self.count_ubound = count_ubound
@@ -163,13 +159,13 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         StreamingDetector.__init__(self)
         KdqTreeDetector.__init__(
             self,
-            window_size,
-            persistence,
             alpha,
             bootstrap_samples,
             count_ubound,
             cutpoint_proportion_lbound
         )
+        self.window_size = window_size # XXX - could be generalized into StreamingDetector.init
+        self.persistence = persistence
         self.reset()
 
     def reset(self):
@@ -192,15 +188,11 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         alpha=0.01,
         bootstrap_samples=500,
         count_ubound=100,
-        cutpoint_proportion_lbound=2e-10,
-        window_size=None,
-        persistence=0.05
+        cutpoint_proportion_lbound=2e-10
     ):
         BatchDetector.__init__(self)
         KdqTreeDetector.__init__(
             self,
-            window_size,
-            persistence,
             alpha,
             bootstrap_samples,
             count_ubound,

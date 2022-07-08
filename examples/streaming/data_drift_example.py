@@ -24,11 +24,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-from menelaus.data_drift import PCACD, KdqTree
+from menelaus.data_drift import PCACD, KdqTreeStreaming
 
 
 # read in Circle dataset
-data_path = os.path.join('..', '..', 'src', 'menelaus', 'tools', 'artifacts', 'dataCircleGSev3Sp3Train.csv')
+data_path = os.path.join('..', '..', 'src', 'menelaus', 'datasets', 'dataCircleGSev3Sp3Train.csv')
 df = pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
 
 ################################################################################
@@ -121,7 +121,7 @@ np.random.seed(1)
 # Note that the default input_type for KDQTree is "stream".
 # The window size, corresponding to the portion of the stream which KDQTree
 # monitors, must be specified.
-det = KdqTree(window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50)
+det = KdqTreeStreaming(window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50)
 
 # setup DF to record results
 status = pd.DataFrame(columns=["index", "var1", "var2", "drift_detected"])
