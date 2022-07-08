@@ -302,6 +302,33 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
     streaming data context. Inherits from ``KdqTreeDetector``
     and ``StreamingDetector`` (see docs).
 
+    kdqTree is a drift detection algorithm which detects drift via the
+    Kullback-Leibler divergence, calculated after partitioning the data space
+    via constructing a k-d-quad-tree (kdq-tree).
+
+    If used in a streaming data setting, the reference window is used to
+    construct a kdq-tree, and the data in both the reference and test window are
+    filed into it. If used in a batch data setting, the reference window - the
+    first batch passed in - is used to construct a kdq-tree, and data in test
+    batches are compared to it. When drift is detected on a test batch, that
+    test batch is set to be the new reference window - unless the user specifies
+    a reference window using the set_reference method.
+
+    The threshold for drift is determined using the desired alpha level by a
+    bootstrap estimate for the critical value of the K-L divergence, drawing a
+    sample of ``num_boostrap_samples`` repeatedly, ``2 * window_size`` times,
+    from the reference window.
+
+    Additionally, the Kulldorff spatial scan statistic, which is a special case
+    of the KL-divergence, can be calculated at each node of the kdq-tree, which
+    gives a measure of the regions of the data space which have the greatest
+    divergence between the reference and test windows. This can be used to
+    visualize which regions of data space have the greatest drift. Note that
+    these statistics are specific to the partitions of the data space by the
+    kdq-tree, rather than (necessarily) the maximally different region in
+    general. KSSs are made available via ``to_plotly_dataframe``, which produces
+    output structured for use with ``plotly.express.treemap``.
+
     Ref. :cite:t:`dasu2006information`
 
     Attributes:
@@ -396,6 +423,43 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
     Implements the kdqTree drift detection algorithm in a
     batch data context. Inherits from ``KdqTreeDetector``
     and ``BatchDetector`` (see docs).
+
+    kdqTree is a drift detection algorithm which detects drift via the
+    Kullback-Leibler divergence, calculated after partitioning the data space
+    via constructing a k-d-quad-tree (kdq-tree). A reference window of initial
+    data is compared to a test window of later data. The Kullback-Leibler
+    divergence between the empirical distributions of the reference and test
+    windows is calculated, and drift is alarmed when a threshold is reached.
+    A kdqtree is a combination of k-d trees and quad-trees; it is a binary tree
+    (k-d) whose nodes contain square cells (quad) which are created via
+    sequential splits along each dimension. This structure allows the
+    calculation of the K-L divergence for continuous distributions, as the K-L
+    divergence is defined on probability mass functions. The number of samples
+    in each leaf of the tree is an empirical distribution for either dataset;
+    this allows us to calculate the K-L divergence.
+
+    If used in a streaming data setting, the reference window is used to
+    construct a kdq-tree, and the data in both the reference and test window are
+    filed into it. If used in a batch data setting, the reference window - the
+    first batch passed in - is used to construct a kdq-tree, and data in test
+    batches are compared to it. When drift is detected on a test batch, that
+    test batch is set to be the new reference window - unless the user specifies
+    a reference window using the set_reference method.
+
+    The threshold for drift is determined using the desired alpha level by a
+    bootstrap estimate for the critical value of the K-L divergence, drawing a
+    sample of ``num_boostrap_samples`` repeatedly, ``2 * window_size`` times,
+    from the reference window.
+
+    Additionally, the Kulldorff spatial scan statistic, which is a special case
+    of the KL-divergence, can be calculated at each node of the kdq-tree, which
+    gives a measure of the regions of the data space which have the greatest
+    divergence between the reference and test windows. This can be used to
+    visualize which regions of data space have the greatest drift. Note that
+    these statistics are specific to the partitions of the data space by the
+    kdq-tree, rather than (necessarily) the maximally different region in
+    general. KSSs are made available via ``to_plotly_dataframe``, which produces
+    output structured for use with ``plotly.express.treemap``.
 
     Ref. :cite:t:`dasu2006information`
 
