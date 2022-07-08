@@ -1,6 +1,7 @@
 """ Functions to generate example data according to a fixed scheme. """
 
 import os
+import pytest  # until such time as we kill the current fetch_circle_data
 import pandas as pd
 import numpy as np
 
@@ -89,10 +90,13 @@ def make_example_batch_data():
     return df
 
 
+@pytest.mark.no_cover  # Current solution does not deserve the rites of coverage.
 def fetch_circle_data():
     """Retrieve the Circle data from the datasets directory."""
 
-    # A terrible solution to get RTD working.
+    #TODO: A terrible solution to get RTD working. It'd be better to generate
+    #the data "live", or write a solution that finds the file without
+    #hard-coding the path.
     rtd_filepath = os.path.join(
         "..",
         "..",
