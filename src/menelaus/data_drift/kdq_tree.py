@@ -24,21 +24,22 @@ class KdqTreeDetector:
     (k-d) whose nodes contain square cells (quad) which are created via
     sequential splits along each dimension. This structure allows the
     calculation of the K-L divergence for continuous distributions, as the K-L
-    divergence is defined on prwobability mass functions. The number of samples
+    divergence is defined on probability mass functions. The number of samples
     in each leaf of the tree is an empirical distribution for either dataset;
     this allows us to calculate the K-L divergence.
 
     If used in a streaming data setting, the reference window is used to
     construct a kdq-tree, and the data in both the reference and test window are
-    filed into it. If used in a batch data setting, the reference window, the
-    first batch passed in, is used to construct a kdq-tree, and data in test
+    filed into it. If used in a batch data setting, the reference window - the
+    first batch passed in - is used to construct a kdq-tree, and data in test
     batches are compared to it. When drift is detected on a test batch, that
     test batch is set to be the new reference window - unless the user specifies
     a reference window using the set_reference method.
+
     The threshold for drift is determined using the desired alpha level by a
-    bootstrap estimate for the critical value of the K-L divergence, drawing
-    num_bootstrap_samples samples, ``2 * window_size times``, from the reference
-    window.
+    bootstrap estimate for the critical value of the K-L divergence, drawing a
+    sample of ``num_boostrap_samples`` repeatedly, ``2 * window_size`` times,
+    from the reference window.
 
     Additionally, the Kulldorff spatial scan statistic, which is a special case
     of the KL-divergence, can be calculated at each node of the kdq-tree, which
@@ -47,10 +48,12 @@ class KdqTreeDetector:
     visualize which regions of data space have the greatest drift. Note that
     these statistics are specific to the partitions of the data space by the
     kdq-tree, rather than (necessarily) the maximally different region in
-    general. KSS is made available via ``to_plotly_dataframe``, which produces
+    general. KSSs are made available via ``to_plotly_dataframe``, which produces
     output structured for use with ``plotly.express.treemap``.
+
     Note that this algorithm could be used with other types of trees; the
     reference paper and this implementation use kdq-trees.
+
     Note that the current implementation does not explicitly handle categorical
     data.
 
@@ -58,7 +61,7 @@ class KdqTreeDetector:
 
     Attributes:
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``
+            take ``str`` values ``"drift"`` or ``None``.
         alpha (float, optional): Achievable significance level. Defaults to
                 0.01.
         bootstrap_samples (int, optional): The number of bootstrap samples
@@ -203,7 +206,7 @@ class KdqTreeDetector:
         Args:
             ary (numpy.ndarray): baseline dataset
             input_type (str): context for incoming data, either
-                ``'stream'`` or ``'batch'``
+                ``"stream"`` or ``"batch"``
         """
         # TODO ensure self.reset (or e.g. any function in that place uses right local version)
         self.reset()
