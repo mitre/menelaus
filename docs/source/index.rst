@@ -7,7 +7,6 @@ Menelaus
    :hidden:
 
    Home <self>
-   Choosing a Detector <flow_diagram>
 
 References
 ==================================
