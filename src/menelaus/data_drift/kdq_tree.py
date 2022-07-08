@@ -8,7 +8,7 @@ from menelaus.drift_detector import StreamingDetector, BatchDetector
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
 
-class KdqTreeDetector():
+class KdqTreeDetector:
     """
     Parent class for kdqTree-based drift detector classes. Whether
     reliant on streaming or batch data, kdqTree detectors have some
@@ -74,12 +74,13 @@ class KdqTreeDetector():
             than this proportion, relative to the original feature length.
             Defaults to 2e-10.
     """
+
     def __init__(
         self,
         alpha=0.01,
         bootstrap_samples=500,
         count_ubound=100,
-        cutpoint_proportion_lbound=2e-10
+        cutpoint_proportion_lbound=2e-10,
     ):
         """
         Args:
@@ -96,7 +97,7 @@ class KdqTreeDetector():
             cutpoint_proportion_lbound (float, optional): A lower bound for the
                 size of the leaf nodes. No node shall have a size length smaller
                 than this proportion, relative to the original feature length.
-                Defaults to 2e-10. 
+                Defaults to 2e-10.
         """
         self.alpha = alpha
         self.bootstrap_samples = bootstrap_samples
@@ -112,7 +113,7 @@ class KdqTreeDetector():
         self._test_data_size = 0
         self._kdqtree = None
         self._critical_dist = None
-        self._drift_counter = 0 # samples consecutively in the drift region
+        self._drift_counter = 0  # samples consecutively in the drift region
         self.input_cols = None
 
     def _prepare_data(self, data):
@@ -152,7 +153,7 @@ class KdqTreeDetector():
     def _evaluate_kdqtree(self, ary, input_type):
         """
         Deploy internal KDQTreePartitioner and evaluate results on
-        new data, setting drift state accordingly. 
+        new data, setting drift state accordingly.
 
         Args:
             ary (numpy.ndarray): new data to be evaluated
@@ -164,17 +165,21 @@ class KdqTreeDetector():
         #       decomposes the update function so much that the two
         #       classes always call this with their respective input
         #       type - so it may not be much of an issue? @Anmol-Srivastava
-        if self._kdqtree is None: # ary part of new ref tree
-            self._ref_data = np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
-            
-            if (input_type == 'stream' and len(self._ref_data) == self.window_size) or input_type == 'batch':
+        if self._kdqtree is None:  # ary part of new ref tree
+            self._ref_data = (
+                np.vstack([self._ref_data, ary]) if self._ref_data.size else ary
+            )
+
+            if (
+                input_type == "stream" and len(self._ref_data) == self.window_size
+            ) or input_type == "batch":
                 # XXX - _inner_set_reference calls KLD itself, so needs to know sample_size
                 #       and hence input type; we may streamline this later - Anmol-Srivastava
                 self._inner_set_reference(self._ref_data, input_type)
 
-        else: # new test sample(s)
-            self._kdqtree.fill(ary, tree_id='test', reset=(input_type == 'batch'))
-            if input_type == 'stream':
+        else:  # new test sample(s)
+            self._kdqtree.fill(ary, tree_id="test", reset=(input_type == "batch"))
+            if input_type == "stream":
                 self._test_data_size += 1
             # check for drift if either: we're streaming and the reference
             # window is full, or we're doing batch detection
@@ -204,19 +209,15 @@ class KdqTreeDetector():
         self.reset()
         self._kdqtree = KDQTreePartitioner(
             count_ubound=self.count_ubound,
-            cutpoint_proportion_lbound=self.cutpoint_proportion_lbound
+            cutpoint_proportion_lbound=self.cutpoint_proportion_lbound,
         )
         self._kdqtree.build(ary)
-        ref_counts = self._kdqtree.leaf_counts('build')
-        sample_size = self.window_size if input_type == 'stream' else sum(ref_counts)
+        ref_counts = self._kdqtree.leaf_counts("build")
+        sample_size = self.window_size if input_type == "stream" else sum(ref_counts)
         self._critical_dist = self._get_critical_kld(ref_counts, sample_size)
 
     def to_plotly_dataframe(
-        self,
-        tree_id1="build",
-        tree_id2="test",
-        max_depth=None,
-        input_cols=None
+        self, tree_id1="build", tree_id2="test", max_depth=None, input_cols=None
     ):
         """
         Generates a dataframe containing information about the kdqTree's structure
@@ -310,17 +311,17 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
     """
     Implements the kdqTree drift detection algorithm in a
     streaming data context. Inherits from ``KdqTreeDetector``
-    and ``StreamingDetector`` (see docs). 
+    and ``StreamingDetector`` (see docs).
 
     Ref. :cite:t:`dasu2006information`
 
     Attributes:
         total_samples (int): total number of samples the drift
-            detector has been udpated with 
+            detector has been udpated with
         samples_since_reset (int): number of samples since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None`` 
+            take ``str`` values e.g. ``'drift'`` or ``None``
         window_size (int): The minimum number of samples required
             to test whether drift has occurred. Only meaningful if
             input_type is "stream". If input_type is "batch", kdqTree uses
@@ -342,8 +343,9 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         cutpoint_proportion_lbound (float, optional): A lower bound for the
             size of the leaf nodes. No node shall have a size length smaller
             than this proportion, relative to the original feature length.
-            Defaults to 2e-10. 
+            Defaults to 2e-10.
     """
+
     def __init__(
         self,
         window_size,
@@ -351,7 +353,7 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         alpha=0.01,
         bootstrap_samples=500,
         count_ubound=100,
-        cutpoint_proportion_lbound=2e-10
+        cutpoint_proportion_lbound=2e-10,
     ):
         """
         Args:
@@ -376,20 +378,18 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
             cutpoint_proportion_lbound (float, optional): A lower bound for the
                 size of the leaf nodes. No node shall have a size length smaller
                 than this proportion, relative to the original feature length.
-                Defaults to 2e-10. 
+                Defaults to 2e-10.
         """
         if not isinstance(window_size, int) or window_size < 1:
-            raise ValueError(f'window_size must be positive integer, was {window_size}')
+            raise ValueError(f"window_size must be positive integer, was {window_size}")
 
         StreamingDetector.__init__(self)
         KdqTreeDetector.__init__(
-            self,
-            alpha,
-            bootstrap_samples,
-            count_ubound,
-            cutpoint_proportion_lbound
+            self, alpha, bootstrap_samples, count_ubound, cutpoint_proportion_lbound
         )
-        self.window_size = window_size # XXX - could be generalized into StreamingDetector.init
+        self.window_size = (
+            window_size  # XXX - could be generalized into StreamingDetector.init
+        )
         self.persistence = persistence
         self.reset()
 
@@ -411,7 +411,7 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         The reference window is maintained as the initial window until drift.
         Upon drift, the user may continue passing data to update and new
         reference windows will be constructed once sufficient samples are received.
-        
+
         Args:
             data (pandas.DataFrame or numpy array): If just reset/initialized,
             the reference data. Otherwise, a new sample to put into the test
@@ -419,28 +419,28 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         """
         ary = self._prepare_data(data)
 
-        if self.drift_state == 'drift':
+        if self.drift_state == "drift":
             self.reset()
 
         StreamingDetector.update(self)
-        KdqTreeDetector._evaluate_kdqtree(self, ary, 'stream')
+        KdqTreeDetector._evaluate_kdqtree(self, ary, "stream")
 
 
 class KdqTreeBatch(KdqTreeDetector, BatchDetector):
     """
     Implements the kdqTree drift detection algorithm in a
     batch data context. Inherits from ``KdqTreeDetector``
-    and ``BatchDetector`` (see docs). 
+    and ``BatchDetector`` (see docs).
 
     Ref. :cite:t:`dasu2006information`
 
     Attributes:
         total_samples (int): total number of samples the drift
-            detector has been udpated with 
+            detector has been udpated with
         samples_since_reset (int): number of samples since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None`` 
+            take ``str`` values e.g. ``'drift'`` or ``None``
         alpha (float, optional): Achievable significance level. Defaults to
             0.01.
         bootstrap_samples (int, optional): The number of bootstrap samples
@@ -454,14 +454,15 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         cutpoint_proportion_lbound (float, optional): A lower bound for the
             size of the leaf nodes. No node shall have a size length smaller
             than this proportion, relative to the original feature length.
-            Defaults to 2e-10. 
+            Defaults to 2e-10.
     """
+
     def __init__(
         self,
         alpha=0.01,
         bootstrap_samples=500,
         count_ubound=100,
-        cutpoint_proportion_lbound=2e-10
+        cutpoint_proportion_lbound=2e-10,
     ):
         """
         Args:
@@ -482,11 +483,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         """
         BatchDetector.__init__(self)
         KdqTreeDetector.__init__(
-            self,
-            alpha,
-            bootstrap_samples,
-            count_ubound,
-            cutpoint_proportion_lbound
+            self, alpha, bootstrap_samples, count_ubound, cutpoint_proportion_lbound
         )
         self.reset()
 
@@ -510,10 +507,10 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         if isinstance(data, pd.DataFrame):
             # XXX - notice how inner_set calling KLD requires us to continue
             #       branching on input_type, which is not ideal - Anmol Srivastava
-            self._inner_set_reference(data.values, input_type='batch')
+            self._inner_set_reference(data.values, input_type="batch")
             self.input_cols = data.columns
         elif isinstance(data, np.ndarray):
-            self._inner_set_reference(data, input_type='batch')
+            self._inner_set_reference(data, input_type="batch")
         else:
             raise ValueError(
                 "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
@@ -533,7 +530,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
 
         Args:
             data (pandas.DataFrame or numpy array): If just reset/initialized,
-            the reference data. Otherwise, a new batch of data to be compared 
+            the reference data. Otherwise, a new batch of data to be compared
             to the reference window.
         """
         ary = self._prepare_data(data)
@@ -542,8 +539,8 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             self.set_reference(self.ref_data)
 
         BatchDetector.update(self)
-        KdqTreeDetector._evaluate_kdqtree(self, ary, 'batch')
+        KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")
 
         # if _evaluate_kdqtree resulted in drift for batch data, do a redundant check
-        if self.drift_state == 'drift' and isinstance(data, pd.DataFrame):
+        if self.drift_state == "drift" and isinstance(data, pd.DataFrame):
             self.input_cols = data.columns

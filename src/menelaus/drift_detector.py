@@ -9,12 +9,13 @@ class StreamingDetector(ABC):
 
     Attributes:
         total_samples (int): total number of samples the drift
-            detector has been udpated with 
+            detector has been udpated with
         samples_since_reset (int): number of samples since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``    
+            take ``str`` values e.g. ``'drift'`` or ``None``
     """
+
     def __init__(self, *args, **kwargs):
         self.total_samples = 0
         self.samples_since_reset = 0
@@ -50,8 +51,8 @@ class StreamingDetector(ABC):
         Raises:
             ValueError: raised if disallowed value is given
         """
-        if value not in ('drift', 'warning', None):
-            raise ValueError('tbd')
+        if value not in ("drift", "warning", None):
+            raise ValueError("tbd")
         else:
             self._drift_state = value
 
@@ -64,12 +65,13 @@ class BatchDetector(ABC):
 
     Attributes:
         total_batches (int): total number of batches the drift
-            detector has been udpated with 
+            detector has been udpated with
         batches_since_reset (int): number of batches since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``     
+            take ``str`` values e.g. ``'drift'`` or ``None``
     """
+
     def __init__(self, *args, **kwargs):
         self.total_batches = 0
         self.batches_since_reset = 0
@@ -105,8 +107,8 @@ class BatchDetector(ABC):
         Raises:
             ValueError: raised if disallowed value is given
         """
-        if value not in ('drift', 'warning', None):
-            raise ValueError('tbd')
+        if value not in ("drift", "warning", None):
+            raise ValueError("tbd")
         else:
             self._drift_state = value
 
