@@ -89,25 +89,43 @@ def make_example_batch_data():
     return df
 
 
-def find_git_root():
-    """Find the root directory for the git repo, so that we don't have to
-    fool with strange filepaths.
-    """
-    test_dir = os.getcwd()
-    prev_dir, test_dir = None, os.path.abspath(test_dir)
-    while prev_dir != test_dir:
-        if any(os.path.isdir(os.path.join(test_dir, d)) for d in (".git")):
-            return test_dir
-        prev_dir, test_dir = test_dir, os.path.abspath(
-            os.path.join(test_dir, os.pardir)
-        )
-    return None
+# def find_git_root():
+#     """Find the root directory for the git repo, so that we don't have to
+#     fool with strange filepaths.
+#     """
+#     test_dir = os.getcwd()
+#     prev_dir, test_dir = None, os.path.abspath(test_dir)
+#     while prev_dir != test_dir:
+#         if any(os.path.isdir(os.path.join(test_dir, d)) for d in (".git")):
+#             return test_dir
+#         prev_dir, test_dir = test_dir, os.path.abspath(
+#             os.path.join(test_dir, os.pardir)
+#         )
+#     return None
+def find_circle_path():
+    # This is a really terrible solution due to RTD. Let's see if it works.
+    target_name = "src"
+    curr = os.getcwd()
+    while True:
+        fnames = os.listdir(curr)
+        parent = os.path.dirname(curr)
+        if target_name in fnames:
+            return os.path.join(
+                os.path.abspath(target_name),
+                "menelaus",
+                "datasets",
+                "dataCircleGSev3Sp3Train.csv",
+            )
+        else:
+            if curr == parent:
+                break
+            else:
+                curr = parent
 
 
 def fetch_circle_data():
     """Retrieve the Circle data from the datasets directory."""
-    print(f"ROOT DIR {find_git_root()}")
     data_path = os.path.join(
-        find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
+        find_circle_path(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
     )
     return pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
