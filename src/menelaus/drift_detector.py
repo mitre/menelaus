@@ -9,11 +9,11 @@ class StreamingDetector(ABC):
 
     Attributes:
         total_samples (int): total number of samples the drift
-            detector has been udpated with
+            detector has been updated with
         samples_since_reset (int): number of samples since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``
+            take ``str`` values ``"drift"``, ``"warning"``, or ``None``.
     """
 
     def __init__(self, *args, **kwargs):
@@ -31,7 +31,7 @@ class StreamingDetector(ABC):
     def reset(self, *args, **kwargs):
         """
         Initialize the detector's drift state and other relevant attributes.
-        Intended for use after ``drift_state == 'drift'``.
+        Intended for use after ``drift_state == "drift"``.
         """
         self.samples_since_reset = 0
         self.drift_state = None
@@ -65,11 +65,11 @@ class BatchDetector(ABC):
 
     Attributes:
         total_batches (int): total number of batches the drift
-            detector has been udpated with
+            detector has been updated with
         batches_since_reset (int): number of batches since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``
+            take ``str`` values ``"drift"``, ``"warning"``, or ``None``.
     """
 
     def __init__(self, *args, **kwargs):
