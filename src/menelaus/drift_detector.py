@@ -65,7 +65,7 @@ class BatchDetector(ABC):
 
     Attributes:
         total_batches (int): total number of batches the drift
-            detector has been udpated with
+            detector has been updated with
         batches_since_reset (int): number of batches since last
             drift detection
         drift_state (str): detector's current drift state, can
