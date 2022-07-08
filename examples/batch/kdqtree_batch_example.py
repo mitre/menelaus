@@ -20,7 +20,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-from menelaus.data_drift.kdq_tree import KdqTree
+from menelaus.data_drift.kdq_tree import KdqTreeBatch
 from menelaus.datasets import make_example_batch_data
 
 # kdq-Tree does use bootstrapping to define its critical thresholds, so setting
@@ -43,7 +43,7 @@ df.drop(columns=["cat", "confidence", "drift"], inplace=True)
 
 plot_data = {}
 status = pd.DataFrame(columns=["year", "drift"])
-det = KdqTree(input_type="batch")
+det = KdqTreeBatch()
 
 # Set up reference batch, using 2007 as reference year
 det.set_reference(df[df.year == 2007].drop(columns=['year']))

@@ -40,7 +40,7 @@ from menelaus.concept_drift import LinearFourRates, ADWIN, DDM, EDDM, STEPD
 
 
 # read in Circle dataset
-data_path = os.path.join("..", "..", "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv")
+data_path = os.path.join("..", "..", "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv")
 df = pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
 
 drift_start, drift_end = 1000, 1250
