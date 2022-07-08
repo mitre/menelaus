@@ -35,6 +35,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
+    "sphinxcontrib.mermaid",
+    "myst_parser",
     "nbsphinx",
     "sphinx.ext.mathjax",
 ]
