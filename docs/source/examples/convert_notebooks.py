@@ -16,6 +16,6 @@ for subdir, dirs, files in os.walk(walk_dir):
         if os.path.splitext(file)[1] == ".ipynb":
             in_file = os.path.join(subdir, file)
             command = f"jupyter nbconvert --to python {in_file} --output-dir {out_dir}"
-            # print(f"nbconvert {in_file} \n\t to dir {out_dir}")
+            print(f"nbconvert {in_file} \n\t to dir {out_dir}")
             os.system(command)
             # print("\n")
