@@ -110,7 +110,7 @@ class KdqTreeDetector:
     def reset(self):
         """
         Initialize the detector's drift state and other relevant attributes.
-        Intended for use after ``drift_state == 'drift'`` or initialization.
+        Intended for use after ``drift_state == "drift"`` or initialization.
         """
         self._ref_data = np.array([])
         self._test_data_size = 0
@@ -324,15 +324,13 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         samples_since_reset (int): number of samples since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``
+            take ``str`` values e.g. ``"drift"`` or ``None``
         window_size (int): The minimum number of samples required
-            to test whether drift has occurred. Only meaningful if
-            input_type is "stream". If input_type is "batch", kdqTree uses
-            all samples within each batch
-        persistence (float, optional): Persistence factor. If stream is
-            ``True``, how many samples in a row, as a proportion of the
-            window size, must be in the "drift region" of K-L divergence, in
-            order for ``kdqTree`` to alarm and reset. Defaults to 0.05.
+            to test whether drift has occurred.
+        persistence (float, optional): Persistence factor: how many samples in a
+            row, as a proportion of the window size, must be in the "drift
+            region" of K-L divergence, in order for ``kdqTree`` to alarm and
+            reset. Defaults to 0.05.
         alpha (float, optional): Achievable significance level. Defaults to
             0.01.
         bootstrap_samples (int, optional): The number of bootstrap samples
@@ -361,13 +359,11 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         """
         Args:
             window_size (int): The minimum number of samples required
-                to test whether drift has occurred. Only meaningful if
-                input_type is "stream". If input_type is "batch", kdqTree uses
-                all samples within each batch
-            persistence (float, optional): Persistence factor. If stream is
-                ``True``, how many samples in a row, as a proportion of the
-                window size, must be in the "drift region" of K-L divergence, in
-                order for ``kdqTree`` to alarm and reset. Defaults to 0.05.
+                to test whether drift has occurred.
+            persistence (float, optional): Persistence factor: how many samples
+                in a row, as a proportion of the window size, must be in the
+                "drift region" of K-L divergence, in order for ``kdqTree`` to
+                alarm and reset. Defaults to 0.05.
             alpha (float, optional): Achievable significance level. Defaults to
                 0.01.
             bootstrap_samples (int, optional): The number of bootstrap samples
@@ -399,7 +395,7 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
     def reset(self):
         """
         Initialize the detector's drift state and other relevant attributes.
-        Intended for use after ``drift_state == 'drift'`` or initialization.
+        Intended for use after ``drift_state == "drift"`` or initialization.
         """
         StreamingDetector.reset(self)
         KdqTreeDetector.reset(self)
@@ -443,7 +439,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         samples_since_reset (int): number of samples since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``
+            take ``str`` values e.g. ``"drift"`` or ``None``
         alpha (float, optional): Achievable significance level. Defaults to
             0.01.
         bootstrap_samples (int, optional): The number of bootstrap samples
@@ -493,7 +489,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
     def reset(self):
         """
         Initialize the detector's drift state and other relevant attributes.
-        Intended for use after ``drift_state == 'drift'`` or initialization.
+        Intended for use after ``drift_state == "drift"`` or initialization.
         """
         BatchDetector.reset(self)
         KdqTreeDetector.reset(self)
