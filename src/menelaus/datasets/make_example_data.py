@@ -1,5 +1,6 @@
 """ Functions to generate example data according to a fixed scheme. """
 
+import os
 import pandas as pd
 import numpy as np
 
@@ -86,3 +87,26 @@ def make_example_batch_data():
     df["drift"] = df["year"].isin([2009, 2012, 2015, 2018, 2021])
     df.drop("index", axis=1, inplace=True)
     return df
+
+
+def find_git_root():
+    """Find the root directory for the git repo, so that we don't have to
+    fool with strange filepaths.
+    """
+    test_dir = os.getcwd()
+    prev_dir, test_dir = None, os.path.abspath(test_dir)
+    while prev_dir != test_dir:
+        if any(os.path.isdir(os.path.join(test_dir, d)) for d in (".git")):
+            return test_dir
+        prev_dir, test_dir = test_dir, os.path.abspath(
+            os.path.join(test_dir, os.pardir)
+        )
+    return None
+
+
+def fetch_circle_data():
+    """Retrieve the Circle data from the datasets directory."""
+    data_path = os.path.join(
+        find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
+    )
+    return pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
