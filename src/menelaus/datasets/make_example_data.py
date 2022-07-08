@@ -106,7 +106,7 @@ def find_git_root():
 
 def fetch_circle_data():
     """Retrieve the Circle data from the datasets directory."""
-    print(f"ROOT DIR", find_git_root())
+    print(f"ROOT DIR {find_git_root()}")
     data_path = os.path.join(
         find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
     )
