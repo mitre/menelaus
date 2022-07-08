@@ -62,20 +62,6 @@ class KdqTreeDetector:
     Attributes:
         drift_state (str): detector's current drift state, can
             take ``str`` values ``"drift"`` or ``None``.
-        alpha (float, optional): Achievable significance level. Defaults to
-                0.01.
-        bootstrap_samples (int, optional): The number of bootstrap samples
-            to use to approximate the empirical distributions. Equivalent to
-            kappa in Dasu (2006), which recommends 500-1000 samples.
-            Defaults to 500.
-        count_ubound (int, optional): An upper bound for the number of
-            samples stored in a leaf node of the kdqTree. No leaf shall
-            contain more samples than this value, unless further divisions
-            violate the cutpoint_proportion_lbound restriction. Default 100.
-        cutpoint_proportion_lbound (float, optional): A lower bound for the
-            size of the leaf nodes. No node shall have a size length smaller
-            than this proportion, relative to the original feature length.
-            Defaults to 2e-10.
     """
 
     def __init__(
@@ -325,26 +311,6 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
             drift detection
         drift_state (str): detector's current drift state, can
             take ``str`` values e.g. ``"drift"`` or ``None``
-        window_size (int): The minimum number of samples required
-            to test whether drift has occurred.
-        persistence (float, optional): Persistence factor: how many samples in a
-            row, as a proportion of the window size, must be in the "drift
-            region" of K-L divergence, in order for ``kdqTree`` to alarm and
-            reset. Defaults to 0.05.
-        alpha (float, optional): Achievable significance level. Defaults to
-            0.01.
-        bootstrap_samples (int, optional): The number of bootstrap samples
-            to use to approximate the empirical distributions. Equivalent to
-            kappa in Dasu (2006), which recommends 500-1000 samples.
-            Defaults to 500.
-        count_ubound (int, optional): An upper bound for the number of
-            samples stored in a leaf node of the kdqTree. No leaf shall
-            contain more samples than this value, unless further divisions
-            violate the cutpoint_proportion_lbound restriction. Default 100.
-        cutpoint_proportion_lbound (float, optional): A lower bound for the
-            size of the leaf nodes. No node shall have a size length smaller
-            than this proportion, relative to the original feature length.
-            Defaults to 2e-10.
     """
 
     def __init__(
@@ -440,20 +406,6 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             drift detection
         drift_state (str): detector's current drift state, can
             take ``str`` values e.g. ``"drift"`` or ``None``
-        alpha (float, optional): Achievable significance level. Defaults to
-            0.01.
-        bootstrap_samples (int, optional): The number of bootstrap samples
-            to use to approximate the empirical distributions. Equivalent to
-            kappa in Dasu (2006), which recommends 500-1000 samples.
-            Defaults to 500.
-        count_ubound (int, optional): An upper bound for the number of
-            samples stored in a leaf node of the kdqTree. No leaf shall
-            contain more samples than this value, unless further divisions
-            violate the cutpoint_proportion_lbound restriction. Default 100.
-        cutpoint_proportion_lbound (float, optional): A lower bound for the
-            size of the leaf nodes. No node shall have a size length smaller
-            than this proportion, relative to the original feature length.
-            Defaults to 2e-10.
     """
 
     def __init__(
