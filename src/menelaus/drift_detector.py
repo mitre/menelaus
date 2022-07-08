@@ -31,7 +31,7 @@ class StreamingDetector(ABC):
     def reset(self, *args, **kwargs):
         """
         Initialize the detector's drift state and other relevant attributes.
-        Intended for use after ``drift_state == 'drift'``.
+        Intended for use after ``drift_state == "drift"``.
         """
         self.samples_since_reset = 0
         self.drift_state = None
