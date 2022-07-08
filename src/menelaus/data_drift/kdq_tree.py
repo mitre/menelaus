@@ -102,7 +102,6 @@ class KdqTreeDetector:
         self._test_data_size = 0
         self._kdqtree = None
         self._critical_dist = None
-        self._drift_counter = 0  # samples consecutively in the drift region
         self.input_cols = None
 
     def _prepare_data(self, data):
@@ -392,6 +391,8 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         """
         StreamingDetector.reset(self)
         KdqTreeDetector.reset(self)
+        self._drift_counter = 0  # samples consecutively in the drift region
+
 
     def update(self, data):
         """
