@@ -155,6 +155,13 @@ Install the library using the `[dev]` option, as above.
   sphinx-build . ../build
   ```
 
+  If the example notebooks for the docs need to be updated, the corresponding 
+  python scripts in the `examples` directory should also be regenerated via
+  ```python
+  cd docs/source/examples
+  python convert_notebooks.py
+  ```
+
 - **Formatting**:
 
   This project uses `black` and `flake8` for code formatting and
