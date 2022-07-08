@@ -90,36 +90,26 @@ def make_example_batch_data():
     return df
 
 
+@pytest.mark.no_cover
+def find_git_root():
+    """Find the root directory for the git repo, so that we don't have to
+    fool with strange filepaths.
+    """
+    test_dir = os.getcwd()
+    prev_dir, test_dir = None, os.path.abspath(test_dir)
+    while prev_dir != test_dir:
+        if any(os.path.isdir(os.path.join(test_dir, d)) for d in (".git",)):
+            return test_dir
+        prev_dir, test_dir = test_dir, os.path.abspath(
+            os.path.join(test_dir, os.pardir)
+        )
+    return None
+
+
 @pytest.mark.no_cover  # Current solution does not deserve the rites of coverage.
 def fetch_circle_data():
     """Retrieve the Circle data from the datasets directory."""
-
-    #TODO: A terrible solution to get RTD working. It'd be better to generate
-    #the data "live", or write a solution that finds the file without
-    #hard-coding the path.
-    rtd_filepath = os.path.join(
-        "..",
-        "..",
-        "..",
-        "..",
-        "src",
-        "menelaus",
-        "datasets",
-        "dataCircleGSev3Sp3Train.csv",
+    data_path = os.path.join(
+        find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
     )
-    local_filepath = os.path.join(
-        "..", "..", "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
-    )
-
-    local_filepath2 = os.path.join(
-        "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
-    )
-
-    if os.path.exists(rtd_filepath):
-        data_path = rtd_filepath
-    elif os.path.exists(local_filepath):
-        data_path = local_filepath
-    else:
-        data_path = local_filepath2
-
     return pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
