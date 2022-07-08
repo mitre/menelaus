@@ -69,7 +69,7 @@ class BatchDetector(ABC):
         batches_since_reset (int): number of batches since last
             drift detection
         drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``'drift'`` or ``None``
+            take ``str`` values ``"drift"``, ``"warning"``, or ``None``.
     """
 
     def __init__(self, *args, **kwargs):
