@@ -156,7 +156,7 @@ Install the library using the `[dev]` option, as above.
   ```
 
   If the example notebooks for the docs need to be updated, the corresponding 
-  python scripts in the `examples` directory should also be regenerated via
+  python scripts in the `examples` directory should also be regenerated via:
   ```python
   cd docs/source/examples
   python convert_notebooks.py
