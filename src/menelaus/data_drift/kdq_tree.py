@@ -203,6 +203,8 @@ class KdqTreeDetector:
         ref_counts = self._kdqtree.leaf_counts("build")
         sample_size = self.window_size if input_type == "stream" else sum(ref_counts)
         self._critical_dist = self._get_critical_kld(ref_counts, sample_size)
+        if input_type == "stream":
+            self._ref_data = np.array([])
 
     def to_plotly_dataframe(
         self, tree_id1="build", tree_id2="test", max_depth=None, input_cols=None
