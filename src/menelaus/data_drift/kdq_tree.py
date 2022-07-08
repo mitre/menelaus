@@ -395,7 +395,6 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         KdqTreeDetector.reset(self)
         self._drift_counter = 0  # samples consecutively in the drift region
 
-
     def update(self, data):
         """
         Update the detector with a new sample point. Constructs the reference
