@@ -26,6 +26,7 @@ Package structure
    examples/partitioners/partitioner_plots_example.ipynb
 
 
+
 Indices and tables
 ==================
 
