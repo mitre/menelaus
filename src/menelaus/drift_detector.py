@@ -9,7 +9,7 @@ class StreamingDetector(ABC):
 
     Attributes:
         total_samples (int): total number of samples the drift
-            detector has been udpated with
+            detector has been updated with
         samples_since_reset (int): number of samples since last
             drift detection
         drift_state (str): detector's current drift state, can
