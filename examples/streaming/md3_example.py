@@ -28,23 +28,27 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import SGDClassifier
 from menelaus.concept_drift import MD3
 
 
-# read in Circle dataset
+# read in rainfall dataset
 # assumes the script is being run from the root directory.
-# TODO: before merging in PR, change this path to match dev
+# TODO: before merging in PR, change this path to match dev, and put the rainfall
+#       dataset in the right place
 df = pd.read_csv(
     os.path.join(
-        "..", "..", "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
+        "..", "..", "src", "menelaus", "tools", "artifacts", "rainfall_data.csv"
     ),
-    usecols=[0, 1, 2],
-    names=["var1", "var2", "y"],
+    usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9],
+    names=["index", "temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature", "rain"],
 )
-drift_start, drift_end = 1000, 1250
-training_size = 500
+df = df.iloc[1: , :].reset_index(drop=True)
+drift_start, drift_end = 12000, 18158
+training_size = 10000
+
+columns = ["temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature", "rain"]
+features = ["temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature"]
+df[features] = df[features].astype(float)
 
 
 ################################################################################
@@ -52,22 +56,29 @@ training_size = 500
 ################################################################################
 
 # Set up classifier: train on first training_size rows
-training_data = df.loc[0:training_size, ["var1", "var2", "y"]]
-X_train = df.loc[0:training_size, ["var1", "var2"]]
-y_train = df.loc[0:training_size, "y"]
+training_data = df.loc[0:training_size, columns]
+X_train = df.loc[0:training_size, features]
+y_train = df.loc[0:training_size, "rain"]
 
 np.random.seed(123)
 clf = svm.SVC(kernel='linear')
 clf.fit(X_train, y_train.values.ravel())
 
-oracle_retrain_labels = 200
+oracle_labels = 1000
 
 # TODO: play around more with this sensitivity
 # it also seems like it doesn't make sense to have the default value be 2 --> see what the paper
 # says again, i thought they said a value in the range [1, 3] should work but apparently not
-md3 = MD3(clf=clf, sensitivity=0.25, oracle_data_length_required=oracle_retrain_labels)
-md3.set_reference(training_data, "y")
+md3 = MD3(clf=clf, sensitivity=1, oracle_data_length_required=oracle_labels)
+md3.set_reference(training_data, "rain")
 
+# TODO: track cumulative accuracy for the classifier over the samples and add
+#       to the plot that gets outputted, so that we can track margin vs detector
+#       performance and see exactly where accuracy changes and how
+# TODO: have two different loops that each output a plot. the first one can
+#       retrain the model when drift is confirmed, and the other doesn't retrain.
+#       and track accuracy for both and see how the plots differ. or have this on
+#       one plot and just two different lines
 # Set up DF to record results.
 status = pd.DataFrame(
     columns=["index", "y", "margin_density", "drift_detected"]
@@ -78,12 +89,12 @@ oracle_list = []
 # run MD3
 for i in range(training_size, len(df)):
 
-    X_test = df.loc[[i], ["var1", "var2"]]
-    y_true = int(df.loc[[i], "y"])
+    X_test = df.loc[[i], features]
+    y_true = int(df.loc[[i], "rain"])
 
     # call give_oracle_label if detector is currently waiting for oracle data
     if md3.waiting_for_oracle == True:
-        oracle_label = df.loc[[i], ["var1", "var2", "y"]]
+        oracle_label = df.loc[[i], columns]
         md3.give_oracle_label(oracle_label)
         status.loc[i] = [
             i,
@@ -121,7 +132,7 @@ plt.xlabel("Index", fontsize=18)
 ylims = [-0.05, 1.1]
 plt.ylim(ylims)
 
-plt.axvspan(1000, 1250, alpha=0.5, label="Drift Induction Window")
+plt.axvspan(drift_start, drift_end, alpha=0.5, label="Drift Induction Window")
 
 # Draw red lines that indicate where drift was detected
 plt.vlines(
