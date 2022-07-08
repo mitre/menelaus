@@ -90,15 +90,17 @@ def make_example_batch_data():
     return df
 
 
-@pytest.mark.no_cover
-def find_git_root():
+def find_git_root(search_dirs=(".git",)):
     """Find the root directory for the git repo, so that we don't have to
     fool with strange filepaths.
+
+    This is a strange place to have this utility function, but we don't have any
+    other such functions at the moment.
     """
     test_dir = os.getcwd()
     prev_dir, test_dir = None, os.path.abspath(test_dir)
     while prev_dir != test_dir:
-        if any(os.path.isdir(os.path.join(test_dir, d)) for d in (".git",)):
+        if any(os.path.isdir(os.path.join(test_dir, d)) for d in search_dirs):
             return test_dir
         prev_dir, test_dir = test_dir, os.path.abspath(
             os.path.join(test_dir, os.pardir)
@@ -106,7 +108,6 @@ def find_git_root():
     return None
 
 
-@pytest.mark.no_cover  # Current solution does not deserve the rites of coverage.
 def fetch_circle_data():
     """Retrieve the Circle data from the datasets directory."""
     data_path = os.path.join(
