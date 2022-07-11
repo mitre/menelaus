@@ -19,24 +19,16 @@ import os
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import matplotlib.pyplot as plt
-from menelaus.data_drift.kdq_tree import KdqTree
 
+from menelaus.data_drift.kdq_tree import KdqTreeBatch
+from menelaus.datasets import make_example_batch_data
 
 # kdq-Tree does use bootstrapping to define its critical thresholds, so setting
 # the seed is important to reproduce exact behavior.
 np.random.seed(123)
 
 # Import data
-# assumes the script is being run from the root directory.
-df_orig = pd.read_csv(
-    os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
-    index_col="id",
-    dtype={"drift": bool},
-)
-
-# Convert the categorical columns to dummy variables
-df = pd.concat([df_orig, pd.get_dummies(df_orig.cat, prefix="cat")], axis=1)
+df = make_example_batch_data()
 
 # Capture the column which tells us when drift truly occurred
 drift_years = df.groupby("year")["drift"].apply(lambda x: x.unique()[0]).reset_index()
@@ -46,20 +38,19 @@ drift_years = df.groupby("year")["drift"].apply(lambda x: x.unique()[0]).reset_i
 # drift in 2010, 2013, and 2016. So:
 drift_years.loc[drift_years["year"].isin([2010, 2013, 2016]), "drift"] = True
 
-
 df.drop(columns=["cat", "confidence", "drift"], inplace=True)
 
 
 plot_data = {}
 status = pd.DataFrame(columns=["year", "drift"])
-det = KdqTree(input_type="batch")
+det = KdqTreeBatch()
 
 # Set up reference batch, using 2007 as reference year
-det.set_reference(df[df.year == 2007].values)
+det.set_reference(df[df.year == 2007].drop(columns=['year']))
 
 # Batch the data by year and run kdqTree
 for group, sub_df in df[df.year != 2007].groupby("year"):
-    det.update(sub_df.drop(columns=["year"]).values)
+    det.update(sub_df.drop(columns=["year"]))
     status = pd.concat(
         [status, pd.DataFrame({"year": [group], "drift": [det.drift_state]})],
         axis=0,
@@ -70,7 +61,7 @@ for group, sub_df in df[df.year != 2007].groupby("year"):
         plot_data[group] = det.to_plotly_dataframe()
         
         # option to specify reference batch to be any year 
-        #det.set_reference(df[df.year == XXXX].values)
+        # det.set_reference(df[df.year == XXXX].values)
 
 # Print out the true drift status, and that according to the detector.
 # The detector successfully identifies drift in every year but 2018;
@@ -110,5 +101,3 @@ for year, df_plot in plot_data.items():
 # Drift 3: change the correlation of item e and f in 2015 (go from correlation of 0 to correlation of 0.5)
 # Drift 4: change mean and var of H and persist it from 2018 on
 # Drift 5: change mean and var just for a year of J in 2021
-
-

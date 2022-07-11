@@ -1,7 +1,5 @@
-from statistics import mean
 import numpy as np
 import pandas as pd
-import scipy.stats
 from scipy.spatial.distance import jensenshannon
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -26,7 +24,7 @@ class PCACD(DriftDetector):
     Once drift is detected, the reference window is replaced with the current
     test window, and the test window is initialized.
 
-    Ref. [C11]_
+    Ref. :cite:t:`qahtan2015pca`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever
@@ -58,7 +56,7 @@ class PCACD(DriftDetector):
         """
         Args:
             window_size (int): size of the reference window. Note that
-                ``PCA_CD``will only try to detect drift periodically, either
+                ``PCA_CD`` will only try to detect drift periodically, either
                 every 100 observations or 5% of the ``window_size``, whichever
                 is smaller.
             ev_threshold (float, optional): Threshold for percent explained
@@ -128,8 +126,9 @@ class PCACD(DriftDetector):
             if self.drift_state is not None:
                 self._reference_window = self._test_window.copy()
                 if self.online_scaling is True:
-                    # we'll need to refit the scaler. this occurs when both reference and test
-                    # windows are full, so, inverse_transform first, here
+                    # we'll need to refit the scaler. this occurs when both
+                    # reference and test windows are full, so, inverse_transform
+                    # first, here
                     self._reference_window = pd.DataFrame(
                         self._reference_scaler.inverse_transform(self._reference_window)
                     )
@@ -178,7 +177,8 @@ class PCACD(DriftDetector):
                 for i in range(self.num_pcs):
 
                     if self.divergence_metric == "intersection":
-                        # Histograms need the same bin edges so find bounds from both windows to inform range for reference and test
+                        # Histograms need the same bin edges so find bounds from
+                        # both windows to inform range for reference and test
                         self.lower = min(
                             self._reference_pca_projection.iloc[:, i].min(),
                             self._test_pca_projection.iloc[:, i].min(),
@@ -303,23 +303,28 @@ class PCACD(DriftDetector):
         kde_object = KernelDensity(bandwidth=bandwidth, kernel="epanechnikov").fit(
             sample.values.reshape(-1, 1)
         )
-        # score_samples gives log-likelihood for each point, true density values should be > 0 so exponentiate
+        # score_samples gives log-likelihood for each point, true density values
+        # should be > 0 so exponentiate
         density = np.exp(kde_object.score_samples(sample.values.reshape(-1, 1)))
 
         return {"density": density, "object": kde_object}
 
     @staticmethod
     def _build_histograms(sample, bins, bin_range):
-        """Compute the histogram density estimates for a given 1D data stream. Density estimates consist of the value of
-        the pdf in each bin, normalized s.t. integral over the entire range is 1
+        """
+        Compute the histogram density estimates for a given 1D data stream.
+        Density estimates consist of the value of the pdf in each bin,
+        normalized s.t. integral over the entire range is 1
 
         Args:
             sample: 1D array in which we desire to estimate its density function
-            bins: number of bins for estimating histograms. Equal to sqrt of cardinality of ref window
+            bins: number of bins for estimating histograms. Equal to sqrt of
+                cardinality of ref window
             bin_range: (float, float) lower and upper bound of histogram bins
 
         Returns:
-            Dict of bin edges and corresponding density values (normalized s.t. they sum to 1)
+            Dict of bin edges and corresponding density values (normalized s.t.
+            they sum to 1)
 
         """
 
@@ -334,8 +339,10 @@ class PCACD(DriftDetector):
         """Computes Jensen Shannon between two distributions
 
         Args:
-            density_reference (dict): dictionary of density values and object from ref distribution
-            density_test (dict): dictionary of density values and object from test distribution
+            density_reference (dict): dictionary of density values and object
+                from ref distribution
+            density_test (dict): dictionary of density values and object from
+                test distribution
 
         Returns:
             Change Score
@@ -346,12 +353,17 @@ class PCACD(DriftDetector):
 
     @staticmethod
     def _intersection_divergence(density_reference, density_test):
-        """Computes Intersection Area similarity between two distributions using histogram density estimation method.
-        A value of 0 means the distributions are identical, a value of 1 means they are completely different
+        """
+        Computes Intersection Area similarity between two distributions using
+        histogram density estimation method. A value of 0 means the
+        distributions are identical, a value of 1 means they are completely
+        different
 
         Args:
-            density_reference (dict): dictionary of density values from reference distribution
-            density_test (dict): dictionary of density values from test distribution
+            density_reference (dict): dictionary of density values from
+                reference distribution
+            density_test (dict): dictionary of density values from test
+                distribution
 
         Returns:
             Change score

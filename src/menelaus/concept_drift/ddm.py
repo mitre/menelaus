@@ -20,7 +20,7 @@ class DDM(DriftDetector):
     The index of the first sample which triggered a warning/drift state
     (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
 
-    Ref. [C4]_
+    Ref. :cite:t:`gama2004learning`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever

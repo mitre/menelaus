@@ -14,3 +14,4 @@ _build
 *.DS_Store
 .idea/
 *.png
+*.tox*

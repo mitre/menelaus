@@ -24,17 +24,15 @@ import numpy as np
 import os
 import pandas as pd
 import seaborn as sns
+
 from menelaus.data_drift.hdddm import HDDDM
+from menelaus.datasets import make_example_batch_data
 
 
 ## Setup ##
 
 # Import data
-# assumes the script is being run from the root directory.
-df = pd.read_csv(
-    os.path.join("src", "menelaus", "tools", "artifacts", "example_data.csv"),
-    index_col="id",
-)
+df = make_example_batch_data()
 
 # Set up reference and test batches, using 2007 as reference year
 # -2 indexing removes columns "drift" and "confidence"
@@ -157,5 +155,3 @@ hdddm = HDDDM(
 
 hdddm.set_reference(reference)
 hdddm.update(df[df.year == 2008].iloc[:, 1:-2])
-
-

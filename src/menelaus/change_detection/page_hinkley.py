@@ -21,7 +21,7 @@ class PageHinkley(DriftDetector):
     If the threshold is too small, PH may result in many false alarms. If too
     large, the PH test will be more robust, but may miss true drift.
 
-    Ref. [C2]_
+    Ref. :cite:t:`page1954continuous`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever

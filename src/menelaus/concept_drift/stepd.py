@@ -31,7 +31,7 @@ class STEPD(DriftDetector):
     using only a single data point vs. being required to retrain on the entire
     set.
 
-    Ref. [C7]_
+    Ref. :cite:t:`nishida2007detecting`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever
@@ -92,7 +92,8 @@ class STEPD(DriftDetector):
         # update r and s and trim the window
         self._window.append(classifier_result)
         if len(self._window) > self.window_size:
-            # points that are larger than the buffer are removed, and only tracked through r and n
+            # points that are larger than the buffer are removed, and only
+            # tracked through r and n
             self._s -= self._window[0]
             self._r += self._window[0]
             self._window = self._window[1:]

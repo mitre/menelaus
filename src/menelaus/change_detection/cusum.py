@@ -9,7 +9,7 @@ class CUSUM(DriftDetector):
     single model performance metric, or could be applied to the mean of a
     feature variable of interest.
 
-    Ref. [C1]_
+    Ref. :cite:t:`hinkley1971inference`
 
     Attributes:
         total_updates (int): number of samples the drift detector has ever
@@ -81,7 +81,8 @@ class CUSUM(DriftDetector):
         Args:
           next_obs: The value of the new sample.
         """
-        # if the last run resulted in drift, reset everything and use last 30 obs to estimate stats
+        # if the last run resulted in drift, reset everything and use last 30
+        # obs to estimate stats
         if self.drift_state == "drift":
             self.target = np.mean(self._stream[-self.burn_in :])
             self.sd_hat = np.std(self._stream[-self.burn_in :])
@@ -105,7 +106,8 @@ class CUSUM(DriftDetector):
         # if sd = 0 then no variance in stream and no drift -- raise error
         if (self.sd_hat == 0) & (self.updates_since_reset > self.burn_in):
             raise ValueError(
-                "Standard deviation is 0. Confirm imput is a time series with more than 1 unique value."
+                """Standard deviation is 0. Confirm imput is a time series with
+                more than 1 unique value."""
             )
 
         # find new upper and lower cusum stats

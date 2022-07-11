@@ -40,14 +40,9 @@ from menelaus.concept_drift import LinearFourRates, ADWIN, DDM, EDDM, STEPD
 
 
 # read in Circle dataset
-# assumes the script is being run from the root directory.
-df = pd.read_csv(
-    os.path.join(
-        "src", "menelaus", "tools", "artifacts", "dataCircleGSev3Sp3Train.csv"
-    ),
-    usecols=[0, 1, 2],
-    names=["var1", "var2", "y"],
-)
+data_path = os.path.join("..", "..", "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv")
+df = pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
+
 drift_start, drift_end = 1000, 1250
 training_size = 500
 
@@ -70,7 +65,7 @@ lfr = LinearFourRates(
     time_decay_factor=0.6,
     warning_level=0.01,
     detect_level=0.001,
-    num_mc=5000,
+    num_mc=1,               # XXX - need to lower for pipeline testing - Anmol
     burn_in=10,
     subsample=10,
 )
@@ -578,6 +573,7 @@ status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accura
 correct = 0
 rec_list = []
 
+# run STEPD and retrain
 n = 1
 for i, row in df_ex.iloc[training_size:].iterrows():
     y_pred = clf.predict(np.array(row[["var1", "var2"]]).reshape(1, -1))

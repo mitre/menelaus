@@ -119,13 +119,17 @@ class HistogramDensityMethod(DriftDetector):
               and samples since reset will be number of batches passed to HDM
               plus 1, due to splitting of reference batch
 
-    Ref. [C8]_ and [C9]_
+    Ref. :cite:t:`lindstrom2013drift` and :cite:t:`ditzler2011hellinger`
 
     Attributes:
-        total_updates (int): number of batches the drift detector has ever
-            been updated with.
+        total_updates (int): total number of batches the drift detector has
+            been updated with. If detect_batch = 1, attr refers to total
+            number of batches + 1 to account for additional update call
+            due to the initial splitting of the reference batch.
         updates_since_reset (int): number of batches since the last drift
-            detection.
+            detection. If detect_batch = 1, attr refers to total
+            number of batches + 1 to account for additional update call
+            due to the initial splitting of the reference batch.
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
         Epsilon (list): stores Epsilon values since the last drift detection.
