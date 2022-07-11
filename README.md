@@ -162,7 +162,7 @@ Install the library using the `[dev]` option, as above.
   python convert_notebooks.py
   ```
   Note that this will require the installation of `jupyter` and `nbconvert`,
-  which can be added to installation via `pip install -e ".[dev, test]`.
+  which can be added to installation via `pip install -e ".[dev, test]"`.
 
 - **Formatting**:
 
