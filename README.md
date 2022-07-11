@@ -91,8 +91,7 @@ A flowchart breaking down these contexts can be found on the ReadTheDocs page un
 
 # Installation
 
-Create a virtual environment as desired, e.g. `python -m venv ./venv`,
-then:
+Create a virtual environment as desired, then:
 
 ```python
 # for read-only, install from pypi:
@@ -157,12 +156,13 @@ Install the library using the `[dev]` option, as above.
 
 - **Formatting**:
 
-  This project uses `black` and `flake8` for code formatting and
+  This project uses `black`, `bandit`, and `flake8` for code formatting and
   linting, respectively. To satisfy these requirements when contributing, you
   may use them as the linter/formatter in your IDE, or manually run the
   following from the root directory:
   ```python
-  flake8                 # lint
+  flake8                 # linting
+  bandit -r ./src        # security checks
   black ./src/menelaus   # formatting
   ```  
 
