@@ -73,13 +73,13 @@ def test_give_oracle_label():
     """Confirm that providing a stream of labeled samples to the detector
     with give_oracle_label behaves as expected"""
     np.random.seed(123)
-    data = [[1, 1, 0], [2, 2, 0], [3, 4, 1], [5, 6, 1], [6, 7, 1]]
+    data = [[1, 1, 0], [3, 4, 1], [1.25, 2.25, 0], [4, 4, 1], [2, 2, 0], [5, 6, 1], [1, 2, 0], [6, 7, 1]]
     df = pd.DataFrame(data, columns=['var1', 'var2', 'y'])
     X_train = df.loc[:, ['var1', 'var2']]
     y_train = df.loc[:, 'y']
     clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
-    det = MD3(clf=clf, k=2)
+    det = MD3(clf=clf, sensitivity=0.5, k=3)
     det.set_reference(df, 'y')
     
     labeled_sample = [[1, 2, 0]]
@@ -92,9 +92,10 @@ def test_give_oracle_label():
     with pytest.raises(ValueError) as _:
         det.update(df_update1)
     
-    data_update2 = [[2.5, 3.5]]
+    data_update2 = [[3, 4]]
     df_update2 = pd.DataFrame(data_update2, columns=['var1', 'var2'])
-    det.update(df_update2)
+    for _ in range(2):
+        det.update(df_update2)
     assert det.drift_state == "warning"
     assert det.waiting_for_oracle == True
     
@@ -111,7 +112,7 @@ def test_give_oracle_label():
     with pytest.raises(ValueError) as _:
         det.give_oracle_label(wrong_labeled_df)
         
-    wrong_len_sample = [[1, 0], [7, 1]]
+    wrong_len_sample = [[1, 0]]
     wrong_len_df = pd.DataFrame(wrong_len_sample, columns=['var1', 'target'])
     with pytest.raises(ValueError) as _:
         det.give_oracle_label(wrong_len_df)
@@ -123,21 +124,23 @@ def test_give_oracle_label():
     assert labeled_df.equals(det.oracle_data)
         
     for i in range(len(data) - 1):
-        if i % 2 == 0:
-            labeled_sample = [[6.5, 7.5, 1]]
-            labeled_df = pd.DataFrame(labeled_sample, columns=['var1', 'var2', 'y'])
-            det.give_oracle_label(labeled_df)
-            assert det.drift_state is None
-            if i == len(data) - 2:
-                assert det.oracle_data is None
-            else:
-                assert len(det.oracle_data) == i + 2
+        labeled_sample = [[3.5, 4.5, i % 2]]
+        labeled_df = pd.DataFrame(labeled_sample, columns=['var1', 'var2', 'y'])
+        det.give_oracle_label(labeled_df)
+        if i == len(data) - 2:
+            assert det.drift_state == "drift"
+            assert det.oracle_data is None
+            assert det.waiting_for_oracle == False
         else:
-            labeled_sample = [[1.5, 2.5, 0]]
-            labeled_df = pd.DataFrame(labeled_sample, columns=['var1', 'var2', 'y'])
-            det.give_oracle_label(labeled_df)
             assert det.drift_state is None
-            if i == len(data) - 2:
-                assert det.oracle_data is None
-            else:
-                assert len(det.oracle_data) == i + 2
+            assert len(det.oracle_data) == i + 2
+            
+    data_update = [[1, 2]]
+    df_update = pd.DataFrame(data_update, columns=['var1', 'var2'])
+    assert det.drift_state == "drift"
+    det.update(df_update)
+    assert det.drift_state is None
+    
+    det.reset()
+    assert det.updates_since_reset == ( 0 )
+    assert det.drift_state is None

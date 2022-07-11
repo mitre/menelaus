@@ -226,24 +226,6 @@ class MD3(DriftDetector):
             "acc_std": acc_std,
         }
 
-    def calculate_margin_density(self, data):
-        """
-        Calculate the total margin density of the batch of data passed in.
-
-        Args:
-            data (DataFrame): batch of data to calculate margin density for
-        """
-
-        signal_func = 0
-        for i in range(len(data)):
-            sample_np_array = data.iloc[i].to_numpy()
-            margin_inclusion_signal = self.margin_calculation_function(
-                self, sample_np_array, self.classifier
-            )
-            signal_func += margin_inclusion_signal
-
-        return signal_func / len(data)
-
     def update(self, new_sample):
         """
         Update the detector with a new sample.
@@ -254,8 +236,8 @@ class MD3(DriftDetector):
 
         if self.waiting_for_oracle == True:
             raise ValueError(
-                """give_oracle_labels method must be called to provide detector with
-                labeled samples to confirm or rule out drift."""
+                """give_oracle_label method must be called to provide detector with a
+                labeled sample to confirm or rule out drift."""
             )
 
         if len(new_sample) != 1:
@@ -300,7 +282,7 @@ class MD3(DriftDetector):
 
         if self.waiting_for_oracle != True:
             raise ValueError(
-                """give_oracle_labels method can be called only when a drift warning has
+                """give_oracle_label method can be called only when a drift warning has
                 been issued and drift needs to be confirmed or ruled out."""
             )
 
@@ -318,7 +300,7 @@ class MD3(DriftDetector):
             labeled_columns
         ) != set(reference_columns):
             raise ValueError(
-                """give_oracle_labels method can be called only with a sample containing
+                """give_oracle_label method can be called only with a sample containing
                 the same number and names of columns as the original reference distribution."""
             )
 

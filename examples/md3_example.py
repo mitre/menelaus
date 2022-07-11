@@ -39,11 +39,10 @@ from menelaus.concept_drift import MD3
 # TODO: add this example as part of the concept_drift_example.py script?
 # TODO: add this example as one of the example notebooks in dev? --> will have to
 #       merge dev back into this branch
-# TODO: before merging in PR, change this path to match dev, and put the rainfall
-#       dataset in the right place
+# TODO: change method of importing data to match other examples
 df = pd.read_csv(
     os.path.join(
-        "..", "..", "src", "menelaus", "tools", "artifacts", "rainfall_data.csv"
+        "..", "src", "menelaus", "datasets", "rainfall_data.csv"
     ),
     usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9],
     names=["index", "temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature", "rain"],
@@ -69,7 +68,7 @@ y_train = df.loc[0:training_size, "rain"]
 np.random.seed(123)
 clf = svm.SVC(kernel='linear')
 clf.fit(X_train, y_train.values.ravel())
-
+print(np.array(clf.coef_[0]))
 oracle_labels = 1000
 
 # TODO: play around more with this sensitivity
