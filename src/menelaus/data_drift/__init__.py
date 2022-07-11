@@ -14,5 +14,5 @@ are applied and when the results are verified. Data drift detection is also
 applicable in unsupervised learning settings.
 """
 from menelaus.data_drift.hdddm import HDDDM
-from menelaus.data_drift.kdq_tree import KdqTree
+from menelaus.data_drift.kdq_tree import KdqTreeStreaming, KdqTreeBatch
 from menelaus.data_drift.pca_cd import PCACD

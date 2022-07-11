@@ -48,31 +48,34 @@ class CDBD(HistogramDensityMethod):
     Ref. :cite:t:`lindstrom2013drift`
 
     Attributes:
-            total_updates (int): number of batches the drift detector has ever
-                been updated with.
-            updates_since_reset (int): number of batches since the last drift
-                detection.
-            drift_state (str): detector's current drift state. Can take values
-                ``"drift"`` or ``None``.
-            Epsilon (list): stores Epsilon values since the last drift detection.
-            reference_n (int): number of samples in reference batch.
-            total_epsilon (int): stores running sum of Epsilon values until
-                drift is detected, initialized to 0.
-            bins (int): number of bins in histograms, equivalent to square root
-                of number of samples in reference batch .
-            num_feat (int): number of features in reference batch.
-            lambda (int): batch number on which last drift was detected.
-            distances (dict): For each batch seen (key), stores the distance
-                between test and reference batch (value). Useful for visualizing
-                drift detection statistics.
-            epsilon_values (dict): For each batch seen (key), stores the Epsilon
-                value between the current and previous test and reference
-                batches (value). Useful for visualizing drift detection
-                statistics. Does not store the bootstrapped estimate of Epsilon,
-                if used.
-            thresholds (dict): For each batch seen (key), stores the Beta
-                thresholds between test and reference batch (value). Useful for
-                visualizing drift detection statistics.
+        total_updates (int): total number of batches the drift detector has
+          been updated with. If detect_batch = 1, attr refers to total number of
+          batches + 1 to account for additional update call due to the initial
+          splitting of the reference batch.
+        updates_since_reset (int): number of batches since the last drift
+          detection. If detect_batch = 1, attr refers to total number of batches
+          + 1 to account for additional update call due to the initial splitting
+          of the reference batch.
+        drift_state (str): detector's current drift state. Can take values
+          ``"drift"`` or ``None``.
+        Epsilon (list): stores Epsilon values since the last drift detection.
+        reference_n (int): number of samples in reference batch.
+        total_epsilon (int): stores running sum of Epsilon values until
+          drift is detected, initialized to 0.
+        bins (int): number of bins in histograms, equivalent to square root
+          of number of samples in reference batch .
+        num_feat (int): number of features in reference batch.
+        lambda (int): batch number on which last drift was detected.
+        distances (dict): For each batch seen (key), stores the distance
+          between test and reference batch (value). Useful for visualizing drift
+          detection statistics.
+        epsilon_values (dict): For each batch seen (key), stores the Epsilon
+          value between the current and previous test and reference batches
+          (value). Useful for visualizing drift detection statistics. Does not
+          store the bootstrapped estimate of Epsilon, if used.
+        thresholds (dict): For each batch seen (key), stores the Beta
+          thresholds between test and reference batch (value). Useful for
+          visualizing drift detection statistics.
 
     """
 
