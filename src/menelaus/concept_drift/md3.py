@@ -5,13 +5,14 @@ from sklearn.metrics import accuracy_score
 from sklearn.base import clone
 from menelaus.drift_detector import DriftDetector
 
+
 class MD3(DriftDetector):
     """The Margin Density Drift Detection (MD3) method is a drift detection
     algorithm that alarms based on the cumulative tracking of the number of
     samples in the margin, the uncertainty region of a classifier. Tracking
     samples that fall in the margin is an unsupervised task, as no true
     labels are required. However, this can lead to more common false alarms.
-    
+
     To counter this, MD3 has an initial drift warning step based on Margin
     Density, and then confirms or rules out drift based on accuracy of
     predictions on a labeled dataset that is accumulated from the "Oracle",
@@ -32,9 +33,9 @@ class MD3(DriftDetector):
     notion of margin. To implement compatibility with MD3 for these
     classifiers, a feater bagging ensemble technique must be used (this will
     be added to the MD3 implementation later on). For now, this algorithm
-    is designed specifically for SVMs (and potentially logistic regression) 
+    is designed specifically for SVMs (and potentially logistic regression)
     for the sake of simplicity.
-    
+
     Ref. :cite:t:`sethi2017reliable`
 
     Attributes:
@@ -47,13 +48,13 @@ class MD3(DriftDetector):
     """
 
     input_type = "stream"
-    
+
     def calculate_margin_inclusion_signal(self, sample, clf):
         """
         Calculate the value of the margin inclusion signal for an incoming sample that
         the detector is being updated with. Uses the classifier passed in for this
-        margin calculation. If the sample lies in the margin of the classifier, then 
-        a value of 1 is returned for the margin inclusion signal. Otherwise, a value 
+        margin calculation. If the sample lies in the margin of the classifier, then
+        a value of 1 is returned for the margin inclusion signal. Otherwise, a value
         of 0 is returned.
 
         Args:
@@ -61,38 +62,45 @@ class MD3(DriftDetector):
             clf (sklearn.svm.SVC): the classifier for which we are calculating margin
                 inclusion signal.
         """
-        
+
         w = np.array(clf.coef_[0])
         intercept = np.array(clf.intercept_)
         b = intercept[0] / w[1]
-        
+
         mis = np.abs(np.dot(w, sample) + b)
-        
+
         if mis <= 1:
             return 1
         else:
             return 0
 
-    def __init__(self, clf, margin_calculation_function=calculate_margin_inclusion_signal, sensitivity=2, k=10, oracle_data_length_required=None):
+    def __init__(
+        self,
+        clf,
+        margin_calculation_function=calculate_margin_inclusion_signal,
+        sensitivity=2,
+        k=10,
+        oracle_data_length_required=None,
+    ):
         """
         Args:
             clf (sklearn.svm.SVC): the classifier for which we are tracking drift.
                 For now, assumed to be a Support Vector Machine (SVM). TODO: change
                 this after adding capability for other models.
-            margin_calculation_function (function): the appropriate margin signal 
+            margin_calculation_function (function): the appropriate margin signal
                 function for the classifier. Takes in two arguments: (1) an incoming
                 sample of size 1 as a numpy array and (2) the classifier for this
                 detector. Should return 1 if the sample falls in the margin of the
-                classifier, 0 if not. Defaults to the 
-                ``calculate_margin_inclusion_signal`` function, which is designed 
+                classifier, 0 if not. Defaults to the
+                ``calculate_margin_inclusion_signal`` function, which is designed
                 specifically for an sklearn.svm.SVC classifier.
             sensitivity (float): the sensitivity at which a change in margin density
                 will be detected. Change is signaled when the margin density at a
                 time t, given by MD_t, deviates by more than ``sensitivity``
                 standard deviations from the reference margin density value MD_Ref.
-                A larger value can be set if frequent signaling is not desired. 
+                A larger value can be set if frequent signaling is not desired.
                 Alternatively, a lower value could be used for applications
-                where small changes could be harmful, if undetected. Defaults to 2. 
+                where small changes could be harmful, if undetected. Defaults to 2.
             k (int): the number of folds that will be used in k-fold cross validation
                 when measuring the distribution statistics of the reference batch
                 of data. Defaults to 10.
@@ -129,15 +137,23 @@ class MD3(DriftDetector):
                 dataframe which is the target variable
         """
 
-        self.reference_batch_features = reference_batch.loc[:, reference_batch.columns != target_name]
-        self.reference_batch_target = reference_batch.loc[:, reference_batch.columns == target_name]
-        
-        self.reference_distribution = self.calculate_distribution_statistics(reference_batch)
-        
+        self.reference_batch_features = reference_batch.loc[
+            :, reference_batch.columns != target_name
+        ]
+        self.reference_batch_target = reference_batch.loc[
+            :, reference_batch.columns == target_name
+        ]
+
+        self.reference_distribution = self.calculate_distribution_statistics(
+            reference_batch
+        )
+
         if self.oracle_data_length_required is None:
             self.oracle_data_length_required = self.reference_distribution["len"]
 
-        self.forgetting_factor = (self.reference_distribution["len"] - 1) / self.reference_distribution["len"]
+        self.forgetting_factor = (
+            self.reference_distribution["len"] - 1
+        ) / self.reference_distribution["len"]
         self.curr_margin_density = self.reference_distribution["md"]
 
     def calculate_distribution_statistics(self, data):
@@ -161,19 +177,27 @@ class MD3(DriftDetector):
         margin_densities = []
         accuracies = []
         cv = KFold(n_splits=self.k, random_state=42, shuffle=True)
-        
+
         # perform k-fold cross validation to acquire distribution margin density and acuracy values
         for train_index, test_index in cv.split(self.reference_batch_features):
-            X_train, X_test = self.reference_batch_features.iloc[train_index], self.reference_batch_features.iloc[test_index]
-            y_train, y_test = self.reference_batch_target.iloc[train_index], self.reference_batch_target.iloc[test_index]
-            
+            X_train, X_test = (
+                self.reference_batch_features.iloc[train_index],
+                self.reference_batch_features.iloc[test_index],
+            )
+            y_train, y_test = (
+                self.reference_batch_target.iloc[train_index],
+                self.reference_batch_target.iloc[test_index],
+            )
+
             duplicate_classifier.fit(X_train, y_train.values.ravel())
 
             # record margin inclusion signals for all samples in this test band
             signal_func_values = []
             for i in range(len(X_test)):
                 sample_np_array = X_test.iloc[i].to_numpy()
-                margin_inclusion_signal = self.margin_calculation_function(self, sample_np_array, duplicate_classifier)
+                margin_inclusion_signal = self.margin_calculation_function(
+                    self, sample_np_array, duplicate_classifier
+                )
                 signal_func_values.append(margin_inclusion_signal)
 
             # record margin density over this test band
@@ -199,7 +223,7 @@ class MD3(DriftDetector):
             "md": md,
             "md_std": md_std,
             "acc": acc,
-            "acc_std": acc_std
+            "acc_std": acc_std,
         }
 
     def calculate_margin_density(self, data):
@@ -213,9 +237,11 @@ class MD3(DriftDetector):
         signal_func = 0
         for i in range(len(data)):
             sample_np_array = data.iloc[i].to_numpy()
-            margin_inclusion_signal = self.margin_calculation_function(self, sample_np_array, self.classifier)
+            margin_inclusion_signal = self.margin_calculation_function(
+                self, sample_np_array, self.classifier
+            )
             signal_func += margin_inclusion_signal
-        
+
         return signal_func / len(data)
 
     def update(self, new_sample):
@@ -225,7 +251,7 @@ class MD3(DriftDetector):
         Args:
             new_sample (DataFrame): feature values/sample data for the new incoming sample
         """
-        
+
         if self.waiting_for_oracle == True:
             raise ValueError(
                 """give_oracle_labels method must be called to provide detector with
@@ -237,82 +263,95 @@ class MD3(DriftDetector):
                 """This method is only available for data inputs in the form of 
                 a Pandas DataFrame with exactly 1 record."""
             )
-            
+
         if self.drift_state == "drift":
             self.reset()
-            
+
         super().update()
 
         sample_np_array = new_sample.to_numpy()[0]
-        margin_inclusion_signal = self.margin_calculation_function(self, sample_np_array, self.classifier)
-        self.curr_margin_density = (self.forgetting_factor * self.curr_margin_density + 
-                                    (1 - self.forgetting_factor) * margin_inclusion_signal)
-        
-        warning_level = np.abs(self.curr_margin_density - self.reference_distribution["md"])
+        margin_inclusion_signal = self.margin_calculation_function(
+            self, sample_np_array, self.classifier
+        )
+        self.curr_margin_density = (
+            self.forgetting_factor * self.curr_margin_density
+            + (1 - self.forgetting_factor) * margin_inclusion_signal
+        )
+
+        warning_level = np.abs(
+            self.curr_margin_density - self.reference_distribution["md"]
+        )
         warning_threshold = self.sensitivity * self.reference_distribution["md_std"]
-        
+
         if warning_level > warning_threshold:
             self.drift_state = "warning"
             self.waiting_for_oracle = True
-        
+
     def give_oracle_label(self, labeled_sample):
         """
         Provide the detector with a labeled sample to confirm or rule out drift. Once a
         certain number of samples is accumulated, drift can be confirmed or ruled out. If
-        drift is confirmed, retraining will be initiated using these samples, and the 
+        drift is confirmed, retraining will be initiated using these samples, and the
         reference distribution will be updated accordingly.
 
         Args:
             labeled_sample (DataFrame): labeled data sample
         """
-        
+
         if self.waiting_for_oracle != True:
             raise ValueError(
                 """give_oracle_labels method can be called only when a drift warning has
                 been issued and drift needs to be confirmed or ruled out."""
             )
-            
+
         if len(labeled_sample) != 1:
             raise ValueError(
                 """This method is only available for data inputs in the form of 
                 a Pandas DataFrame with exactly 1 record."""
             )
-        
+
         labeled_columns = list(labeled_sample.columns)
         feature_columns = list(self.reference_batch_features.columns)
         target_column = list(self.reference_batch_target.columns)
         reference_columns = feature_columns + target_column
-        if len(labeled_columns) != len(reference_columns) or set(labeled_columns) != set(reference_columns):
+        if len(labeled_columns) != len(reference_columns) or set(
+            labeled_columns
+        ) != set(reference_columns):
             raise ValueError(
                 """give_oracle_labels method can be called only with a sample containing
                 the same number and names of columns as the original reference distribution."""
             )
-            
+
         self.drift_state = None
-            
+
         if self.oracle_data is None:
             self.oracle_data = labeled_sample
         else:
-            self.oracle_data = pd.concat([self.oracle_data, labeled_sample], ignore_index = True)
-            
+            self.oracle_data = pd.concat(
+                [self.oracle_data, labeled_sample], ignore_index=True
+            )
+
         if len(self.oracle_data) == self.oracle_data_length_required:
-            X_test, y_test = self.oracle_data[feature_columns], self.oracle_data[target_column]
+            X_test, y_test = (
+                self.oracle_data[feature_columns],
+                self.oracle_data[target_column],
+            )
             y_pred = self.classifier.predict(X_test)
             acc_labeled_samples = accuracy_score(y_test, y_pred)
-            
+
             drift_level = self.reference_distribution["acc"] - acc_labeled_samples
             drift_threshold = self.sensitivity * self.reference_distribution["acc_std"]
-            
+
             if drift_level > drift_threshold:
                 self.drift_state = "drift"
             else:
                 self.drift_state = None
-                
+
             # update reference distribution
             self.set_reference(self.oracle_data, target_column[0])
             self.oracle_data = None
             self.waiting_for_oracle = False
-        
+
     def reset(self):
         """
         Initialize the detector's drift state and other relevant attributes.
