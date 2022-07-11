@@ -6,20 +6,24 @@ from sklearn.base import clone
 from menelaus.drift_detector import DriftDetector
 
 class MD3(DriftDetector):
-    # TODO: write up own summary here (or clearly quote paper)
     """The Margin Density Drift Detection (MD3) method is a drift detection
-    algorithm based on the number of samples in the uncertainty region
-    of a classifier, intended for an online classifier.
+    algorithm that alarms based on the cumulative tracking of the number of
+    samples in the margin, the uncertainty region of a classifier. Tracking
+    samples that fall in the margin is an unsupervised task, as no true
+    labels are required. However, this can lead to more common false alarms.
+    
+    To counter this, MD3 has an initial drift warning step based on Margin
+    Density, and then confirms or rules out drift based on accuracy of
+    predictions on a labeled dataset that is accumulated from the "Oracle",
+    or directly from the data stream.
 
-    The MD3 algorithm is a distribution independent, application independent,
-    and model independent method for reliably detecting drifts from data
-    streams.
-
-    Margin Density (MD): The expected number of data samples that fall within
+    Margin Density (MD): "The expected number of data samples that fall within
     a robust classifier's (one that distributes importance weights among its
-    features) region of uncertainty, i.e. its margin.
+    features) region of uncertainty, i.e. its margin." (Sethi & Kantardzic 2017)
 
-    The MD metric, being a ratio, has its value in the range of [0, 1].
+    Because the MD metric is essentially the total number of samples that fall
+    with the margin divided by the total number of samples in the set,
+    its value is in the range of [0, 1].
 
     TODO: This initial implementation assumes that the classifier being used is a
     Support Vector Machine (SVM) because SVMs have explicit margins defined
@@ -43,13 +47,45 @@ class MD3(DriftDetector):
     """
 
     input_type = "stream"
+    
+    def calculate_margin_inclusion_signal(self, sample, clf):
+        """
+        Calculate the value of the margin inclusion signal for an incoming sample that
+        the detector is being updated with. Uses the classifier passed in for this
+        margin calculation. If the sample lies in the margin of the classifier, then 
+        a value of 1 is returned for the margin inclusion signal. Otherwise, a value 
+        of 0 is returned.
 
-    def __init__(self, clf, sensitivity=2, k=10, oracle_data_length_required=None):
+        Args:
+            sample (numpy.array): feature values/sample data for the new incoming sample
+            clf (sklearn.svm.SVC): the classifier for which we are calculating margin
+                inclusion signal.
+        """
+        
+        w = np.array(clf.coef_[0])
+        intercept = np.array(clf.intercept_)
+        b = intercept[0] / w[1]
+        
+        mis = np.abs(np.dot(w, sample) + b)
+        
+        if mis <= 1:
+            return 1
+        else:
+            return 0
+
+    def __init__(self, clf, margin_calculation_function=calculate_margin_inclusion_signal, sensitivity=2, k=10, oracle_data_length_required=None):
         """
         Args:
             clf (sklearn.svm.SVC): the classifier for which we are tracking drift.
                 For now, assumed to be a Support Vector Machine (SVM). TODO: change
                 this after adding capability for other models.
+            margin_calculation_function (function): the appropriate margin signal 
+                function for the classifier. Takes in two arguments: (1) an incoming
+                sample of size 1 as a numpy array and (2) the classifier for this
+                detector. Should return 1 if the sample falls in the margin of the
+                classifier, 0 if not. Defaults to the 
+                ``calculate_margin_inclusion_signal`` function, which is designed 
+                specifically for an sklearn.svm.SVC classifier.
             sensitivity (float): the sensitivity at which a change in margin density
                 will be detected. Change is signaled when the margin density at a
                 time t, given by MD_t, deviates by more than ``sensitivity``
@@ -57,7 +93,6 @@ class MD3(DriftDetector):
                 A larger value can be set if frequent signaling is not desired. 
                 Alternatively, a lower value could be used for applications
                 where small changes could be harmful, if undetected. Defaults to 2. 
-                TODO: suggested by paper to be picked in the range of [0, 3]
             k (int): the number of folds that will be used in k-fold cross validation
                 when measuring the distribution statistics of the reference batch
                 of data. Defaults to 10.
@@ -70,23 +105,12 @@ class MD3(DriftDetector):
 
         super().__init__()
         self.classifier = clf
+        self.margin_calculation_function = margin_calculation_function
         self.sensitivity = sensitivity
         self.k = k
         self.oracle_data_length_required = oracle_data_length_required
         self.oracle_data = None
         self.waiting_for_oracle = False
-        self.process_svm()
-
-    def process_svm(self):
-        # get the separating hyperplane
-        # The decision boundary is the line y = a*x - b
-        self.w = np.array(self.classifier.coef_[0])
-        self.intercept = np.array(self.classifier.intercept_)
-        self.a = -self.w[0] / self.w[1]
-        self.b = self.intercept[0] / self.w[1]
-
-        # calculate the magnitude of the margin
-        self.margin = 1 / np.sqrt(np.sum(self.classifier.coef_**2))
 
     # TODO: two ways we can handle the update/drift detection:
     #       (1) after the detector has been updated with some number of samples
@@ -136,8 +160,8 @@ class MD3(DriftDetector):
         # prepare the cross-validation procedure
         margin_densities = []
         accuracies = []
-        # TODO: set random state here or no?
-        cv = KFold(n_splits=self.k, random_state=1, shuffle=True)
+        cv = KFold(n_splits=self.k, random_state=42, shuffle=True)
+        
         # perform k-fold cross validation to acquire distribution margin density and acuracy values
         for train_index, test_index in cv.split(self.reference_batch_features):
             X_train, X_test = self.reference_batch_features.iloc[train_index], self.reference_batch_features.iloc[test_index]
@@ -149,7 +173,7 @@ class MD3(DriftDetector):
             signal_func_values = []
             for i in range(len(X_test)):
                 sample_np_array = X_test.iloc[i].to_numpy()
-                margin_inclusion_signal = self.calculate_margin_inclusion_signal_other_classifier(sample_np_array, duplicate_classifier)
+                margin_inclusion_signal = self.margin_calculation_function(self, sample_np_array, duplicate_classifier)
                 signal_func_values.append(margin_inclusion_signal)
 
             # record margin density over this test band
@@ -189,7 +213,7 @@ class MD3(DriftDetector):
         signal_func = 0
         for i in range(len(data)):
             sample_np_array = data.iloc[i].to_numpy()
-            margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
+            margin_inclusion_signal = self.margin_calculation_function(self, sample_np_array, self.classifier)
             signal_func += margin_inclusion_signal
         
         return signal_func / len(data)
@@ -219,15 +243,13 @@ class MD3(DriftDetector):
             
         super().update()
 
-        sample_np_array = new_sample.iloc[0].to_numpy()
-        margin_inclusion_signal = self.calculate_margin_inclusion_signal(sample_np_array)
+        sample_np_array = new_sample.to_numpy()[0]
+        margin_inclusion_signal = self.margin_calculation_function(self, sample_np_array, self.classifier)
         self.curr_margin_density = (self.forgetting_factor * self.curr_margin_density + 
                                     (1 - self.forgetting_factor) * margin_inclusion_signal)
         
         warning_level = np.abs(self.curr_margin_density - self.reference_distribution["md"])
         warning_threshold = self.sensitivity * self.reference_distribution["md_std"]
-        print("warning level:", warning_level)
-        print("warning threshold:", warning_threshold)
         
         if warning_level > warning_threshold:
             self.drift_state = "warning"
@@ -278,27 +300,15 @@ class MD3(DriftDetector):
             y_pred = self.classifier.predict(X_test)
             acc_labeled_samples = accuracy_score(y_test, y_pred)
             
-            # TODO: do absolute value here or no? algo in paper does not use absolute value
             drift_level = self.reference_distribution["acc"] - acc_labeled_samples
             drift_threshold = self.sensitivity * self.reference_distribution["acc_std"]
-            print("drift level:", drift_level)
-            print("drift threshold:", drift_threshold)
             
             if drift_level > drift_threshold:
                 self.drift_state = "drift"
-                # self.classifier.fit(X_test, y_test.values.ravel())
-                
-                # TODO: recalculate SVM margin values and reset the reference data only
-                # after drift is confirmed (commented out here) or at the end of this function
-                # regardless of whether drift is confirmed or not (below)?
-                # algo in the paper does it the second way
-                # self.process_svm()
-                # self.set_reference(self.oracle_data, target_column[0])
             else:
                 self.drift_state = None
                 
-            # update classifer margin values and update reference distribution
-            self.process_svm()
+            # update reference distribution
             self.set_reference(self.oracle_data, target_column[0])
             self.oracle_data = None
             self.waiting_for_oracle = False
@@ -310,46 +320,3 @@ class MD3(DriftDetector):
         """
         super().reset()
         self.curr_margin_density = self.reference_distribution["md"]
-
-    def calculate_margin_inclusion_signal(self, sample):
-        """
-        Calculate the value of the margin inclusion signal for an incoming sample that
-        the detector is being updated with. If the sample lies in the margin of the
-        classifier, then a value of 1 is returned for the margin inclusion signal.
-        Otherwise, a value of 0 is returned.
-
-        Args:
-            sample (numpy.array): feature values/sample data for the new incoming sample
-        """
-        
-        mis = np.abs(np.dot(self.w, sample) + self.b)
-        
-        if mis <= 1:
-            return 1
-        else:
-            return 0
-
-    def calculate_margin_inclusion_signal_other_classifier(self, sample, clf):
-        """
-        Calculate the value of the margin inclusion signal for an incoming sample that
-        the detector is being updated with. Uses the classifier passed in rather than
-        the classifier stored in the detector. If the sample lies in the margin of the
-        classifier, then a value of 1 is returned for the margin inclusion signal.
-        Otherwise, a value of 0 is returned.
-
-        Args:
-            sample (numpy.array): feature values/sample data for the new incoming sample
-            clf (sklearn.svm.SVC): the classifier for which we are calculating margin
-                inclusion signal. TODO: add compatibility with other types of models.
-        """
-
-        w = np.array(clf.coef_[0])
-        intercept = np.array(clf.intercept_)
-        b = intercept[0] / w[1]
-        
-        mis = np.abs(np.dot(w, sample) + b)
-
-        if mis <= 1:
-            return 1
-        else:
-            return 0

@@ -66,6 +66,8 @@ Menelaus implements the following drift detectors.
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+----------------------------------+
 | Concept drift     | Statistical Test of Equal Proportions to Detect concept drift  | STEPD         | x          |        | :cite:t:`nishida2007detecting`   |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+----------------------------------+
+| Concept drift     | Margin Density Drift Detection Method                          | MD3           | x          |        | :cite:t:`sethi2017reliable`      |
++-------------------+----------------------------------------------------------------+---------------+------------+--------+----------------------------------+
 | Data drift        | Confidence Distribution Batch Detection                        | CDBD          |            | x      | :cite:t:`lindstrom2013drift`     |
 +-------------------+----------------------------------------------------------------+---------------+------------+--------+----------------------------------+
 | Data drift        | Hellinger Distance Drift Detection Method                      | HDDDM         |            | x      | :cite:t:`ditzler2011hellinger`   |

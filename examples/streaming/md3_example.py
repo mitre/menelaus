@@ -69,7 +69,7 @@ oracle_labels = 1000
 # TODO: play around more with this sensitivity
 # it also seems like it doesn't make sense to have the default value be 2 --> see what the paper
 # says again, i thought they said a value in the range [1, 3] should work but apparently not
-md3 = MD3(clf=clf, sensitivity=1, oracle_data_length_required=oracle_labels)
+md3 = MD3(clf=clf, sensitivity=1.5, oracle_data_length_required=oracle_labels)
 md3.set_reference(training_data, "rain")
 
 # TODO: track cumulative accuracy for the classifier over the samples and add
