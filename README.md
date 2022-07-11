@@ -154,6 +154,15 @@ Install the library using the `[dev]` option, as above.
   sphinx-build . ../build
   ```
 
+  If the example notebooks for the docs need to be updated, the corresponding 
+  python scripts in the `examples` directory should also be regenerated via:
+  ```python
+  cd docs/source/examples
+  python convert_notebooks.py
+  ```
+  Note that this will require the installation of `jupyter` and `nbconvert`,
+  which can be added to installation via `pip install -e ".[dev, test]"`.
+
 - **Formatting**:
 
   This project uses `black`, `bandit`, and `flake8` for code formatting and

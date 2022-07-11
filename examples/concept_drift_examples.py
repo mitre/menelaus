@@ -1,34 +1,31 @@
-"""
+#!/usr/bin/env python
+# coding: utf-8
 
-Concept Drift Examples
-   1. Linear Four Rates (LFR)
-   2. ADaptive WINdowing (ADWIN) 
-   3. Drift Detection Method (DDM)
-   4. Early Drift Detection Method (EDDM)
-   5. Statistical Test of Equal Proportions to Detect Concept Drift (STEPD)
--------------------------
+# # Concept Drift Detector Examples
 
-These examples show how to set up, run, and produce output from detectors in the 
-concept_drift module. The parameters aren't necessarily tuned for best 
-performance for the input data, just notional.
+# The examples in this notebook show how to set up, run, and produce output from detectors in the 
+# concept_drift module. The parameters aren't necessarily tuned for best 
+# performance for the input data, just notional.
+# 
+# Circle is a synthetic data source, where drift occurs in both var1, var2, and the 
+# conditional distributions P(y|var1) and P(y|var2). The drift occurs from index 
+# 1000 to 1250, and affects 66% of the sample.
+# 
+# These detectors are generally to be applied to the true class and predicted class 
+# from a particular model. ADWIN is an exception in that it could also be used to 
+# monitor an arbitrary real-valued feature. So, each of the summary plots displays 
+# the running accuracy of the classifier alongside the drift detector's output.
+# 
+# They also track the indices of portions of the incoming data stream which are 
+# more similar to each other -- i.e., data that seems to be part of the same 
+# concept, which could be used to retrain a model.
+# 
+# NOTE: The LinearFourRates example has a relatively long runtime, roughly 5 minutes.
 
-Circle is a synthetic data source, where drift occurs in both var1, var2, and the 
-conditional distributions P(y|var1) and P(y|var2). The drift occurs from index 
-1000 to 1250, and affects 66% of the sample.
+# In[ ]:
 
-These detectors are generally to be applied to the true class and predicted class 
-from a particular model. ADWIN is an exception in that it could also be used to 
-monitor an arbitrary real-valued feature. So, each of the summary plots displays 
-the running accuracy of the classifier alongside the drift detector's output.
 
-They also track the indices of portions of the incoming data stream which are 
-more similar to each other -- i.e., data that seems to be part of the same 
-concept, which could be used to retrain a model.
-
-NOTE: The LinearFourRates example has a relatively long runtime, roughly 5 minutes.
-
-"""
-
+## Imports ##
 
 import os
 import pandas as pd
@@ -37,21 +34,28 @@ import matplotlib.pyplot as plt
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import SGDClassifier
 from menelaus.concept_drift import LinearFourRates, ADWIN, DDM, EDDM, STEPD
+from menelaus.datasets import fetch_circle_data
 
+
+# In[ ]:
+
+
+## Import Data ##
 
 # read in Circle dataset
-data_path = os.path.join("..", "..", "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv")
-df = pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
-
+df = fetch_circle_data()
 drift_start, drift_end = 1000, 1250
 training_size = 500
 
-################################################################################
-############################# Linear Four Rates ################################
-################################################################################
-# Linear Four Rates monitors the four cells of the confusion matrix (TPR, FPR,
-# TNR, FNR) and alarms when one of these becomes different enough from earlier
-# performance.
+
+# ## Linear Four Rates (LFR) Example
+
+# Linear Four Rates monitors the four cells of the confusion matrix (TPR, FPR, TNR, FNR) and alarms when one of these becomes different enough from earlier performance.
+
+# In[ ]:
+
+
+## Setup ##
 
 # Set up classifier: train on first training_size rows
 X_train = df.loc[0:training_size, ["var1", "var2"]]
@@ -65,7 +69,7 @@ lfr = LinearFourRates(
     time_decay_factor=0.6,
     warning_level=0.01,
     detect_level=0.001,
-    num_mc=1,               # XXX - need to lower for pipeline testing - Anmol
+    num_mc=5000,
     burn_in=10,
     subsample=10,
 )
@@ -73,6 +77,12 @@ lfr = LinearFourRates(
 # Set up DF to store results.
 status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
 correct = 0
+
+
+# In[ ]:
+
+
+## Run LFR ##
 
 np.random.seed(123)  # set seed for this example
 
@@ -111,6 +121,12 @@ for i in range(training_size, len(df)):
         clf.fit(X_train, y_train)
 
     n += 1
+
+
+# In[ ]:
+
+
+## Plotting ##
 
 plt.figure(figsize=(20, 5))
 plt.scatter("index", "accuracy", data=status, label="Accuracy")
@@ -163,30 +179,33 @@ plt.hlines(
 )
 
 plt.legend()
-# plt.show()
 
+
+# 
 # One of the four rates immediately passes outside its threshold when drift is
 # induced. The same occurs shortly after leaving the drift region. The
 # recommended retraining data includes most of the drift induction window and
 # the data after regime change.
-#
+# 
 # The classifier's accuracy decreases again later, which causes the detector to
 # enter a "warning" state. Note that the retraining recommendations *begin* with
 # the index corresponding to the warning state, and end where drift is detected.
-#
+# 
 
-plt.savefig("example_LFR.png")
+# In[ ]:
 
 
-################################################################################
-################################### ADWIN ######################################
-################################################################################
-# ADWIN can be used to monitor the average of a given real-valued feature.
-# In this case, we use it to monitor the accuracy of a classifier.
-# ADWIN maintains a window of the data stream, which grows to the right as new
-# elements are received.
-# When the mean of the feature in one of the subwindows is different enough,
-# ADWIN drops older elements in its window until this ceases to be the case.
+plt.show()
+
+
+# ## ADaptive WINdowing (ADWIN) Example
+
+# ADWIN can be used to monitor the average of a given real-valued feature. In this case, we use it to monitor the accuracy of a classifier. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
+
+# In[ ]:
+
+
+## Setup ##
 
 # Set up classifier: train on first training_size rows
 X_train = df.loc[0:training_size, ["var1", "var2"]]
@@ -204,6 +223,10 @@ status = pd.DataFrame(
 )
 correct = 0
 rec_list = []
+
+
+# In[ ]:
+
 
 # run ADWIN
 n = 1
@@ -242,6 +265,12 @@ for i in range(training_size, len(df)):
         clf.fit(X_train, y_train)
 
     n += 1
+
+
+# In[ ]:
+
+
+## Plotting ##
 
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "accuracy", data=status, label="Accuracy")
@@ -285,21 +314,30 @@ plt.hlines(
 
 plt.legend(loc='lower right')
 
+
+# 
 # After drift is induced, the accuracy decreases enough for ADWIN to shrink its
 # window and alarm;  subsequent windows also include data from the old regime,
 # so drift continues to be detected until the window shrinks enough to be
 # comprised mostly by the new regime.
+# 
 
-# plt.show()
-plt.savefig("example_ADWIN.png")
+# In[ ]:
 
 
-################################################################################
-#################################### DDM #######################################
-################################################################################
-# DDM can enter either a "drift" or "warning" state, depending on how close
-# a classifier's error rate has approached to those respective thresholds,
-# defined by the warning_scale and drift_scale parameters.
+
+plt.show()
+# plt.savefig("example_ADWIN.png")
+
+
+# ## Drift Detection Method (DDM) Example
+
+# DDM can enter either a "drift" or "warning" state, depending on how close a classifier's error rate has approached to those respective thresholds, defined by the warning_scale and drift_scale parameters.
+
+# In[ ]:
+
+
+## Setup ##
 
 np.random.seed(123)
 # setup classifier: train on first training_size rows
@@ -308,6 +346,8 @@ y_train = df.loc[0:training_size, "y"]
 clf = GaussianNB()
 clf.fit(X_train, y_train)
 
+
+# 
 # These parameter values are chosen somewhat arbitrarily.
 # At least 100 samples must be seen before DDM tests for drift (the n_threshold
 # parameter); the other two define the warning and drift regions. The minimum
@@ -315,12 +355,21 @@ clf.fit(X_train, y_train)
 # warning_scale and drift_scale roughly correspond to how many standard standard
 # deviations away the current estimate must be in order for the detector to
 # alarm.
+# 
+
+# In[ ]:
+
+
 ddm = DDM(n_threshold=100, warning_scale=7, drift_scale=10)
 
 # setup DF to store results
 status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
 correct = 0
 rec_list = []
+
+
+# In[ ]:
+
 
 # run DDM and retrain
 n = 1
@@ -356,6 +405,11 @@ for i in range(training_size, len(df)):
 
     n += 1
 
+
+# In[ ]:
+
+
+## Plotting ##
 
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "accuracy", data=status, label="Accuracy")
@@ -410,20 +464,29 @@ plt.hlines(
 
 plt.legend()
 
+
+# 
 # DDM initially alarms during the drift induction window, triggering retraining.
 # The subsequent dip in accuracy is large enough to put the detector in the
 # "warning" state, but not large enough for "drift" to be identified.
+# 
+# 
 
-# plt.show()
-plt.savefig("example_DDM.png")
+# In[ ]:
 
 
-################################################################################
-################################### EDDM #######################################
-################################################################################
-# EDDM monitors the distance between two errors of a classifier - i.e., the
-# number of samples between errors - rather than monitoring the error rate
-# itself. Similar to DDM, it uses separate thresholds for "warning" and "drift."
+plt.show()
+# plt.savefig("example_DDM.png")
+
+
+# ## Early Drift Detection Method (EDDM) Example
+
+# EDDM monitors the distance between two errors of a classifier - i.e., the number of samples between errors - rather than monitoring the error rate itself. Similar to DDM, it uses separate thresholds for "warning" and "drift."
+
+# In[ ]:
+
+
+## Setup ##
 
 np.random.seed(123)
 # setup classifier: train on first 500 rows
@@ -432,20 +495,30 @@ y_train = df.loc[0:training_size, "y"]
 clf = GaussianNB()
 clf.fit(X_train, y_train)
 
-# n_threshold specifies the number of new samples which must be observed before
+
+# - n_threshold specifies the number of new samples which must be observed before
 # tests for drift are run.
-# The warning_thresh and drift_thresh values roughly correspond to the ratio of
+# 
+# - The warning_thresh and drift_thresh values roughly correspond to the ratio of
 # the 95th percentile for the current distance distribution vs. the 95th percentile
-# for the "best" distance distribution observed so far.
-# So, lower values correspond to less conservative monitoring - the current
+# for the "best" distance distribution observed so far. So, lower values correspond to less conservative monitoring - the current
 # distance between errors is allowed to be a smaller fraction of the "best"
 # distance.
+# 
+
+# In[ ]:
+
+
 eddm = EDDM(n_threshold=30, warning_thresh=0.7, drift_thresh=0.5)
 
 # setup DF to store results
 status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
 correct = 0
 rec_list = []
+
+
+# In[ ]:
+
 
 # run EDDM and retrain
 n = 1
@@ -480,6 +553,12 @@ for i in range(training_size, len(df)):
         clf.fit(X_train, y_train)
 
     n += 1
+
+
+# In[ ]:
+
+
+## Plotting ##
 
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "accuracy", data=status, label="Accuracy")
@@ -534,22 +613,29 @@ plt.hlines(
 
 plt.legend()
 
+
 # EDDM enters a drift state shortly after the drift induction window, triggering
 # retraining. The later increase in the error rate causes the detector to enter
 # the warning state, but is not large enough to be identified as drift with this
 # threshold setting.
+# 
 
-# plt.show()
-plt.savefig("example_EDDM.png")
+# In[ ]:
 
 
-################################################################################
-################################### STEPD ######################################
-################################################################################
-# STEPD is a detector specifically intended for online classifiers, where each
-# new sample is used to update the parameters of the classifier. STEPD monitors
-# the accuracy in two windows, "recent" and "past," and compares those in order
-# to detect drift in classifier accuracy.
+
+plt.show()
+# plt.savefig("example_EDDM.png")
+
+
+# ## Statistical Test of Equal Proportions to Detect Concept Drift (STEPD) Example
+
+# STEPD is a detector specifically intended for online classifiers, where each new sample is used to update the parameters of the classifier. STEPD monitors the accuracy in two windows, "recent" and "past," and compares those in order to detect drift in classifier accuracy.
+
+# In[ ]:
+
+
+## Setup ##
 
 np.random.seed(123)
 df_ex = df
@@ -572,6 +658,10 @@ stepd = STEPD(window_size=100)
 status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
 correct = 0
 rec_list = []
+
+
+# In[ ]:
+
 
 # run STEPD and retrain
 n = 1
@@ -604,6 +694,11 @@ for i, row in df_ex.iloc[training_size:].iterrows():
 
     n += 1
 
+
+# In[ ]:
+
+
+## Plotting ##
 
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "accuracy", data=status, label="Accuracy")
@@ -658,10 +753,17 @@ plt.hlines(
 
 plt.legend(loc='upper left')
 
+
 # STEPD identifies drift quite early in the drift induction window, triggering
 # retraining on a relatively small amount of data; after this, the online
 # classifier updates sufficiently that its accuracy is roughly flat over the
 # remaining data, albeit with a big enough change to trigger more warnings.
+# 
 
-# plt.show()
-plt.savefig("example_STEPD.png")
+# In[ ]:
+
+
+
+plt.show()
+# plt.savefig("example_STEPD.png")
+

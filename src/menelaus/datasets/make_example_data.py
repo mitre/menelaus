@@ -1,7 +1,10 @@
 """ Functions to generate example data according to a fixed scheme. """
 
+import os
+import pytest  # until such time as we kill the current fetch_circle_data
 import pandas as pd
 import numpy as np
+from menelaus.utils._locate import find_git_root
 
 
 def make_example_batch_data():
@@ -14,7 +17,7 @@ def make_example_batch_data():
         #. Change the variance of columns 'c' and 'd' in 2012 by replacing
             some samples with the mean. Reverts to original distribution in 2013.
         #. Change the correlation of columns 'e' and 'f' in 2015 (0 correlation
-            to 0.5 correlation).
+        to 0.5 correlation).
         #. Change the mean and variance of column 'h' in 2018, and maintain this
             new distribution going forward. Change the range of the "confidence"
             column going forward.
@@ -86,3 +89,11 @@ def make_example_batch_data():
     df["drift"] = df["year"].isin([2009, 2012, 2015, 2018, 2021])
     df.drop("index", axis=1, inplace=True)
     return df
+
+
+def fetch_circle_data():
+    """Retrieve the Circle data from the datasets directory."""
+    data_path = os.path.join(
+        find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
+    )
+    return pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
