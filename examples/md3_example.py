@@ -68,7 +68,6 @@ y_train = df.loc[0:training_size, "rain"]
 np.random.seed(123)
 clf = svm.SVC(kernel='linear')
 clf.fit(X_train, y_train.values.ravel())
-print(np.array(clf.coef_[0]))
 oracle_labels = 1000
 
 # TODO: play around more with this sensitivity

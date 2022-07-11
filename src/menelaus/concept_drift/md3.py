@@ -326,8 +326,6 @@ class MD3(DriftDetector):
 
             if drift_level > drift_threshold:
                 self.drift_state = "drift"
-            else:
-                self.drift_state = None
 
             # update reference distribution
             self.set_reference(self.oracle_data, target_column[0])

@@ -144,3 +144,4 @@ def test_give_oracle_label():
     det.reset()
     assert det.updates_since_reset == ( 0 )
     assert det.drift_state is None
+    
