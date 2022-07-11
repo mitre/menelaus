@@ -33,6 +33,9 @@ from menelaus.concept_drift import MD3
 
 # read in rainfall dataset
 # assumes the script is being run from the root directory.
+# TODO: add this example as part of the concept_drift_example.py script?
+# TODO: add this example as one of the example notebooks in dev? --> will have to
+#       merge dev back into this branch
 # TODO: before merging in PR, change this path to match dev, and put the rainfall
 #       dataset in the right place
 df = pd.read_csv(
