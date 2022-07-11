@@ -18,4 +18,4 @@ for subdir, dirs, files in os.walk(walk_dir):
             command = f"jupyter nbconvert --to python {in_file} --output-dir {out_dir}"
             print(f"nbconvert {in_file} \n\t to dir {out_dir}")
             os.system(command)
-            # print("\n")
+            print("\n")
