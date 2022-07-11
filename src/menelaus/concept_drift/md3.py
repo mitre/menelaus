@@ -26,16 +26,6 @@ class MD3(DriftDetector):
     with the margin divided by the total number of samples in the set,
     its value is in the range of [0, 1].
 
-    TODO: This initial implementation assumes that the classifier being used is a
-    Support Vector Machine (SVM) because SVMs have explicit margins defined
-    by the hyperplane. Classifiers such as decision trees and K-nearest
-    neighbors return discrete class labels and do not have any intuitive
-    notion of margin. To implement compatibility with MD3 for these
-    classifiers, a feater bagging ensemble technique must be used (this will
-    be added to the MD3 implementation later on). For now, this algorithm
-    is designed specifically for SVMs (and potentially logistic regression)
-    for the sake of simplicity.
-
     Ref. :cite:t:`sethi2017reliable`
 
     Attributes:
@@ -84,9 +74,9 @@ class MD3(DriftDetector):
     ):
         """
         Args:
-            clf (sklearn.svm.SVC): the classifier for which we are tracking drift.
-                For now, assumed to be a Support Vector Machine (SVM). TODO: change
-                this after adding capability for other models.
+            clf (classifier): the classifier for which we are tracking drift. If
+                classifier is not of type sklearn.svm.svc, a ``margin_calculation_function``
+                must be passed in for appropriate margin signal tracking.
             margin_calculation_function (function): the appropriate margin signal
                 function for the classifier. Takes in two arguments: (1) an incoming
                 sample of size 1 as a numpy array and (2) the classifier for this

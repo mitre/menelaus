@@ -13,41 +13,22 @@ Drift starts from index 12,000 and continues through the rest of the dataset.
 In this example, we take the first 10,000 samples of the dataset for training
 an initial classifier, and then use the remaining samples for testing.
 
-TODO: update this description
-These detectors are generally to be applied to the true class and predicted class 
-from a particular model. ADWIN is an exception in that it could also be used to 
-monitor an arbitrary real-valued feature. So, each of the summary plots displays 
-the running accuracy of the classifier alongside the drift detector's output.
-
-They also track the indices of portions of the incoming data stream which are 
-more similar to each other -- i.e., data that seems to be part of the same 
-concept, which could be used to retrain a model.
-
 """
 
 
-import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm
 from menelaus.concept_drift import MD3
+from menelaus.datasets import fetch_rainfall_data
 
 
-# read in rainfall dataset
-# assumes the script is being run from the root directory.
 # TODO: add this example as part of the concept_drift_example.py script?
-# TODO: add this example as one of the example notebooks in dev? --> will have to
-#       merge dev back into this branch
-# TODO: change method of importing data to match other examples
-df = pd.read_csv(
-    os.path.join(
-        "..", "src", "menelaus", "datasets", "rainfall_data.csv"
-    ),
-    usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9],
-    names=["index", "temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature", "rain"],
-)
-df = df.iloc[1: , :].reset_index(drop=True)
+# TODO: add this example as one of the example notebooks in dev?
+
+# read in Rainfall dataset
+df = fetch_rainfall_data()
 drift_start, drift_end = 12000, 18158
 training_size = 10000
 
@@ -70,23 +51,19 @@ clf = svm.SVC(kernel='linear')
 clf.fit(X_train, y_train.values.ravel())
 oracle_labels = 1000
 
-# TODO: play around more with this sensitivity
-# it also seems like it doesn't make sense to have the default value be 2 --> see what the paper
-# says again, i thought they said a value in the range [1, 3] should work but apparently not
 md3 = MD3(clf=clf, sensitivity=1.5, oracle_data_length_required=oracle_labels)
 md3.set_reference(training_data, "rain")
 
-# TODO: track cumulative accuracy for the classifier over the samples and add
-#       to the plot that gets outputted, so that we can track margin vs detector
-#       performance and see exactly where accuracy changes and how
 # TODO: have two different loops that each output a plot. the first one can
 #       retrain the model when drift is confirmed, and the other doesn't retrain.
 #       and track accuracy for both and see how the plots differ. or have this on
 #       one plot and just two different lines
 # Set up DF to record results.
 status = pd.DataFrame(
-    columns=["index", "y", "margin_density", "drift_detected"]
+    columns=["index", "y", "margin_density", "accuracy", "drift_detected"]
 )
+correct = 0
+n = 1
 rec_list = []
 oracle_list = []
 
@@ -94,7 +71,13 @@ oracle_list = []
 for i in range(training_size, len(df)):
 
     X_test = df.loc[[i], features]
+    y_pred = int(clf.predict(X_test))
     y_true = int(df.loc[[i], "rain"])
+    
+    # increment accuracy
+    if y_pred == y_true:
+        correct += 1
+    accuracy = correct / n
 
     # call give_oracle_label if detector is currently waiting for oracle data
     if md3.waiting_for_oracle == True:
@@ -104,6 +87,7 @@ for i in range(training_size, len(df)):
             i,
             y_true,
             None,
+            accuracy,
             md3.drift_state,
         ]
 
@@ -114,6 +98,7 @@ for i in range(training_size, len(df)):
             i,
             y_true,
             md3.curr_margin_density,
+            accuracy,
             md3.drift_state,
         ]
     
@@ -124,9 +109,12 @@ for i in range(training_size, len(df)):
         oracle_end = i + md3.oracle_data_length_required
         
         oracle_list.append([oracle_start, oracle_end])
+
+    n += 1
     
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "margin_density", data=status, label="Margin Density")
+plt.scatter("index", "accuracy", data=status, label="Accuracy", color="green")
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -177,11 +165,11 @@ plt.hlines(
 
 plt.legend()
 
-# TODO: write a description here for MD3 instead of ADWIN
-# After drift is induced, the accuracy decreases enough for ADWIN to shrink its
-# window and alarm;  subsequent windows also include data from the old regime,
-# so drift continues to be detected until the window shrinks enough to be
-# comprised mostly by the new regime.
+# After drift is induced, the margin density decreases enough for MD3 to
+# emit a warning. From there, the predictive accuracy of the classifier is
+# tested, and this has already decreased sufficiently for the detector to
+# alarm. Then, a new reference batch is set and the detector continues
+# tracking the margin density statistic until the next warning.
 
 # plt.show()
 plt.savefig("example_MD3.png")

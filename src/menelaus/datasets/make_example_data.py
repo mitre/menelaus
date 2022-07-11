@@ -97,3 +97,17 @@ def fetch_circle_data():
         find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
     )
     return pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
+
+
+def fetch_rainfall_data():
+    """Retrieve the Rainfall data from the datasets directory."""
+    data_path = os.path.join(
+        find_git_root(), "src", "menelaus", "datasets", "rainfall_data.csv"
+    )
+    df = pd.read_csv(
+        data_path, 
+        usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9], 
+        names=["index", "temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature", "rain"]
+    )
+    df = df.iloc[1: , :].reset_index(drop=True)
+    return df
