@@ -4,6 +4,7 @@ import os
 import pytest  # until such time as we kill the current fetch_circle_data
 import pandas as pd
 import numpy as np
+from menelaus.utils._locate import find_git_root
 
 
 def make_example_batch_data():
@@ -16,7 +17,7 @@ def make_example_batch_data():
         #. Change the variance of columns 'c' and 'd' in 2012 by replacing
             some samples with the mean. Reverts to original distribution in 2013.
         #. Change the correlation of columns 'e' and 'f' in 2015 (0 correlation
-            to 0.5 correlation).
+        to 0.5 correlation).
         #. Change the mean and variance of column 'h' in 2018, and maintain this
             new distribution going forward. Change the range of the "confidence"
             column going forward.
@@ -88,24 +89,6 @@ def make_example_batch_data():
     df["drift"] = df["year"].isin([2009, 2012, 2015, 2018, 2021])
     df.drop("index", axis=1, inplace=True)
     return df
-
-
-def find_git_root(search_dirs=(".git",)):
-    """Find the root directory for the git repo, so that we don't have to
-    fool with strange filepaths.
-
-    This is a strange place to have this utility function, but we don't have any
-    other such functions at the moment.
-    """
-    test_dir = os.getcwd()
-    prev_dir, test_dir = None, os.path.abspath(test_dir)
-    while prev_dir != test_dir:
-        if any(os.path.isdir(os.path.join(test_dir, d)) for d in search_dirs):
-            return test_dir
-        prev_dir, test_dir = test_dir, os.path.abspath(
-            os.path.join(test_dir, os.pardir)
-        )
-    return None
 
 
 def fetch_circle_data():

@@ -5,7 +5,7 @@ modify the same code in both locations.
 """
 
 import os
-from menelaus.datasets.make_example_data import find_git_root
+from menelaus.utils._locate import find_git_root
 
 root_dir = find_git_root()
 walk_dir = os.path.join(root_dir, "docs", "source", "examples")

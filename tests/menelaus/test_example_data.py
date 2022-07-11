@@ -2,7 +2,6 @@ from numpy import float64, int32, int64
 from menelaus.datasets.make_example_data import (
     make_example_batch_data,
     fetch_circle_data,
-    find_git_root,
 )
 
 
@@ -63,7 +62,3 @@ def test_circle_data():
     df = fetch_circle_data()
     assert all(df.dtypes == float64)
     assert df.shape == (2000, 3)
-
-
-def test_find_root_dir():
-    assert find_git_root("garbage") is None
