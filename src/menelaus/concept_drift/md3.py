@@ -110,11 +110,6 @@ class MD3(DriftDetector):
         self.oracle_data = None
         self.waiting_for_oracle = False
 
-    # TODO: two ways we can handle the update/drift detection:
-    #       (1) after the detector has been updated with some number of samples
-    #           that the user can pass in (maybe 30), then we start looking for drift
-    #       (2) the user sets the detector to have a reference batch, and then passes
-    #           in samples one at a time to update the detector
     def set_reference(self, reference_batch, target_name):
         """
         Initialize detector with a reference batch. Reference batch must be
@@ -126,7 +121,8 @@ class MD3(DriftDetector):
             target_name (string): name of the column in the reference_batch
                 dataframe which is the target variable
         """
-
+        # TODO: see if we can restructure so that we don't have to store the
+        #       data or anything else unnecessary in the detector
         self.reference_batch_features = reference_batch.loc[
             :, reference_batch.columns != target_name
         ]

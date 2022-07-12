@@ -20,12 +20,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm
+from sklearn.base import clone
 from menelaus.concept_drift import MD3
 from menelaus.datasets import fetch_rainfall_data
 
-
-# TODO: add this example as part of the concept_drift_example.py script?
-# TODO: add this example as one of the example notebooks in dev?
 
 # read in Rainfall dataset
 df = fetch_rainfall_data()
@@ -49,45 +47,51 @@ y_train = df.loc[0:training_size, "rain"]
 np.random.seed(123)
 clf = svm.SVC(kernel='linear')
 clf.fit(X_train, y_train.values.ravel())
+retrain_clf = clone(clf)
+retrain_clf.fit(X_train, y_train.values.ravel())
 oracle_labels = 1000
 
+# Initialize detector
 md3 = MD3(clf=clf, sensitivity=1.5, oracle_data_length_required=oracle_labels)
 md3.set_reference(training_data, "rain")
 
-# TODO: have two different loops that each output a plot. the first one can
-#       retrain the model when drift is confirmed, and the other doesn't retrain.
-#       and track accuracy for both and see how the plots differ. or have this on
-#       one plot and just two different lines
 # Set up DF to record results.
 status = pd.DataFrame(
-    columns=["index", "y", "margin_density", "accuracy", "drift_detected"]
+    columns=["index", "y", "margin_density", "original_accuracy", "retrain_accuracy", "drift_detected"]
 )
-correct = 0
+correct_orig, correct_retrain = 0, 0
 n = 1
 rec_list = []
 oracle_list = []
 
-# run MD3
+# run MD3 and track results for both original model and retrained model
 for i in range(training_size, len(df)):
 
     X_test = df.loc[[i], features]
-    y_pred = int(clf.predict(X_test))
+    y_pred_orig = int(clf.predict(X_test))
+    y_pred_retrain = int(retrain_clf.predict(X_test))
     y_true = int(df.loc[[i], "rain"])
     
     # increment accuracy
-    if y_pred == y_true:
-        correct += 1
-    accuracy = correct / n
+    if y_pred_orig == y_true:
+        correct_orig += 1
+    if y_pred_retrain == y_true:
+        correct_retrain += 1
+    accuracy_orig = correct_orig / n
+    accuracy_retrain = correct_retrain / n
 
     # call give_oracle_label if detector is currently waiting for oracle data
     if md3.waiting_for_oracle == True:
         oracle_label = df.loc[[i], columns]
         md3.give_oracle_label(oracle_label)
+        if md3.waiting_for_oracle == False:
+            retrain_clf.fit(md3.reference_batch_features, md3.reference_batch_target.values.ravel())
         status.loc[i] = [
             i,
             y_true,
             None,
-            accuracy,
+            accuracy_orig,
+            accuracy_retrain,
             md3.drift_state,
         ]
 
@@ -98,7 +102,8 @@ for i in range(training_size, len(df)):
             i,
             y_true,
             md3.curr_margin_density,
-            accuracy,
+            accuracy_orig,
+            accuracy_retrain,
             md3.drift_state,
         ]
     
@@ -114,11 +119,12 @@ for i in range(training_size, len(df)):
     
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "margin_density", data=status, label="Margin Density")
-plt.scatter("index", "accuracy", data=status, label="Accuracy", color="green")
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color="red")
+plt.scatter("index", "retrain_accuracy", data=status, label="Retrain Accuracy", color="green")
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
-plt.title("MD3 Results: Margin Density", fontsize=22)
+plt.title("MD3 Results: Margin Density and Accuracy", fontsize=22)
 plt.ylabel("Value", fontsize=18)
 plt.xlabel("Index", fontsize=18)
 ylims = [-0.05, 1.1]
