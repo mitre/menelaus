@@ -254,7 +254,6 @@ plt.show()
 # In[ ]:
 
 
-
 ## Plot Heatmap ##
 sns.set_style("whitegrid")
 sns.set(rc={"figure.figsize": (15, 8)})
@@ -613,6 +612,4 @@ for year, df_plot in plot_data.items():
 # - Drift 4: change mean and var of H and persist it from 2018 on
 # 
 # - Drift 5: change mean and var just for a year of J in 2021
-# 
-
 # 

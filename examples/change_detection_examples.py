@@ -177,7 +177,6 @@ plt.legend()
 # In[ ]:
 
 
-
 plt.show()
 # plt.savefig("example_CUSUM_detections.png")
 
