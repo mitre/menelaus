@@ -121,8 +121,7 @@ class MD3(DriftDetector):
             target_name (string): name of the column in the reference_batch
                 dataframe which is the target variable
         """
-        # TODO: see if we can restructure so that we don't have to store the
-        #       data or anything else unnecessary in the detector
+
         self.reference_batch_features = reference_batch.loc[
             :, reference_batch.columns != target_name
         ]
