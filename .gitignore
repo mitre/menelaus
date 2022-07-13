@@ -13,5 +13,11 @@ _build
 *.coverage
 *.DS_Store
 .idea/
-*.png
+
+# Images
+
+examples/*.png
+src/*.png
+tests/*.png
+
 *.tox*
