@@ -20,7 +20,7 @@ class MD3(DriftDetector):
 
     Margin Density (MD): "The expected number of data samples that fall within
     a robust classifier's (one that distributes importance weights among its
-    features) region of uncertainty, i.e. its margin." (Sethi & Kantardzic 2017)
+    features) region of uncertainty, i.e. its margin." :cite:t:`sethi2017reliable`
 
     Because the MD metric is essentially the total number of samples that fall
     with the margin divided by the total number of samples in the set,
