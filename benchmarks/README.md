@@ -6,23 +6,20 @@
 
 This file houses benchmarking results for a variety of algorithms available under `menelaus`, to establish baselines for detector efficacy and efficiency. 
 
-*TODO*
-- add more details
-
 ## Runtimes
 
 *TODO*
-- determine if/how detecting power of each algorithm can be put in a table
-- plot over increasing data size may be needed
+- determine if/how detecting power of each algorithm can be tabulated
+- plot of runtime over increasing data size may be needed
 - tables may eventually need to be generated through HTML
 
-### On what data?
+### Using "Example" Dataset
 
 | Detector | Category  | Runtime (total s) | Runtime (s/update) |
 | -------- | --------- | ----------------- | ------------------ |
-| KdqTree  | batch     | 5 million         | 42                 |
-| KdqTree  | streaming | 5 million         | 2                  |
+| KdqTree  | batch     | TBD         | TBD                 |
+| KdqTree  | streaming | TBD         | TBD                 |
 
 ## Detector Efficacy
 
-Plot from some script ... 
+![Example Benchmarking Plot](figures/bm_example_plot_1.png "Comparing 2 Detectors")
