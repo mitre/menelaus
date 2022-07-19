@@ -88,8 +88,6 @@ then maintains a count of the number of samples from the given dataset that fall
 into each section of that partition. More details are given in the respective
 module.
 
-A flowchart breaking down these contexts can be found on the ReadTheDocs page under "Choosing a Detector."
-
 # Installation
 
 Create a virtual environment as desired, then:
