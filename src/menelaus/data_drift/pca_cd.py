@@ -115,11 +115,13 @@ class PCACD(DriftDetector):
         self._density_reference = {}
         self._change_score = [0]
 
-    def update(self, next_obs):
+    def update(self, X, y_true=None, y_pred=None):
         """Update the detector with a new observation.
 
         Args:
-            next_obs: next observation, as a ``pandas`` ``Series``
+            X (numpy.ndarray): next observation, as a ``pandas`` ``Series``
+            y_true (numpy.ndarray): true label of observation - not used in PCACD
+            y_pred (numpy.ndarray): predicted label of observation - not used in PCACD
         """
 
         if self._build_reference_and_test:
@@ -138,12 +140,12 @@ class PCACD(DriftDetector):
 
             elif len(self._reference_window) < self.window_size:
                 self._reference_window = pd.concat(
-                    [self._reference_window, pd.DataFrame(next_obs)]
+                    [self._reference_window, pd.DataFrame(X)]
                 )
 
             elif len(self._test_window) < self.window_size:
                 self._test_window = pd.concat(
-                    [self._test_window, pd.DataFrame(next_obs)]
+                    [self._test_window, pd.DataFrame(X)]
                 )
 
             if len(self._test_window) == self.window_size:
@@ -204,7 +206,7 @@ class PCACD(DriftDetector):
 
             # Add new obs to test window
             if self.online_scaling is True:
-                next_obs = pd.DataFrame(self._reference_scaler.transform(next_obs))
+                next_obs = pd.DataFrame(self._reference_scaler.transform(X))
             self._test_window = pd.concat([self._test_window.iloc[1:, :], next_obs])
 
             # Project new observation onto PCs
@@ -272,14 +274,14 @@ class PCACD(DriftDetector):
                 self._change_score.append(change_score)
 
                 self._drift_detection_monitor.update(
-                    next_obs=change_score, obs_id=next_obs.index.values[0]
+                    X=change_score, obs_id=next_obs.index.values[0]
                 )
 
                 if self._drift_detection_monitor.drift_state is not None:
                     self._build_reference_and_test = True
                     self.drift_state = "drift"
 
-        super().update()
+        DriftDetector.update(self, X, y_true, y_pred)
 
     def reset(self):
         """Initialize the detector's drift state and other relevant attributes.

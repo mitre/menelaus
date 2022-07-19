@@ -256,7 +256,7 @@ class HistogramDensityMethod(DriftDetector):
         self._num_features = self.reference.shape[1]
         self.reset()
 
-    def update(self, test_batch):
+    def update(self, X, y_true=None, y_pred=None):
 
         """
         Update the detector with a new test batch. If drift is detected, new
@@ -264,25 +264,27 @@ class HistogramDensityMethod(DriftDetector):
         detected, reference batch is updated to include most recent test batch.
 
         Args:
-          test_batch (DataFrame): next batch of data to detect drift on.
+            X (DataFrame): next batch of data to detect drift on.
+            y_true (numpy.ndarray): true labels of next batch - not used in HDM
+            y_pred (numpy.ndarray): predicted labels of next batch - not used in HDM
         """
 
         if self._drift_state == "drift":
             self.reset()
 
-        super().update()
-        test_n = test_batch.shape[0]
+        super().update(X, y_true, y_pred)
+        test_n = X.shape[0]
 
         # Estimate reference and test histograms
         mins = []
         maxes = []
         for f in range(self._num_features):
             reference_variable = self.reference.iloc[:, f]
-            test_variable = test_batch.iloc[:, f]
+            test_variable = X.iloc[:, f]
             mins.append(np.concatenate((reference_variable, test_variable)).min())
             maxes.append(np.concatenate((reference_variable, test_variable)).max())
         self._reference_density = self._build_histograms(self.reference, mins, maxes)
-        test_density = self._build_histograms(test_batch, mins, maxes)
+        test_density = self._build_histograms(X, mins, maxes)
 
         # Divergence metric
         total_distance = 0
@@ -338,13 +340,13 @@ class HistogramDensityMethod(DriftDetector):
                         }
 
                     self._drift_state = "drift"
-                    self.reference = test_batch
+                    self.reference = X
                     self._lambda = self.total_updates
 
         if self._drift_state != "drift":
             self._prev_distance = self.current_distance
             self._prev_feature_distances = feature_distances
-            self.reference = pd.concat([self.reference, test_batch])
+            self.reference = pd.concat([self.reference, X])
             self.reference_n = self.reference.shape[0]
             # number of bins for histogram, from reference batch
             self._bins = int(np.floor(np.sqrt(self.reference_n)))

@@ -395,7 +395,7 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         KdqTreeDetector.reset(self)
         self._drift_counter = 0  # samples consecutively in the drift region
 
-    def update(self, data):
+    def update(self, X, y_true=None, y_pred=None):
         """
         Update the detector with a new sample point. Constructs the reference
         data's kdqtree; then, when sufficient samples have been received, puts
@@ -407,16 +407,18 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         reference windows will be constructed once sufficient samples are received.
 
         Args:
-            data (pandas.DataFrame or numpy array): If just reset/initialized,
+            X (pandas.DataFrame or numpy array): If just reset/initialized,
             the reference data. Otherwise, a new sample to put into the test
             window.
+            y_true (numpy.ndarray): true labels of input data - not used in KdqTree
+            y_pred (numpy.ndarray): predicted labels of input data - not used in KdqTree
         """
-        ary = self._prepare_data(data)
+        ary = self._prepare_data(X)
 
         if self.drift_state == "drift":
             self.reset()
 
-        StreamingDetector.update(self)
+        StreamingDetector.update(self, X, y_true, y_pred)
         KdqTreeDetector._evaluate_kdqtree(self, ary, "stream")
 
 
@@ -533,7 +535,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
                 "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
             )
 
-    def update(self, data):
+    def update(self, X, y_true=None, y_pred=None):
         """
         Update the detector with a new batch. Constructs the reference
         data's kdqtree; then, when sufficient samples have been received, puts
@@ -546,18 +548,20 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         batches to ``update``.
 
         Args:
-            data (pandas.DataFrame or numpy array): If just reset/initialized,
+            X (pandas.DataFrame or numpy array): If just reset/initialized,
             the reference data. Otherwise, a new batch of data to be compared
             to the reference window.
+            y_true (numpy.ndarray): true labels of input data - not used in KdqTree
+            y_pred (numpy.ndarray): predicted labels of input data - not used in KdqTree
         """
-        ary = self._prepare_data(data)
+        ary = self._prepare_data(X)
 
         if self.drift_state == "drift":
             self.set_reference(self.ref_data)
 
-        BatchDetector.update(self)
+        BatchDetector.update(self, X, y_true, y_pred)
         KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")
 
         # if _evaluate_kdqtree resulted in drift for batch data, do a redundant check
-        if self.drift_state == "drift" and isinstance(data, pd.DataFrame):
-            self.input_cols = data.columns
+        if self.drift_state == "drift" and isinstance(X, pd.DataFrame):
+            self.input_cols = X.columns
