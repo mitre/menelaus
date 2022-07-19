@@ -70,7 +70,6 @@ class PageHinkley(DriftDetector):
 
         # currently, if these need to be made available, they are through the
         # to_dataframe method
-        self._ids = []
         self._change_scores = []
         self._page_hinkley_values = []
         self._page_hinkley_differences = []
@@ -80,7 +79,7 @@ class PageHinkley(DriftDetector):
         self._mins = []
         self._means = []
 
-    def update(self, X, y_true=None, y_pred=None, obs_id=None):
+    def update(self, X, y_true=None, y_pred=None):
         """Update the detector with a new sample.
 
         Args:
@@ -113,7 +112,6 @@ class PageHinkley(DriftDetector):
         if drift_check and self.updates_since_reset > self.burn_in:
             self.drift_state = "drift"
 
-        self._ids.append(obs_id)
         self._change_scores.append(X)
         self._page_hinkley_values.append(self._sum)
         self._page_hinkley_differences.append(ph_difference)
@@ -134,7 +132,6 @@ class PageHinkley(DriftDetector):
         self._sum = 0
         self._mean = 0
 
-        self._ids = []
         self._change_scores = []
         self._page_hinkley_values = []
         self._page_hinkley_differences = []
@@ -149,7 +146,6 @@ class PageHinkley(DriftDetector):
         """Returns a dataframe storing current statistics"""
         return pd.DataFrame(
             {
-                "ids": self._ids,
                 "change_scores": self._change_scores,
                 "page_hinkley_values": self._page_hinkley_values,
                 "page_hinkley_differences": self._page_hinkley_differences,

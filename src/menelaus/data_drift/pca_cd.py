@@ -273,9 +273,7 @@ class PCACD(DriftDetector):
                 change_score = max(change_scores)
                 self._change_score.append(change_score)
 
-                self._drift_detection_monitor.update(
-                    X=change_score, obs_id=next_obs.index.values[0]
-                )
+                self._drift_detection_monitor.update(X=change_score)
 
                 if self._drift_detection_monitor.drift_state is not None:
                     self._build_reference_and_test = True
