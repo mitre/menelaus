@@ -111,7 +111,14 @@ def make_example_batch_data():
 
 
 def fetch_circle_data():
-    """Retrieve the Circle data from the datasets directory."""
+    """Retrieve the Circle data from the datasets directory. Circle is synthetic
+    data containing drift due to both a change in the feature distribution and a
+    change in the conditional target distribution. Drift occurs from index
+    1000-1250 and affects 66% of the data points.
+
+    Ref. :cite:t:`minku2010`
+
+    """
     data_path = os.path.join(
         find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
     )
