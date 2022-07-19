@@ -75,11 +75,13 @@ class CUSUM(DriftDetector):
         self._upper_bound = [0]
         self._lower_bound = [0]
 
-    def update(self, next_obs):
+    def update(self, X, y_true=None, y_pred=None):
         """Update the detector with a new sample.
 
         Args:
-          next_obs: The value of the new sample.
+            X (numpy.ndarray): The value of the new sample.
+            y_true (numpy.ndarray): True label of new sample - not used in CUSUM.
+            y_pred (numpy.ndarray): Predicted label of new sample - not used in CUSUM.
         """
         # if the last run resulted in drift, reset everything and use last 30
         # obs to estimate stats
@@ -88,8 +90,8 @@ class CUSUM(DriftDetector):
             self.sd_hat = np.std(self._stream[-self.burn_in :])
             self.reset()
 
-        super().update()
-        self._stream.append(next_obs)
+        super().update(X, y_true, y_pred)
+        self._stream.append(X)
 
         # cannot compute s_h/s_l so set to 0
         if (self.target is None) & (self.updates_since_reset < self.burn_in):
