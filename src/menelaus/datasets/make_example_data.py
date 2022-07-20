@@ -126,7 +126,18 @@ def fetch_circle_data():
 
 
 def fetch_rainfall_data():
-    """Retrieve the Rainfall data from the datasets directory."""
+    """Retrieve the Rainfall data from the datasets directory. National Oceanic 
+    and Atmospheric Administration (NOAA) rainfall data contains weather 
+    measurements collected over a 50 year period at a site location in 
+    Bellevue, Nebraska. It contains eight features: temperature, dew point, 
+    sea-level pressure, visibility, average wind speed, max sustained wind-speed, 
+    minimum temperature, and maximum temperature. The dependent variable is rain.
+    Concept and data drift starts in index 12,000 and persists through the rest 
+    of the dataset. 
+
+    Ref. :cite:t: `souza2020`
+    
+    """
     data_path = os.path.join(
         find_git_root(), "src", "menelaus", "datasets", "rainfall_data.csv"
     )
