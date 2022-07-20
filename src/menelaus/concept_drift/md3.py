@@ -145,10 +145,15 @@ class MD3(DriftDetector):
         """
         Calculate the following five statistics for the data distribution
         passed in:
+
             1. Length/Number of Samples (len)
+
             2. Margin Density (md)
+
             3. Standard Deviation of Margin Density (md_std)
+
             4. Accuracy (acc)
+
             5. Standard Deivation of Accuracy (acc_std)
 
         Args:

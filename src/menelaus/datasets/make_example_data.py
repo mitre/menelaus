@@ -41,6 +41,8 @@ def make_example_batch_data():
 
         * Change the mean and variance of column ``"j"`` in 2021.
 
+    Returns:
+        pd.DataFrame: A dataframe containing a synthetic batch dataset.
     """
     np.random.seed(123)
     year_size = 20000
@@ -118,6 +120,8 @@ def fetch_circle_data():
 
     Ref. :cite:t:`minku2010`
 
+    Returns:
+        pd.DataFrame: A dataframe containing the Circle dataset.
     """
     data_path = os.path.join(
         find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
@@ -126,7 +130,21 @@ def fetch_circle_data():
 
 
 def fetch_rainfall_data():
-    """Retrieve the Rainfall data from the datasets directory."""
+    """Retrieve the Rainfall data from the datasets directory. National Oceanic
+    and Atmospheric Administration (NOAA) rainfall data contains weather
+    measurements collected over a 50 year period at a site location in
+    Bellevue, Nebraska. It contains eight features: temperature, dew point,
+    sea-level pressure, visibility, average wind speed, max sustained wind-speed,
+    minimum temperature, and maximum temperature. The dependent variable is rain.
+    Concept and data drift starts in index 12,000 and persists through the rest
+    of the dataset.
+
+    Ref. :cite:t:`souza2020`
+
+    Returns:
+        pd.DataFrame: A dataframe containing the Rainfall dataset.
+
+    """
     data_path = os.path.join(
         find_git_root(), "src", "menelaus", "datasets", "rainfall_data.csv"
     )
