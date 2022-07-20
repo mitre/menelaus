@@ -17,3 +17,4 @@ from menelaus.concept_drift.ddm import DDM
 from menelaus.concept_drift.eddm import EDDM
 from menelaus.concept_drift.lfr import LinearFourRates
 from menelaus.concept_drift.stepd import STEPD
+from menelaus.concept_drift.md3 import MD3

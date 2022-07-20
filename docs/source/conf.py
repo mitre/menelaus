@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.abspath("../src/menelaus"))
 
 project = "menelaus"
 copyright = "©2022 The MITRE Corporation. ALL RIGHTS RESERVED"
-author = "Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Austin Downing"
-release = "0.1.0"
+author = "Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Shashank Jarmale"
+# release = "0.1.2"
 
 
 # -- General configuration ---------------------------------------------------

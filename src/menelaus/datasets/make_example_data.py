@@ -10,18 +10,39 @@ from menelaus.utils._locate import find_git_root
 def make_example_batch_data():
     """
     This function returns a dataframe containing synthetic batch data for use
-    with the repo's examples:
+    with the repo's examples. The dataframe's columns are ``"year", "a", "b", ... "j", "cat", "confidence", "drift"``.
 
-        #. Change the mean of column 'b' in 2009. Reverts to original distribution
-            in 2010.
-        #. Change the variance of columns 'c' and 'd' in 2012 by replacing
-            some samples with the mean. Reverts to original distribution in 2013.
-        #. Change the correlation of columns 'e' and 'f' in 2015 (0 correlation
-        to 0.5 correlation).
-        #. Change the mean and variance of column 'h' in 2018, and maintain this
-            new distribution going forward. Change the range of the "confidence"
-            column going forward.
-        #. Change the mean and variance of column 'j' in 2021.
+        * ``year`` covers 2007-2021, with 20,000 observations each.
+
+        * Features ``"b", "e", "f"`` are normally distributed.
+
+        * Features ``"a", "c", "d", "g", "h", "i", "j"`` have a gamma distribution.
+
+        * The ``"cat"`` feature contains categorical variables ranging from 1-7,
+          sampled with varying probability.
+
+        * ``"confidence"`` contains values on ``[0, 0.6]`` through 2018, then values
+          on ``[0.4, 1]``.
+
+    Drift occurs as follows:
+
+        * Change the mean of column ``"b"`` in 2009. Reverts to original distribution
+          in 2010.
+
+        * Change the variance of columns ``"c"`` and ``"d"`` in 2012 by replacing
+          some samples with the mean. Reverts to original distribution in 2013.
+
+        * Increase the correlation of columns ``"e"`` and ``"f"`` in 2015 (0 correlation
+          to 0.5 correlation).
+
+        * Change the mean and variance of column ``"h"`` in 2019, and maintain this
+          new distribution going forward. Change the range of the "confidence"
+          column going forward.
+
+        * Change the mean and variance of column ``"j"`` in 2021.
+
+    Returns:
+        pd.DataFrame: A dataframe containing a synthetic batch dataset.
     """
     np.random.seed(123)
     year_size = 20000
@@ -92,8 +113,56 @@ def make_example_batch_data():
 
 
 def fetch_circle_data():
-    """Retrieve the Circle data from the datasets directory."""
+    """Retrieve the Circle data from the datasets directory. Circle is synthetic
+    data containing drift due to both a change in the feature distribution and a
+    change in the conditional target distribution. Drift occurs from index
+    1000-1250 and affects 66% of the data points.
+
+    Ref. :cite:t:`minku2010`
+
+    Returns:
+        pd.DataFrame: A dataframe containing the Circle dataset.
+    """
     data_path = os.path.join(
         find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
     )
     return pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
+
+
+def fetch_rainfall_data():
+    """Retrieve the Rainfall data from the datasets directory. National Oceanic
+    and Atmospheric Administration (NOAA) rainfall data contains weather
+    measurements collected over a 50 year period at a site location in
+    Bellevue, Nebraska. It contains eight features: temperature, dew point,
+    sea-level pressure, visibility, average wind speed, max sustained wind-speed,
+    minimum temperature, and maximum temperature. The dependent variable is rain.
+    Concept and data drift starts in index 12,000 and persists through the rest
+    of the dataset.
+
+    Ref. :cite:t:`souza2020`
+
+    Returns:
+        pd.DataFrame: A dataframe containing the Rainfall dataset.
+
+    """
+    data_path = os.path.join(
+        find_git_root(), "src", "menelaus", "datasets", "rainfall_data.csv"
+    )
+    df = pd.read_csv(
+        data_path,
+        usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        names=[
+            "index",
+            "temperature",
+            "dew_point",
+            "sea_level_pressure",
+            "visibility",
+            "average_wind_speed",
+            "max_sustained_wind_speed",
+            "minimum_temperature",
+            "maximum_temperature",
+            "rain",
+        ],
+    )
+    df = df.iloc[1:, :].reset_index(drop=True)
+    return df

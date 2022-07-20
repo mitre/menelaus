@@ -2,6 +2,7 @@ from numpy import float64, int32, int64
 from menelaus.datasets.make_example_data import (
     make_example_batch_data,
     fetch_circle_data,
+    fetch_rainfall_data
 )
 
 
@@ -62,3 +63,9 @@ def test_circle_data():
     df = fetch_circle_data()
     assert all(df.dtypes == float64)
     assert df.shape == (2000, 3)
+
+
+def test_rainfall_data():
+    df = fetch_rainfall_data()
+    assert all(df.dtypes == object)
+    assert df.shape == (18159, 9)

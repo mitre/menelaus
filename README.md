@@ -52,6 +52,7 @@ Menelaus implements the following drift detectors.
 | Concept drift    | Early Drift Detection Method                                  | EDDM         | x         |       |
 | Concept drift    | Linear Four Rates                                             | LFR          | x         |       |
 | Concept drift    | Statistical Test of Equal Proportions to Detect concept drift | STEPD        | x         |       |
+| Concept drift    | Margin Density Drift Detection Method                         | MD3          | x         |       |
 | Data drift       | Confidence Distribution Batch Detection                       | CDBD         |           | x     |
 | Data drift       | Hellinger Distance Drift Detection Method                     | HDDDM        |           | x     |
 | Data drift       | kdq-Tree Detection Method                                     | kdq-Tree     | x         | x     |
@@ -86,8 +87,6 @@ kdq-Tree Detection Method. This data structure partitions a given feature space,
 then maintains a count of the number of samples from the given dataset that fall
 into each section of that partition. More details are given in the respective
 module.
-
-A flowchart breaking down these contexts can be found on the ReadTheDocs page under "Choosing a Detector."
 
 # Installation
 

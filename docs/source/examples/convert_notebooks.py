@@ -2,6 +2,8 @@
 This utility script converts all of the notebooks in the /docs/source/examples
 directory into python scripts in the /examples/ directory, to avoid having to
 modify the same code in both locations.
+
+This script should be run from the /docs/source/examples directory.
 """
 
 import os
