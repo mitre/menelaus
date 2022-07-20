@@ -73,7 +73,12 @@ class EDDM(DriftDetector):
         self._test_statistic = None
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true):
+    # XXX - Order of y_true, y_pred, X differs from abstractmethod signature
+    #       for update(). This is done for convenience, so users can call e.g.
+    #       EDDM.update(1,1) without misinterpretation, but exposes them to a
+    #       potential issue where LFR.update(X, y, y) would assign arguments
+    #       incorrectly.
+    def update(self, y_true, y_pred, X=None):
         """Update the detector with a new sample.
 
         Args:
@@ -83,7 +88,7 @@ class EDDM(DriftDetector):
         if self.drift_state == "drift":
             self.reset()
 
-        super().update()
+        super().update(X, y_true, y_pred)
         classifier_result = int(y_pred == y_true)
 
         # found a new error, so update

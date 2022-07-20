@@ -11,11 +11,11 @@ def test_drift():
         det.update(1, 1)
 
     for _ in range(n_error_samples):
-        det.update(1, 0)
+        det.update(y_true=0, y_pred=1)
 
     # drift and reset
     assert det.drift_state == "drift"
-    det.update(1, 0)
+    det.update(y_true=0, y_pred=1)
     assert det.drift_state is None
 
 
@@ -29,12 +29,12 @@ def test_warning():
 
     # enter warning region
     for _ in range(n_error_samples):
-        det.update(1, 0)
+        det.update(y_true=0, y_pred=1)
     assert det.drift_state == "warning"
 
     # increase distance between errors, leave warning region
     det.update(1, 1)
-    det.update(0, 1)
+    det.update(y_true=1, y_pred=0)
     assert det.drift_state is None
 
 

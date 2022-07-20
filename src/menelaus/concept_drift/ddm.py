@@ -69,17 +69,24 @@ class DDM(DriftDetector):
         self._error_std_min = float("inf")
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true):
+    # XXX - Order of y_true, y_pred, X differs from abstractmethod signature
+    #       for update(). This is done for convenience, so users can call e.g.
+    #       DDM.update(1,1) without misinterpretation, but exposes them to a
+    #       potential issue where LFR.update(X, y, y) would assign arguments
+    #       incorrectly.
+    def update(self, y_true, y_pred, X=None):
         """Update the detector with a new sample.
 
-        Args:
-          y_pred: predicted class
+        Args: 
           y_true: actual class
+          y_pred: predicted class
+          X: new sample - not used in DDM
         """
+
         if self.drift_state == "drift":
             self.reset()
 
-        super().update()
+        super().update(X, y_true, y_pred)
         classifier_result = int(y_pred != y_true)
 
         # with each sample, update estimate of error and its std, along with minimums
