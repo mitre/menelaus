@@ -514,22 +514,24 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         BatchDetector.reset(self)
         KdqTreeDetector.reset(self)
 
-    def set_reference(self, data):
+    def set_reference(self, X, y_true=None, y_pred=None):
         """
         Initialize detector with a reference batch. The user may specify an
         alternate reference batch than the one maintained by kdq-Tree. This will
         reset the detector.
 
         Args:
-            data (pandas.DataFrame or numpy array): baseline dataset
+            X (pandas.DataFrame or numpy.array): baseline dataset
+            y_true (numpy.array): actual labels of dataset - not used in KdqTree
+            y_pred (numpy.array): predicted labels of dataset - not used in KdqTree
         """
-        if isinstance(data, pd.DataFrame):
+        if isinstance(X, pd.DataFrame):
             # XXX - notice how inner_set calling KLD requires us to continue
             #       branching on input_type, which is not ideal - Anmol Srivastava
-            self._inner_set_reference(data.values, input_type="batch")
-            self.input_cols = data.columns
-        elif isinstance(data, np.ndarray):
-            self._inner_set_reference(data, input_type="batch")
+            self._inner_set_reference(X.values, input_type="batch")
+            self.input_cols = X.columns
+        elif isinstance(X, np.ndarray):
+            self._inner_set_reference(X, input_type="batch")
         else:
             raise ValueError(
                 "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."

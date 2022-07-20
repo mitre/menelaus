@@ -98,6 +98,18 @@ class BatchDetector(ABC):
         self.batches_since_reset += 1
 
     @abstractmethod
+    def set_reference(self, X, y_true, y_pred):
+        """
+        Initialize detector with a reference batch.
+
+        Args:
+            X (pandas.DataFrame or numpy.array): baseline dataset
+            y_true (numpy.array): actual labels of dataset
+            y_pred (numpy.array): predicted labels of dataset
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def reset(self, *args, **kwargs):
         """
         Initialize the detector's drift state and other relevant attributes.

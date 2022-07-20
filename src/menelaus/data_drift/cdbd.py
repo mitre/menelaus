@@ -161,17 +161,19 @@ class CDBD(HistogramDensityMethod):
             subsets=subsets,
         )
 
-    def set_reference(self, reference_batch):
+    def set_reference(self, X, y_true=None, y_pred=None):
         """
         Initialize detector with a reference batch. After drift, reference batch is
         automatically set to most recent test batch. Option for user to specify
         alternative reference batch using this method.
 
         Args:
-            reference_batch (DataFrame): initial baseline dataset
+            X (pandas.DataFrame): initial baseline dataset
+            y_true (numpy.array): true labels for dataset - not used by CDBD
+            y_pred (numpy.array): predicted labels for dataset - not used by CDBD
         """
 
-        super().set_reference(reference_batch)
+        super().set_reference(X, y_true, y_pred)
 
         # Ensure only being used with 1 variable in reference
         if self._num_features != 1:

@@ -241,18 +241,20 @@ class HistogramDensityMethod(DriftDetector):
         self.epsilon_values = {}
         self.thresholds = {}
 
-    def set_reference(self, reference_batch):
+    def set_reference(self, X, y_true=None, y_pred=None):
         """
         Initialize detector with a reference batch. After drift, reference batch is
         automatically set to most recent test batch. Option for user to specify
         alternative reference batch using this method.
 
         Args:
-            reference_batch (DataFrame): initial baseline dataset
+            X (pandas.DataFrame): initial baseline dataset
+            y_true (numpy.array): true labels for dataset - not used by HDM
+            y_pred (numpy.array): predicted labels for dataset - not used by HDM
         """
 
         # Initialize attributes
-        self.reference = reference_batch
+        self.reference = X
         self._num_features = self.reference.shape[1]
         self.reset()
 

@@ -219,17 +219,19 @@ class HDDDM(HistogramDensityMethod):
             subsets=subsets,
         )
 
-    def set_reference(self, reference_batch):
+    def set_reference(self, X, y_true=None, y_pred=None):
         """
         Initialize detector with a reference batch. After drift, reference batch is
         automatically set to most recent test batch. Option for user to specify
         alternative reference batch using this method.
 
         Args:
-            reference_batch (DataFrame): initial baseline dataset
+            X (pandas.DataFrame): initial baseline dataset
+            y_true (numpy.array): true labels for dataset - not used by HDDDM
+            y_pred (numpy.array): predicted labels for dataset - not used by HDDDM
         """
 
-        super().set_reference(reference_batch)
+        super().set_reference(X, y_true, y_pred)
 
     def update(self, X, y_true=None, y_pred=None):
         """
