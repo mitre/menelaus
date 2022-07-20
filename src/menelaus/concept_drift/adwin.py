@@ -108,11 +108,16 @@ class ADWIN(DriftDetector):
         """Update the detector with a new sample.
 
         Args:
-          y_true: actual class of next sample 
-          y_pred: predicted class of next sample 
+          y_true: actual class of next sample
+          y_pred: predicted class of next sample
           X: next sample in the stream of data - not used in ADWIN
         """
-        new_value = (y_true == y_pred)
+
+        # Technically, ADWIN could monitor the running mean of some feature
+        # aside from accuracy, but that leads to potentially indeterminate input
+        # (user passes the full y_true, y_pred, X triplet), so -- maybe if
+        # there's a big enough need.
+        new_value = int(y_true == y_pred)
 
         if self.drift_state is not None:
             # note that the other attributes should *not* be initialized after drift
