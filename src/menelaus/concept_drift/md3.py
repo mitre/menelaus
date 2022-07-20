@@ -124,16 +124,10 @@ class MD3(DriftDetector):
                 dataframe which is the target variable
         """
 
-        self.reference_batch_features = X.loc[
-            :, X.columns != target_name
-        ]
-        self.reference_batch_target = X.loc[
-            :, X.columns == target_name
-        ]
+        self.reference_batch_features = X.loc[:, X.columns != target_name]
+        self.reference_batch_target = X.loc[:, X.columns == target_name]
 
-        self.reference_distribution = self.calculate_distribution_statistics(
-            X
-        )
+        self.reference_distribution = self.calculate_distribution_statistics(X)
 
         if self.oracle_data_length_required is None:
             self.oracle_data_length_required = self.reference_distribution["len"]
