@@ -41,6 +41,8 @@ def make_example_batch_data():
 
         * Change the mean and variance of column ``"j"`` in 2021.
 
+    Returns:
+        pd.DataFrame: A dataframe containing a synthetic batch dataset.
     """
     np.random.seed(123)
     year_size = 20000
@@ -118,6 +120,8 @@ def fetch_circle_data():
 
     Ref. :cite:t:`minku2010`
 
+    Returns:
+        pd.DataFrame: A dataframe containing the Circle dataset.
     """
     data_path = os.path.join(
         find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
@@ -136,6 +140,9 @@ def fetch_rainfall_data():
     of the dataset.
 
     Ref. :cite:t:`souza2020`
+
+    Returns:
+        pd.DataFrame: A dataframe containing the Rainfall dataset.
 
     """
     data_path = os.path.join(
