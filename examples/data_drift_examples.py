@@ -49,7 +49,7 @@ circle_data = fetch_circle_data()
 circle_data.shape
 
 
-# ## Confidence Distribution Batch Detection (CDBD) Example
+# ## Confidence Distribution Batch Detection (CDBD)
 
 # This section details how to setup, run, and produce plots for CDBD. This script
 # monitors the feature "confidence", simulated confidence scores output by a
@@ -154,7 +154,7 @@ cdbd.set_reference(reference)
 cdbd.update(pd.DataFrame(example_data[example_data.year == 2008].loc[:, "confidence"]))
 
 
-# ## Hellinger Distance Drift Detection Method (HDDDM) Example
+# ## Hellinger Distance Drift Detection Method (HDDDM)
 
 # This section details how to setup, run, and produce plots for HDDDM, using both
 # numeric and categorical data. Drift occurs in 2009, 2012, 2015, 2018, and 2021.
@@ -310,7 +310,7 @@ hdddm.set_reference(reference)
 hdddm.update(example_data[example_data.year == 2008].iloc[:, 1:-2])
 
 
-# ## PCA-Based Change Detection (PCA-CD) Example
+# ## PCA-Based Change Detection (PCA-CD)
 
 # PCA-CD is a drift detector that transforms the passed data into its principal components, then watches the transformed data for signs of drift by monitoring the KL-divergence via the Page-Hinkley algorithm.
 
@@ -395,7 +395,7 @@ plt.show()
 # plt.savefig("example_PCA_CD.png")
 
 
-# ## KDQ-Tree Detection Method Example
+# ## KDQ-Tree Detection Method (Streaming Setting)
 
 # KdqTree monitors incoming features by constructing a tree which partitions the feature-space, and then monitoring a divergence statistic that is defined over that partition. It watches data within a sliding window of a particular size. When that window is full, it builds the reference tree. As the window moves forward, point-by-point, the data in that new window is compared against the reference tree to detect drift.
 
@@ -496,7 +496,7 @@ for title, df_plot in plot_data.items():
     # fig.write_html(f"example_streaming_kdqtree_treemap_{title}.html")
 
 
-# ## KDQ-Tree Detection Method Example (Batch Setting)
+# ## KDQ-Tree Detection Method (Batch Setting)
 
 # This example shows up how to set up, run, and produce output from the kdq-Tree
 # detector, specifically in the batch data setting. The parameters aren't 

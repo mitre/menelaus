@@ -19,6 +19,7 @@
 
 ## Imports ##
 
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,7 +37,7 @@ df = fetch_circle_data()
 drift_start, drift_end = 1000, 1250
 
 
-# ## Page-Hinkley (PH) Test Example
+# ## Page-Hinkley (PH) Test
 
 # In[ ]:
 
@@ -101,7 +102,7 @@ plt.show()
 # plt.savefig("example_Page-Hinkley_detections.png")
 
 
-# ## Cumulative Sum (CUSUM) Test Example
+# ## Cumulative Sum (CUSUM) Test
 
 # - This monitors a moving average of var2, starting from an initial estimate of mean
 # and standard deviation.
@@ -174,6 +175,7 @@ plt.legend()
 # 
 
 # In[ ]:
+
 
 
 plt.show()
