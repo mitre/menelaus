@@ -77,7 +77,7 @@ class DDM(DriftDetector):
     def update(self, y_true, y_pred, X=None):
         """Update the detector with a new sample.
 
-        Args: 
+        Args:
           y_true: actual class
           y_pred: predicted class
           X: new sample - not used in DDM

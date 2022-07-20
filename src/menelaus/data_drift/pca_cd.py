@@ -144,9 +144,7 @@ class PCACD(DriftDetector):
                 )
 
             elif len(self._test_window) < self.window_size:
-                self._test_window = pd.concat(
-                    [self._test_window, pd.DataFrame(X)]
-                )
+                self._test_window = pd.concat([self._test_window, pd.DataFrame(X)])
 
             if len(self._test_window) == self.window_size:
                 self._build_reference_and_test = False

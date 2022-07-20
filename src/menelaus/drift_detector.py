@@ -23,7 +23,7 @@ class StreamingDetector(ABC):
     def update(self, X, y_true, y_pred):
         """
         Update detector with new sample (data point).
-        
+
         Args:
             X (numpy.ndarray): input data
             y_true (numpy.ndarray): if applicable, true labels of input data
@@ -84,7 +84,7 @@ class BatchDetector(ABC):
     def update(self, X, y_true, y_pred):
         """
         Update detector with new batch of data
-        
+
         Args:
             X (numpy.ndarray): input data
             y_true (numpy.ndarray): if applicable, true labels of input data
@@ -171,7 +171,7 @@ class DriftDetector(ABC):
     def update(self, X, y_true, y_pred):
         """
         Update the detector with a new sample or batch.
-        
+
         Args:
             X (numpy.ndarray): input data
             y_true (numpy.ndarray): if applicable, true labels of input data

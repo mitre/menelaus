@@ -126,13 +126,7 @@ class LinearFourRates(DriftDetector):
     #       LFR.update(1,1) without misinterpretation, but exposes them to a
     #       potential issue where LFR.update(X, y, y) would assign arguments
     #       incorrectly.
-    def update(
-        self, 
-        y_true, 
-        y_pred,
-        X=None,
-        round_val=4
-    ):
+    def update(self, y_true, y_pred, X=None, round_val=4):
         """Update detector with a new observation:
 
         #. Updates confusion matrix (``self._confusion``) with new predictions
