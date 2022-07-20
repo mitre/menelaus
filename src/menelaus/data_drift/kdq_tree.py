@@ -227,6 +227,7 @@ class KdqTreeDetector:
         Returns:
             pd.DataFrame: A dataframe where each row corresponds to a node, and
             each column contains some information:
+
                 * ``name``: a label corresponding to which feature this split is on
                 * ``idx``: a unique ID for the node, to pass
                   ``plotly.express.treemap``'s id argument
