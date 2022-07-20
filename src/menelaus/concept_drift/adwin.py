@@ -104,14 +104,16 @@ class ADWIN(DriftDetector):
         self._window_size = 0
         self._retraining_recs = [None, None]
 
-    def update(self, X, y_true=None, y_pred=None):
+    def update(self, y_true=None, y_pred=None, X=None):
         """Update the detector with a new sample.
 
         Args:
-          X: next sample in the stream of data being fed to ADWIN
-          y_true: actual class of next sample - not used in ADWIN
-          y_pred: predicted class of next sample - not used in ADWIN
+          y_true: actual class of next sample 
+          y_pred: predicted class of next sample 
+          X: next sample in the stream of data - not used in ADWIN
         """
+        new_value = (y_true == y_pred)
+
         if self.drift_state is not None:
             # note that the other attributes should *not* be initialized after drift
             self.reset()
@@ -119,7 +121,7 @@ class ADWIN(DriftDetector):
         super().update(X, y_true, y_pred)
         # add new sample to the head of the window
         self._window_size += 1
-        self._add_sample(X)
+        self._add_sample(new_value)
         self._shrink_window()
 
     def reset(self):

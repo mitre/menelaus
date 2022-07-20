@@ -27,7 +27,6 @@
 
 ## Imports ##
 
-import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -100,7 +99,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    lfr.update(y_pred, y_true)
+    lfr.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, lfr.drift_state, accuracy]
 
     # If drift is detected, examine the retraining recommendations and retrain.
@@ -241,7 +240,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    adwin.update(int(y_true == y_pred))
+    adwin.update(y_true, y_pred)
     status.loc[i] = [
         i,
         int(y_true == y_pred),
@@ -384,7 +383,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    ddm.update(y_pred, y_true)
+    ddm.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, ddm.drift_state, accuracy]
 
     # If drift is detected, examine the window and retrain.
@@ -533,7 +532,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    eddm.update(y_pred, y_true)
+    eddm.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, eddm.drift_state, accuracy]
 
     # If drift is detected, examine the window and retrain.
@@ -673,7 +672,7 @@ for i, row in df_ex.iloc[training_size:].iterrows():
         correct += 1
     accuracy = correct / n
 
-    stepd.update(y_pred, y_true)
+    stepd.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, stepd.drift_state, accuracy]
     # train_ix[1] = train_ix[1] + 1
 

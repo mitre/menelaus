@@ -120,10 +120,21 @@ follows:
 ```python
 import pandas as pd
 from menelaus.concept_drift import ADWIN
+from menelaus.data_drift import KdqTreeStreaming
+
 df = pd.read_csv('example.csv')
+
+# use a detector that searches for concept drift
 detector = ADWIN()
 for i, row in df.iterrows():
-   detector.update(row['y_predicted'], row['y_true'])
+   detector.update(row['y_true'], row['y_predicted'], X=None)
+   if detector.drift_state is not None:
+      print("Drift has occurred!")
+
+# use a detector that searches for data drift
+detector = KdqTreeStreaming()
+for i, row in df.iterrows():
+   detector.update(X=row, y_true=None, y_pred=None)
    if detector.drift_state is not None:
       print("Drift has occurred!")
 ```

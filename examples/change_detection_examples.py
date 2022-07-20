@@ -19,7 +19,6 @@
 
 ## Imports ##
 
-import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -54,7 +53,7 @@ status = pd.DataFrame(columns=["index", "actual value", "drift_detected"])
 # iterate through data; feed each sample to the detector, in turn
 for i in range(len(df)):
     obs = df["var2"][i]
-    ph.update(next_obs=obs, obs_id=i)
+    ph.update(X=obs)
     status.loc[i] = [i, obs, ph.drift_state]
 
 
