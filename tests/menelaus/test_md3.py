@@ -29,7 +29,7 @@ def test_set_reference():
     clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
     det = MD3(clf=clf, k=2)
-    det.set_reference(df, 'y')
+    det.set_reference(df, target_name='y')
     assert X_train.equals(det.reference_batch_features)
     assert df.loc[:, df.columns == 'y'].equals(det.reference_batch_target)
     assert det.reference_distribution["len"] == len(data)
@@ -52,7 +52,7 @@ def test_update():
     clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
     det = MD3(clf=clf, k=2)
-    det.set_reference(df, 'y')
+    det.set_reference(df, target_name='y')
     
     data_update1 = [[-4, 8], [3, 4]]
     df_update1 = pd.DataFrame(data_update1, columns=['var1', 'var2'])
@@ -80,7 +80,7 @@ def test_give_oracle_label():
     clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
     det = MD3(clf=clf, sensitivity=0.5, k=3)
-    det.set_reference(df, 'y')
+    det.set_reference(df, target_name='y')
     
     labeled_sample = [[1, 2, 0]]
     labeled_df = pd.DataFrame(labeled_sample, columns=['var1', 'var2', 'y'])
