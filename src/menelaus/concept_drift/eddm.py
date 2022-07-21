@@ -39,12 +39,13 @@ class EDDM(DriftDetector):
 
     def __init__(self, n_threshold=30, warning_thresh=0.95, drift_thresh=0.9):
         """
-        :param n_threshold: the minimum number of samples required to test
-            whether drift has occurred
-        :param warning_thresh: defines the threshold over which to enter the
-            warning state.
-        :param drift_thresh: defines the threshold over which to enter the
-            drift state.
+        Args:
+            n_threshold (int, optional): the minimum number of samples required
+                to test whether drift has occurred. Defaults to 30.
+            warning_thresh (float, optional): defines the threshold over which
+                to enter the warning state. Defaults to 0.95.
+            drift_thresh (float, optional): defines the threshold over which to
+                enter the drift state. Defaults to 0.9.
         """
         super().__init__()
         self.warning_thresh = warning_thresh
