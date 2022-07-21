@@ -12,9 +12,6 @@ import os
 def find_git_root(search_dirs=(".git",)):
     """Find the root directory for the git repo, so that we don't have to
     fool with strange filepaths.
-
-    This is a strange place to have this utility function, but we don't have any
-    other such functions at the moment.
     """
     test_dir = os.getcwd()
     prev_dir, test_dir = None, os.path.abspath(test_dir)

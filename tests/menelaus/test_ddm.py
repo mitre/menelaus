@@ -26,7 +26,7 @@ def test_warning():
 
     # enter the "warning" region
     for _ in range(n_error_samples):
-        det.update(1, 0)
+        det.update(y_true=0, y_pred=1)
     assert det.drift_state == "warning"
 
     # leave the "warning" region

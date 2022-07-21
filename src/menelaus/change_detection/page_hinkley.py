@@ -70,7 +70,6 @@ class PageHinkley(DriftDetector):
 
         # currently, if these need to be made available, they are through the
         # to_dataframe method
-        self._ids = []
         self._change_scores = []
         self._page_hinkley_values = []
         self._page_hinkley_differences = []
@@ -80,19 +79,21 @@ class PageHinkley(DriftDetector):
         self._mins = []
         self._means = []
 
-    def update(self, next_obs, *args, obs_id=None, **kwargs):
+    def update(self, X, y_true=None, y_pred=None):
         """Update the detector with a new sample.
 
         Args:
-          next_obs: The value of the new sample.
-          obs_id: Index of new sample to store in dataframe. Defaults to ``None``.
+          X (numpy.ndarray): The value of the new sample.
+          y_true (numpy.ndarray): True label of new sample - not used in PageHinkley
+          y_pred (numpy.ndarray): Predicted label of new sample - not used in PageHinkley
+          obs_id (numpy.ndarray): Index of new sample to store in dataframe. Defaults to ``None``.
         """
         if self.drift_state == "drift":
             self.reset()
-        super().update()
+        super().update(X, y_true, y_pred)
 
-        self._mean = self._mean + (next_obs - self._mean) / self.updates_since_reset
-        self._sum = self._sum + next_obs - self._mean - self.delta
+        self._mean = self._mean + (X - self._mean) / self.updates_since_reset
+        self._sum = self._sum + X - self._mean - self.delta
         theta = self.threshold * self._mean
 
         if self._sum < self._min:
@@ -111,8 +112,7 @@ class PageHinkley(DriftDetector):
         if drift_check and self.updates_since_reset > self.burn_in:
             self.drift_state = "drift"
 
-        self._ids.append(obs_id)
-        self._change_scores.append(next_obs)
+        self._change_scores.append(X)
         self._page_hinkley_values.append(self._sum)
         self._page_hinkley_differences.append(ph_difference)
         self._drift_detected.append(drift_check)
@@ -132,7 +132,6 @@ class PageHinkley(DriftDetector):
         self._sum = 0
         self._mean = 0
 
-        self._ids = []
         self._change_scores = []
         self._page_hinkley_values = []
         self._page_hinkley_differences = []
@@ -147,7 +146,6 @@ class PageHinkley(DriftDetector):
         """Returns a dataframe storing current statistics"""
         return pd.DataFrame(
             {
-                "ids": self._ids,
                 "change_scores": self._change_scores,
                 "page_hinkley_values": self._page_hinkley_values,
                 "page_hinkley_differences": self._page_hinkley_differences,

@@ -75,17 +75,18 @@ class STEPD(DriftDetector):
         self._test_p = None
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true):
+    def update(self, y_true, y_pred, X=None):
         """Update the detector with a new sample.
 
         Args:
-          y_pred: predicted class
-          y_true: actual class
+          X (numpy.ndarray): new sample - not used in STEPD
+          y_pred (numpy.ndarray): predicted class
+          y_true (numpy.ndarray): actual class
         """
         if self.drift_state == "drift":
             self.reset()
 
-        super().update()
+        super().update(X, y_true, y_pred)
         classifier_result = int(y_pred == y_true)
         self._s += classifier_result
 

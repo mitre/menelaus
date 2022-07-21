@@ -9,6 +9,12 @@ StreamingDetector.__abstractmethods__ = set()
 BatchDetector.__abstractmethods__ = set()
 
 
+def test_set_reference_batch():
+    '''Ensure error on call to set_reference from batch ABC'''
+    det = BatchDetector()
+    with pytest.raises(NotImplementedError) as _:
+        det.set_reference(None, None, None)
+
 def test_validation_streaming():
     '''Ensure ValueError on invalid drift_state for StreamingDetector'''
     det = StreamingDetector()

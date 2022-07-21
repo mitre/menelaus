@@ -110,28 +110,24 @@ class MD3(DriftDetector):
         self.oracle_data = None
         self.waiting_for_oracle = False
 
-    def set_reference(self, reference_batch, target_name):
+    def set_reference(self, X, y_true=None, y_pred=None, target_name=None):
         """
         Initialize detector with a reference batch. Reference batch must be
         manually set and updated by user using this method. Reference batch
         is not automatically updated after a drift is detected.
 
         Args:
-            reference_batch (DataFrame): initial baseline dataset
+            reference_batch (pandas.DataFrame): initial baseline dataset
+            y_true (numpy.array): true labels of dataset - not used in MD3
+            y_pred (numpy.array): predicted labels of dataset - not used in MD3
             target_name (string): name of the column in the reference_batch
                 dataframe which is the target variable
         """
 
-        self.reference_batch_features = reference_batch.loc[
-            :, reference_batch.columns != target_name
-        ]
-        self.reference_batch_target = reference_batch.loc[
-            :, reference_batch.columns == target_name
-        ]
+        self.reference_batch_features = X.loc[:, X.columns != target_name]
+        self.reference_batch_target = X.loc[:, X.columns == target_name]
 
-        self.reference_distribution = self.calculate_distribution_statistics(
-            reference_batch
-        )
+        self.reference_distribution = self.calculate_distribution_statistics(X)
 
         if self.oracle_data_length_required is None:
             self.oracle_data_length_required = self.reference_distribution["len"]
@@ -216,12 +212,14 @@ class MD3(DriftDetector):
             "acc_std": acc_std,
         }
 
-    def update(self, new_sample):
+    def update(self, X, y_true=None, y_pred=None):
         """
         Update the detector with a new sample.
 
         Args:
-            new_sample (DataFrame): feature values/sample data for the new incoming sample
+            X (DataFrame): feature values/sample data for the new incoming sample
+            y_true (numpy.array): true label of new sample - not used in MD3
+            y_pred (numpy.array): predicted label of new sample - not used in MD3
         """
 
         if self.waiting_for_oracle == True:
@@ -230,7 +228,7 @@ class MD3(DriftDetector):
                 labeled sample to confirm or rule out drift."""
             )
 
-        if len(new_sample) != 1:
+        if len(X) != 1:
             raise ValueError(
                 """This method is only available for data inputs in the form of 
                 a Pandas DataFrame with exactly 1 record."""
@@ -239,9 +237,9 @@ class MD3(DriftDetector):
         if self.drift_state == "drift":
             self.reset()
 
-        super().update()
+        super().update(X, y_true, y_pred)
 
-        sample_np_array = new_sample.to_numpy()[0]
+        sample_np_array = X.to_numpy()[0]
         margin_inclusion_signal = self.margin_calculation_function(
             self, sample_np_array, self.classifier
         )
@@ -318,7 +316,7 @@ class MD3(DriftDetector):
                 self.drift_state = "drift"
 
             # update reference distribution
-            self.set_reference(self.oracle_data, target_column[0])
+            self.set_reference(self.oracle_data, target_name=target_column[0])
             self.oracle_data = None
             self.waiting_for_oracle = False
 

@@ -24,7 +24,7 @@ import plotly.express as px
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner, KDQTreeNode
 
 
-# ## Basic Plot Example
+# ## Basic Plot
 
 # In[ ]:
 
@@ -80,7 +80,7 @@ fig.show()
 # fig.write_html(f"example_partitioner_lots_basic_plot_depth.html")
 
 
-# ## Modifications Example
+# ## Modifications
 
 # In[ ]:
 
@@ -175,7 +175,7 @@ fig.show()
 # fig.write_html(f"example_partitioner_lots_modifications4_outline.html")
 
 
-# ## Alternatives Example
+# ## Alternatives
 
 # In[ ]:
 

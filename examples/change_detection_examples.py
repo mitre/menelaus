@@ -37,7 +37,7 @@ df = fetch_circle_data()
 drift_start, drift_end = 1000, 1250
 
 
-# ## Page-Hinkley (PH) Test Example
+# ## Page-Hinkley (PH) Test
 
 # In[ ]:
 
@@ -54,7 +54,7 @@ status = pd.DataFrame(columns=["index", "actual value", "drift_detected"])
 # iterate through data; feed each sample to the detector, in turn
 for i in range(len(df)):
     obs = df["var2"][i]
-    ph.update(next_obs=obs, obs_id=i)
+    ph.update(X=obs)
     status.loc[i] = [i, obs, ph.drift_state]
 
 
@@ -102,7 +102,7 @@ plt.show()
 # plt.savefig("example_Page-Hinkley_detections.png")
 
 
-# ## Cumulative Sum (CUSUM) Test Example
+# ## Cumulative Sum (CUSUM) Test
 
 # - This monitors a moving average of var2, starting from an initial estimate of mean
 # and standard deviation.
@@ -175,6 +175,7 @@ plt.legend()
 # 
 
 # In[ ]:
+
 
 
 plt.show()

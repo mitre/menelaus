@@ -121,7 +121,12 @@ class LinearFourRates(DriftDetector):
         }
         self._initialize_retraining_recs()
 
-    def update(self, y_pred, y_true, *args, round_val=4, **kwargs):
+    # XXX - Order of y_true, y_pred, X differs from abstractmethod signature
+    #       for update(). This is done for convenience, so users can call e.g.
+    #       LFR.update(1,1) without misinterpretation, but exposes them to a
+    #       potential issue where LFR.update(X, y, y) would assign arguments
+    #       incorrectly.
+    def update(self, y_true, y_pred, X=None, round_val=4):
         """Update detector with a new observation:
 
         #. Updates confusion matrix (``self._confusion``) with new predictions
@@ -135,17 +140,19 @@ class LinearFourRates(DriftDetector):
            ``"warning"`` or ``"drift"``
 
         Args:
-            y_pred: predicted class
             y_true: actual class
+            y_pred: predicted class
+            X: new sample - not used in LFR
             round_val: number of decimal points the estimate rate is rounded to
                 when stored in bounds dictionary. The greater the ``round_val``, the
                 more precise the bounds dictionary will be, and the longer the
                 runtime. (Default value = 4)
         """
+
         if self.drift_state == "drift":
             self.reset()
 
-        super().update()
+        super().update(X, y_true, y_pred)
         y_p = 1 * y_pred
         y_t = 1 * y_true
 

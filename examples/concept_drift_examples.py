@@ -18,9 +18,8 @@
 # an initial classifier, and then use the remaining samples for testing.
 # 
 # These detectors are generally to be applied to the true class and predicted class 
-# from a particular model. ADWIN is an exception in that it could also be used to 
-# monitor an arbitrary real-valued feature. So, each of the summary plots displays 
-# the running accuracy of the classifier alongside the drift detector's output.
+# from a particular model. So, each of the summary plots displays the running
+# accuracy of the classifier alongside the drift detector's output.
 # 
 # They also track the indices of portions of the incoming data stream which are 
 # more similar to each other -- i.e., data that seems to be part of the same 
@@ -28,7 +27,7 @@
 # 
 # NOTE: The LinearFourRates example has a relatively long runtime, roughly 5 minutes.
 
-# In[1]:
+# In[ ]:
 
 
 ## Imports ##
@@ -45,7 +44,7 @@ from menelaus.datasets import fetch_circle_data
 from menelaus.datasets import fetch_rainfall_data
 
 
-# In[2]:
+# In[ ]:
 
 
 ## Import Data ##
@@ -64,7 +63,7 @@ rainfall_features = ["temperature", "dew_point", "sea_level_pressure", "visibili
 rainfall_df[rainfall_features] = rainfall_df[rainfall_features].astype(float)
 
 
-# ## Linear Four Rates (LFR) Example
+# ## Linear Four Rates (LFR)
 
 # Linear Four Rates monitors the four cells of the confusion matrix (TPR, FPR, TNR, FNR) and alarms when one of these becomes different enough from earlier performance.
 
@@ -116,7 +115,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    lfr.update(y_pred, y_true)
+    lfr.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, lfr.drift_state, accuracy]
 
     # If drift is detected, examine the retraining recommendations and retrain.
@@ -214,9 +213,9 @@ plt.legend()
 plt.show()
 
 
-# ## ADaptive WINdowing (ADWIN) Example
+# ## ADaptive WINdowing (ADWIN)
 
-# ADWIN can be used to monitor the average of a given real-valued feature. In this case, we use it to monitor the accuracy of a classifier. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
+# ADWIN can be used to monitor the accuracy of a classifier. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
 
 # In[ ]:
 
@@ -257,7 +256,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    adwin.update(int(y_true == y_pred))
+    adwin.update(y_true, y_pred)
     status.loc[i] = [
         i,
         int(y_true == y_pred),
@@ -345,7 +344,7 @@ plt.show()
 # plt.savefig("example_ADWIN.png")
 
 
-# ## Drift Detection Method (DDM) Example
+# ## Drift Detection Method (DDM)
 
 # DDM can enter either a "drift" or "warning" state, depending on how close a classifier's error rate has approached to those respective thresholds, defined by the warning_scale and drift_scale parameters.
 
@@ -399,7 +398,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    ddm.update(y_pred, y_true)
+    ddm.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, ddm.drift_state, accuracy]
 
     # If drift is detected, examine the window and retrain.
@@ -494,7 +493,7 @@ plt.show()
 # plt.savefig("example_DDM.png")
 
 
-# ## Early Drift Detection Method (EDDM) Example
+# ## Early Drift Detection Method (EDDM)
 
 # EDDM monitors the distance between two errors of a classifier - i.e., the number of samples between errors - rather than monitoring the error rate itself. Similar to DDM, it uses separate thresholds for "warning" and "drift."
 
@@ -548,7 +547,7 @@ for i in range(training_size, len(df)):
         correct += 1
     accuracy = correct / n
 
-    eddm.update(y_pred, y_true)
+    eddm.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, eddm.drift_state, accuracy]
 
     # If drift is detected, examine the window and retrain.
@@ -642,7 +641,7 @@ plt.show()
 # plt.savefig("example_EDDM.png")
 
 
-# ## Statistical Test of Equal Proportions to Detect Concept Drift (STEPD) Example
+# ## Statistical Test of Equal Proportions to Detect Concept Drift (STEPD)
 
 # STEPD is a detector specifically intended for online classifiers, where each new sample is used to update the parameters of the classifier. STEPD monitors the accuracy in two windows, "recent" and "past," and compares those in order to detect drift in classifier accuracy.
 
@@ -687,7 +686,7 @@ for i, row in df_ex.iloc[training_size:].iterrows():
         correct += 1
     accuracy = correct / n
 
-    stepd.update(y_pred, y_true)
+    stepd.update(y_true, y_pred)
     status.loc[i] = [i, y_true, y_pred, stepd.drift_state, accuracy]
     # train_ix[1] = train_ix[1] + 1
 
@@ -781,11 +780,11 @@ plt.show()
 # plt.savefig("example_STEPD.png")
 
 
-# ## Margin Density Drift Detection (MD3) Method Example
+# ## Margin Density Drift Detection (MD3) Method
 
 # MD3 is a detector intended for semi-supervised and online classifier contexts. A cumulative margin density statistic (unsupervised) is tracked, representing the number of samples that fall into the uncertainty region, or margin, of the classifier. When margin density increases or decreases beyond a certain threshold, a drift warning is issued. When a warning is issued, a set of labeled samples is requested. If prediction accuracy by the model on these samples is lower than on the initial labeled reference dataset, drift is confirmed. If not, drift is ruled out.
 
-# In[3]:
+# In[ ]:
 
 
 ## Setup ##
@@ -804,7 +803,7 @@ oracle_labels = 1000
 
 # Initialize detector
 md3 = MD3(clf=clf, sensitivity=1.5, oracle_data_length_required=oracle_labels)
-md3.set_reference(training_data, "rain")
+md3.set_reference(X=training_data, target_name="rain")
 
 # Set up DF to record results.
 status = pd.DataFrame(
@@ -816,7 +815,7 @@ rec_list = []
 oracle_list = []
 
 
-# In[4]:
+# In[ ]:
 
 
 # run MD3 and track results for both original model and retrained model
@@ -873,7 +872,7 @@ for i in range(rainfall_training_size, len(rainfall_df)):
     n += 1
 
 
-# In[5]:
+# In[ ]:
 
 
 ## Plotting ##
@@ -935,7 +934,7 @@ plt.legend()
 
 # After drift is induced, the margin density decreases enough for MD3 to emit a warning. From there, the predictive accuracy of the classifier is tested, and this has already decreased sufficiently for the detector to alarm. Then, a new reference batch is set and the detector continues tracking the margin density statistic until the next warning. It can be seen from the plot that retraining at drift results in better accuracy moving forward compared with a model that is kept static.
 
-# In[6]:
+# In[ ]:
 
 
 plt.show()

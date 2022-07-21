@@ -20,8 +20,15 @@ class StreamingDetector(ABC):
         self._drift_state = None
 
     @abstractmethod
-    def update(self, *args, **kwargs):
-        """Update detector with new sample (data point)."""
+    def update(self, X, y_true, y_pred):
+        """
+        Update detector with new sample (data point).
+
+        Args:
+            X (numpy.ndarray): input data
+            y_true (numpy.ndarray): if applicable, true labels of input data
+            y_pred (numpy.ndarray): if applicable, predicted labels of input data
+        """
         self.total_samples += 1
         self.samples_since_reset += 1
 
@@ -74,10 +81,29 @@ class BatchDetector(ABC):
         self._drift_state = None
 
     @abstractmethod
-    def update(self, *args, **kwargs):
-        """Update detector with new batch of data"""
+    def update(self, X, y_true, y_pred):
+        """
+        Update detector with new batch of data
+
+        Args:
+            X (numpy.ndarray): input data
+            y_true (numpy.ndarray): if applicable, true labels of input data
+            y_pred (numpy.ndarray): if applicable, predicted labels of input data
+        """
         self.total_batches += 1
         self.batches_since_reset += 1
+
+    @abstractmethod
+    def set_reference(self, X, y_true, y_pred):
+        """
+        Initialize detector with a reference batch.
+
+        Args:
+            X (pandas.DataFrame or numpy.array): baseline dataset
+            y_true (numpy.array): actual labels of dataset
+            y_pred (numpy.array): predicted labels of dataset
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def reset(self, *args, **kwargs):
@@ -142,8 +168,15 @@ class DriftDetector(ABC):
         self._input_type = None
 
     @abstractmethod
-    def update(self, *args, **kwargs):
-        """Update the detector with a new sample or batch."""
+    def update(self, X, y_true, y_pred):
+        """
+        Update the detector with a new sample or batch.
+
+        Args:
+            X (numpy.ndarray): input data
+            y_true (numpy.ndarray): if applicable, true labels of input data
+            y_pred (numpy.ndarray): if applicable, predicted labels of input data
+        """
         self.total_updates += 1
         self.updates_since_reset += 1
 
