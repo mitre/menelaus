@@ -277,7 +277,7 @@ class PCACD(DriftDetector):
                     self._build_reference_and_test = True
                     self.drift_state = "drift"
 
-        DriftDetector.update(self, X, y_true, y_pred)
+        super().update(X, y_true, y_pred)
 
     def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
