@@ -118,13 +118,13 @@ follows:
 
 ```python
 import pandas as pd
-from menelaus.concept_drift import ADWIN
+from menelaus.concept_drift import ADWINacc
 from menelaus.data_drift import KdqTreeStreaming
 
 df = pd.read_csv('example.csv')
 
 # use a detector that searches for concept drift
-detector = ADWIN()
+detector = ADWINacc()
 for i, row in df.iterrows():
    detector.update(row['y_true'], row['y_predicted'], X=None)
    if detector.drift_state is not None:
