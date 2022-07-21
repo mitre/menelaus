@@ -46,8 +46,6 @@ class ADWIN(StreamingDetector):
 
     """
 
-    input_type = "stream"
-
     def __init__(
         self,
         delta=0.002,
