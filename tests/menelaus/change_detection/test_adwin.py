@@ -1,6 +1,6 @@
 """Methods for checking simple behaviors of ADWIN."""
 import pytest
-from menelaus.concept_drift.adwin import ADWIN, _BucketRow, _BucketRowList
+from menelaus.change_detection.adwin import ADWIN, _BucketRow, _BucketRowList
 
 
 def test_compression():
@@ -10,9 +10,9 @@ def test_compression():
     max_buckets = 1
     det = ADWIN(max_buckets=max_buckets, delta=0.000001)
     n_samples = 10
-    for element in [(1, 0), (0, 0), (1, 1)]:
+    for element in [1, 2, 3]:
         for _ in range(n_samples):
-            det.update(y_true=element[0], y_pred=element[1])
+            det.update(element)
     curr = det._bucket_row_list.head
 
     overflow = False
@@ -35,7 +35,7 @@ def test_mean():
     assert det.mean() == 0
     n_samples = 5
     for _ in range(n_samples):
-        det.update(y_true=1, y_pred=1)
+        det.update(1)
     assert det.mean() == 1
 
 
@@ -45,8 +45,8 @@ def test_variance():
     assert det.variance() == 0
     n_samples = 10
     for _ in range(n_samples):
-        det.update(y_true=1, y_pred=1)
-        det.update(y_true=0, y_pred=1)
+        det.update(1)
+        det.update(0)
     assert det.variance() == 0.25
 
 
@@ -56,13 +56,13 @@ def test_drift():
     - ADWIN.retraining_recs takes on the proper values before and after drift
     """
     det = ADWIN(new_sample_thresh=2)
-    n_samples = 50
+    n_samples = 20
     for _ in range(n_samples):
-        det.update(y_true=1, y_pred=1)
+        det.update(0.1)
 
     drift_found = False
     for _ in range(n_samples):
-        det.update(y_true=1, y_pred=0)
+        det.update(100)
         drift_found = (det.drift_state == "drift") or drift_found
         if drift_found:
             break
@@ -73,7 +73,7 @@ def test_drift():
     assert det.retraining_recs is not None
 
     # do we reset properly?
-    det.update(y_true=1, y_pred=0)
+    det.update(100)
     assert det.drift_state is None
     assert det.retraining_recs == [None, None]
 
@@ -83,13 +83,13 @@ def test_conservative_bound():
     very drifting stream.
     """
     det = ADWIN(new_sample_thresh=2, conservative_bound=True)
-    n_samples = 50
+    n_samples = 20
     for _ in range(n_samples):
-        det.update(y_true=1, y_pred=1)
+        det.update(0.1)
 
     drift_found = False
     for _ in range(n_samples):
-        det.update(y_true=1, y_pred=0)
+        det.update(100)
         drift_found = (det.drift_state == "drift") or drift_found
         if drift_found:
             break
