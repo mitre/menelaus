@@ -48,16 +48,6 @@ class CDBD(HistogramDensityMethod):
     Ref. :cite:t:`lindstrom2013drift`
 
     Attributes:
-        total_updates (int): total number of batches the drift detector has
-          been updated with. If detect_batch = 1, attr refers to total number of
-          batches + 1 to account for additional update call due to the initial
-          splitting of the reference batch.
-        updates_since_reset (int): number of batches since the last drift
-          detection. If detect_batch = 1, attr refers to total number of batches
-          + 1 to account for additional update call due to the initial splitting
-          of the reference batch.
-        drift_state (str): detector's current drift state. Can take values
-          ``"drift"`` or ``None``.
         Epsilon (list): stores Epsilon values since the last drift detection.
         reference_n (int): number of samples in reference batch.
         total_epsilon (int): stores running sum of Epsilon values until
@@ -196,12 +186,3 @@ class CDBD(HistogramDensityMethod):
             raise ValueError("CDBD should only be used to monitor 1 variable")
 
         super().update(X, y_true, y_pred)
-
-    def reset(self):
-        """
-        Initialize relevant attributes to original values, to ensure information
-        only stored from updates_since_reset (lambda) onwards. Intended for use
-        after ``drift_state == 'drift'``.
-        """
-        # This is here to make sphinx behave.
-        super().reset()

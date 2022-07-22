@@ -22,14 +22,6 @@ class PageHinkley(DriftDetector):
     large, the PH test will be more robust, but may miss true drift.
 
     Ref. :cite:t:`page1954continuous`
-
-    Attributes:
-        total_updates (int): number of samples the drift detector has ever
-            been updated with
-        updates_since_reset (int): number of samples since the last time the
-            drift detector was reset
-        drift_state (str): detector's current drift state. Can take values
-            ``"drift"``, or ``None``.
     """
 
     input_type = "stream"

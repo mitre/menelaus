@@ -35,15 +35,6 @@ class ADWIN(StreamingDetector):
     window is stored in ``self.retraining_recs``.
 
     Ref. :cite:t:`bifet2007learning`
-
-    Attributes:
-        total_samples (int): number of samples the drift detector has ever
-            been updated with
-        samples_since_reset (int): number of samples since the last time the
-            drift detector was reset
-        drift_state (str): detector's current drift state. Can take values
-            ``"drift"`` or ``None``.
-
     """
 
     def __init__(

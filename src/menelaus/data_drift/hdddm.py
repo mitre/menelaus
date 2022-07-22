@@ -108,16 +108,6 @@ class HDDDM(HistogramDensityMethod):
     Ref. :cite:t:`ditzler2011hellinger`
 
     Attributes:
-        total_updates (int): total number of batches the drift detector has
-            been updated with. If detect_batch = 1, attr refers to total
-            number of batches + 1 to account for additional update call
-            due to the initial splitting of the reference batch.
-        updates_since_reset (int): number of batches since the last drift
-            detection. If detect_batch = 1, attr refers to total
-            number of batches + 1 to account for additional update call
-            due to the initial splitting of the reference batch.
-        drift_state (str): detector's current drift state. Can take values
-            ``"drift"`` or ``None``.
         Epsilon (list): stores Epsilon values since the last drift detection.
         reference_n (int): number of samples in reference batch.
         total_epsilon (int): stores running sum of Epsilon values until drift is detected,
@@ -219,20 +209,6 @@ class HDDDM(HistogramDensityMethod):
             subsets=subsets,
         )
 
-    def set_reference(self, X, y_true=None, y_pred=None):
-        """
-        Initialize detector with a reference batch. After drift, reference batch is
-        automatically set to most recent test batch. Option for user to specify
-        alternative reference batch using this method.
-
-        Args:
-            X (pandas.DataFrame): initial baseline dataset
-            y_true (numpy.array): true labels for dataset - not used by HDDDM
-            y_pred (numpy.array): predicted labels for dataset - not used by HDDDM
-        """
-
-        super().set_reference(X, y_true, y_pred)
-
     def update(self, X, y_true=None, y_pred=None):
         """
         Update the detector with a new test batch. If drift is detected, new
@@ -250,12 +226,3 @@ class HDDDM(HistogramDensityMethod):
             raise ValueError("Batch features must match")
 
         super().update(X, y_true, y_pred)
-
-    def reset(self):
-        """
-        Initialize relevant attributes to original values, to ensure information
-        only stored from updates_since_reset (lambda) onwards. Intended for use
-        after ``drift_state == 'drift'``.
-        """
-        # This is here to make sphinx behave.
-        super().reset()

@@ -6,17 +6,11 @@ class StreamingDetector(ABC):
     Abstract base class for all streaming data-based detectors.
     Minimally implements abstract methods common to all stream
     based detection algorithms.
-
-    Attributes:
-        total_samples (int): total number of samples the drift
-            detector has been updated with
-        samples_since_reset (int): number of samples since last
-            drift detection
     """
 
     def __init__(self, *args, **kwargs):
-        self.total_samples = 0
-        self.samples_since_reset = 0
+        self._total_samples = 0
+        self._samples_since_reset = 0
         self._drift_state = None
 
     @abstractmethod
@@ -40,6 +34,32 @@ class StreamingDetector(ABC):
         """
         self.samples_since_reset = 0
         self.drift_state = None
+
+    @property
+    def total_samples(self):
+        """Total number of samples the drift detector has been updated with.
+
+        Returns:
+            int
+        """
+        return self._total_samples
+
+    @total_samples.setter
+    def total_samples(self, value):
+        self._total_samples = value
+
+    @property
+    def samples_since_reset(self):
+        """Number of samples since last drift detection.
+
+        Returns:
+            int
+        """
+        return self._samples_since_reset
+
+    @samples_since_reset.setter
+    def samples_since_reset(self, value):
+        self._samples_since_reset = value
 
     @property
     def drift_state(self):
@@ -67,17 +87,11 @@ class BatchDetector(ABC):
     Abstract base class for all batch data-based detectors.
     Minimally implements abstract methods common to all batch
     based detection algorithms.
-
-    Attributes:
-        total_batches (int): total number of batches the drift
-            detector has been updated with
-        batches_since_reset (int): number of batches since last
-            drift detection
     """
 
     def __init__(self, *args, **kwargs):
-        self.total_batches = 0
-        self.batches_since_reset = 0
+        self._total_batches = 0
+        self._batches_since_reset = 0
         self._drift_state = None
 
     @abstractmethod
@@ -113,6 +127,32 @@ class BatchDetector(ABC):
         """
         self.batches_since_reset = 0
         self.drift_state = None
+
+    @property
+    def total_batches(self):
+        """Total number of batches the drift detector has been updated with.
+
+        Returns:
+            int
+        """
+        return self._total_batches
+
+    @total_batches.setter
+    def total_batches(self, value):
+        self._total_batches = value
+
+    @property
+    def batches_since_reset(self):
+        """Number of batches since last drift detection.
+
+        Returns:
+            int
+        """
+        return self._batches_since_reset
+
+    @batches_since_reset.setter
+    def batches_since_reset(self, value):
+        self._batches_since_reset = value
 
     @property
     def drift_state(self):
@@ -152,18 +192,12 @@ class DriftDetector(ABC):
     A "batch" detector will compare a new dataset, passed via ``update``, to a
     reference dataset, usually the original reference dataset. A "stream"
     detector compares only one new sample at a time, also passed via ``update``.
-
-    Attributes:
-        total_updates (int): number of samples/batches the drift detector
-            has ever been updated with
-        updates_since_reset (int): number of samples/batches since the last
-            time the drift detector was reset
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.total_updates = 0
-        self.updates_since_reset = 0
+        self._total_updates = 0
+        self._updates_since_reset = 0
         self._drift_state = None
         self._input_type = None
 
@@ -188,6 +222,34 @@ class DriftDetector(ABC):
             0  # number of elements the detector has been updated with since last reset
         )
         self.drift_state = None
+
+    @property
+    def total_updates(self):
+        """Number of samples/batches the drift detector has ever been updated
+        with.
+
+        Returns:
+            int
+        """
+        return self._total_updates
+
+    @total_updates.setter
+    def total_updates(self, value):
+        self._total_updates = value
+
+    @property
+    def updates_since_reset(self):
+        """Number of samples/batches since the last time the drift detector was
+        reset.
+
+        Returns:
+            int
+        """
+        return self._updates_since_reset
+
+    @updates_since_reset.setter
+    def updates_since_reset(self, value):
+        self._updates_since_reset = value
 
     @property
     def drift_state(self):
