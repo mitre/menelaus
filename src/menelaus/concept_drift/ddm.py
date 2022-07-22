@@ -23,10 +23,7 @@ class DDM(DriftDetector):
     Ref. :cite:t:`gama2004learning`
 
     Attributes:
-        total_updates (int): number of samples the drift detector has ever
-            been updated with
-        updates_since_reset (int): number of samples since the last time the
-            drift detector was reset
+
         n_threshold: the minimum number of samples required to test whether
             drift has occurred
         warning_scale: defines the threshold over which to enter the warning state.

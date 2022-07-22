@@ -12,10 +12,7 @@ class CUSUM(DriftDetector):
     Ref. :cite:t:`hinkley1971inference`
 
     Attributes:
-        total_updates (int): number of samples the drift detector has ever
-            been updated with
-        updates_since_reset (int): number of samples since the last time the
-            drift detector was reset
+
     """
 
     input_type = "stream"

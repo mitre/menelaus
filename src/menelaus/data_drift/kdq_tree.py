@@ -328,12 +328,6 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
     output structured for use with ``plotly.express.treemap``.
 
     Ref. :cite:t:`dasu2006information`
-
-    Attributes:
-        total_samples (int): total number of samples the drift
-            detector has been udpated with
-        samples_since_reset (int): number of samples since last
-            drift detection
     """
 
     def __init__(
@@ -462,11 +456,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
 
     Ref. :cite:t:`dasu2006information`
 
-    Attributes:
-        total_samples (int): total number of samples the drift
-            detector has been udpated with
-        samples_since_reset (int): number of samples since last
-            drift detection
+
     """
 
     def __init__(
