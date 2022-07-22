@@ -6,6 +6,6 @@ detection algorithms presented in this package can detect bi-directional shifts,
 either upward or downward changes in a sequence. 
 """
 
-from menelaus.change_detection import adwin
+from menelaus.change_detection.adwin import ADWIN
 from menelaus.change_detection.cusum import CUSUM
 from menelaus.change_detection.page_hinkley import PageHinkley
