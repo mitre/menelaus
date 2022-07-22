@@ -58,10 +58,6 @@ class KdqTreeDetector:
     data.
 
     Ref. :cite:t:`dasu2006information`
-
-    Attributes:
-        drift_state (str): detector's current drift state, can
-            take ``str`` values ``"drift"`` or ``None``.
     """
 
     def __init__(
@@ -338,8 +334,6 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
             detector has been udpated with
         samples_since_reset (int): number of samples since last
             drift detection
-        drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``"drift"`` or ``None``
     """
 
     def __init__(
@@ -473,8 +467,6 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             detector has been udpated with
         samples_since_reset (int): number of samples since last
             drift detection
-        drift_state (str): detector's current drift state, can
-            take ``str`` values e.g. ``"drift"`` or ``None``
     """
 
     def __init__(

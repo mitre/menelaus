@@ -30,8 +30,6 @@ class LinearFourRates(DriftDetector):
             been updated with
         updates_since_reset (int): number of samples since the last time the
             drift detector was reset
-        drift_state (str): detector's current drift state. Can take values
-            ``"drift"``, ``"warning"``, or ``None``.
     """
 
     input_type = "stream"

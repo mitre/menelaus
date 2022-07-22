@@ -1,10 +1,6 @@
 import pytest
 from menelaus.concept_drift.adwin_outcome import ADWINOutcome
 
-# All but the first test here are completely redundant with change_detection.test_adwin.
-# Because we want to get the docstrings to generate properly, and also be search-able,
-# they're aliased, which means these need to run to get coverage.
-
 
 def test_aliased_input():
     det = ADWINOutcome()

@@ -31,8 +31,6 @@ class PCACD(DriftDetector):
             been updated with
         updates_since_reset (int): number of samples since the last time the
             drift detector was reset
-        drift_state (str): detector's current drift state. Can take values
-            ``"drift"`` or ``None``.
         step (int): how frequently (by number of samples), to detect drift.
             This is either 100 samples or ``sample_period * window_size``, whichever
             is smaller.

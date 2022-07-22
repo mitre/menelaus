@@ -116,8 +116,6 @@ class HDDDM(HistogramDensityMethod):
             detection. If detect_batch = 1, attr refers to total
             number of batches + 1 to account for additional update call
             due to the initial splitting of the reference batch.
-        drift_state (str): detector's current drift state. Can take values
-            ``"drift"`` or ``None``.
         Epsilon (list): stores Epsilon values since the last drift detection.
         reference_n (int): number of samples in reference batch.
         total_epsilon (int): stores running sum of Epsilon values until drift is detected,
