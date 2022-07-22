@@ -161,7 +161,7 @@ Install the library using the `[dev]` option, as above.
   `menelaus/docs/build/html/index.html` with:
   ```python
   cd docs/source
-  sphinx-build . ../build
+  sphinx-build . ../build -q
   ```
 
   If the example notebooks for the docs need to be updated, the corresponding 

@@ -196,12 +196,3 @@ class CDBD(HistogramDensityMethod):
             raise ValueError("CDBD should only be used to monitor 1 variable")
 
         super().update(X, y_true, y_pred)
-
-    def reset(self):
-        """
-        Initialize relevant attributes to original values, to ensure information
-        only stored from updates_since_reset (lambda) onwards. Intended for use
-        after ``drift_state == 'drift'``.
-        """
-        # This is here to make sphinx behave.
-        super().reset()

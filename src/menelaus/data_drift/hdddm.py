@@ -219,20 +219,6 @@ class HDDDM(HistogramDensityMethod):
             subsets=subsets,
         )
 
-    def set_reference(self, X, y_true=None, y_pred=None):
-        """
-        Initialize detector with a reference batch. After drift, reference batch is
-        automatically set to most recent test batch. Option for user to specify
-        alternative reference batch using this method.
-
-        Args:
-            X (pandas.DataFrame): initial baseline dataset
-            y_true (numpy.array): true labels for dataset - not used by HDDDM
-            y_pred (numpy.array): predicted labels for dataset - not used by HDDDM
-        """
-
-        super().set_reference(X, y_true, y_pred)
-
     def update(self, X, y_true=None, y_pred=None):
         """
         Update the detector with a new test batch. If drift is detected, new
@@ -250,12 +236,3 @@ class HDDDM(HistogramDensityMethod):
             raise ValueError("Batch features must match")
 
         super().update(X, y_true, y_pred)
-
-    def reset(self):
-        """
-        Initialize relevant attributes to original values, to ensure information
-        only stored from updates_since_reset (lambda) onwards. Intended for use
-        after ``drift_state == 'drift'``.
-        """
-        # This is here to make sphinx behave.
-        super().reset()

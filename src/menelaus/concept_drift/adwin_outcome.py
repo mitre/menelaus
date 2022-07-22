@@ -93,35 +93,3 @@ class ADWINOutcome(ADWIN):
         # This class is here to avoid asking the user to provide such a direct
         # function of (y_true, y_pred) in the X argument, which is unintuitive.
         super().update(new_value, y_true=None, y_pred=None)
-
-    def reset(self):
-        """Initialize the detector's drift state and other relevant attributes.
-        Intended for use after ``drift_state == 'drift'``.
-        """
-        super().reset()
-
-    @property
-    def retraining_recs(self):
-        """Recommended indices for retraining. If drift is detected,
-        set to ``[beginning of ADWIN's new window, end of ADWIN's new window]``.
-        If these are e.g. the 5th and 13th sample that ADWIN has been updated
-        with, the values with be ``[4, 12]``.
-
-        Returns:
-            list: the current retraining recommendations
-        """
-        return self._retraining_recs
-
-    def mean(self):
-        """
-        Returns:
-            float: the estimated average of the passed stream, using the current window
-        """
-        return super().mean()
-
-    def variance(self):
-        """
-        Returns:
-            float: the estimated variance of the passed stream, using the current window
-        """
-        return super().variance()
