@@ -16,7 +16,8 @@
 # corrected, so change does occur.
 # 
 # These change detectors can be applied to any given single variable; below, 
-# they are applied to var2.
+# they are applied to `var2` and the `max_sustained_wind_speed` columns in the 
+# respective datasets.
 
 # In[1]:
 
@@ -183,11 +184,11 @@ plt.show()
 # be unreasonable.
 # 
 
-# # ADaptive WINdowing (ADWIN)
+# ## ADaptive WINdowing (ADWIN)
 # 
 # ADWIN is a change detection algorithm that can be used to monitor a real-valued number. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
 
-# In[58]:
+# In[3]:
 
 
 ## Setup ##
@@ -212,7 +213,7 @@ for i in range(len(df2)):
         rec_list.append([retrain_start, retrain_end])
 
 
-# In[66]:
+# In[4]:
 
 
 ## Plotting ##
@@ -220,7 +221,7 @@ for i in range(len(df2)):
 # plot the monitored variable and the status of the detector
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "actual value", data=status, label="max_sustained_wind_speed", alpha=.5)
-plt.plot("index", "ADWIN mean", data=status, color='red', linewidth=2)
+plt.plot("index", "ADWIN mean", data=status, color='blue', linewidth=3)
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)

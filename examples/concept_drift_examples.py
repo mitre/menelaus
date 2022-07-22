@@ -288,10 +288,6 @@ for i in range(training_size, len(df)):
 
     n += 1
 
-
-# In[41]:
-
-
 status['original_accuracy'] = acc_orig
 
 
@@ -348,12 +344,10 @@ plt.show()
 
 # 
 # After drift is induced, the accuracy decreases enough for ADWIN to shrink its
-# window and alarm;  subsequent windows also include data from the old regime,
-# so drift continues to be detected until the window shrinks enough to be
-# comprised mostly by the new regime.
-# 
-# We can see that, by retraining on the new window of data reported by ADWIN, 
-# the accuracy of the classifier is improved over time.
+# window and alarm;  subsequent windows also include data from the old regime, so
+# drift continues to be detected until the window shrinks enough to be comprised
+# mostly by the new regime. We can see that, by retraining on the new window of
+# data reported by ADWIN, the accuracy of the classifier is improved over time.
 
 # ## Drift Detection Method (DDM)
 
