@@ -11,7 +11,7 @@
 # conditional distributions P(y|var1) and P(y|var2). The drift occurs from index 
 # 1000 to 1250, and affects 66% of the sample.
 # 
-# Rainfall is a real data source that concept drift has been injected into. This
+# Rainfall is a real data source into which concept drift has been injected. This
 # set contains approximately 18,000 samples, and the data has been standardized.
 # Drift starts from index 12,000 and continues through the rest of the dataset.
 # In this example, we take the first 10,000 samples of the dataset for training
@@ -39,9 +39,8 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
 from sklearn.base import clone
-from menelaus.concept_drift import LinearFourRates, ADWIN, DDM, EDDM, STEPD, MD3
-from menelaus.datasets import fetch_circle_data
-from menelaus.datasets import fetch_rainfall_data
+from menelaus.concept_drift import LinearFourRates, ADWINacc, DDM, EDDM, STEPD, MD3
+from menelaus.datasets import fetch_circle_data, fetch_rainfall_data
 
 
 # In[ ]:
@@ -215,9 +214,11 @@ plt.show()
 
 # ## ADaptive WINdowing (ADWIN)
 
-# ADWIN can be used to monitor the accuracy of a classifier. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
+# ADWIN is a change detection algorithm that can be used to monitor a real-valued number. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
+# 
+# It can be used to monitor the accuracy of a classifier by checking `y_true == y_pred` at each time step. So, for convenience, `concept_drift.ADWINacc`, takes `y_true` and `y_pred` as arugments, as shown below. `change_detection.ADWIN` can be used more generally, as shown in the change detection examples.
 
-# In[ ]:
+# In[36]:
 
 
 ## Setup ##
@@ -225,12 +226,18 @@ plt.show()
 # Set up classifier: train on first training_size rows
 X_train = df.loc[0:training_size, ["var1", "var2"]]
 y_train = df.loc[0:training_size, "y"]
+X_test = df.loc[training_size:len(df), ["var1", "var2"]]
+y_pred = df.loc[training_size:len(df), "y"]
 
 np.random.seed(123)
 clf = GaussianNB()
 clf.fit(X_train, y_train)
 
-adwin = ADWIN()
+# get running accuracy from the original classifier to compare performance
+acc_orig = np.cumsum(clf.predict(X_test) == y_pred)
+acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
+
+adwin = ADWINacc()
 
 # Set up DF to record results.
 status = pd.DataFrame(
@@ -240,7 +247,7 @@ correct = 0
 rec_list = []
 
 
-# In[ ]:
+# In[37]:
 
 
 # run ADWIN
@@ -282,13 +289,20 @@ for i in range(training_size, len(df)):
     n += 1
 
 
-# In[ ]:
+# In[41]:
+
+
+status['original_accuracy'] = acc_orig
+
+
+# In[42]:
 
 
 ## Plotting ##
 
 plt.figure(figsize=(20, 6))
-plt.scatter("index", "accuracy", data=status, label="Accuracy")
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color='red')
+plt.scatter("index", "accuracy", data=status, label="Retrain Accuracy", color='green')
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -328,6 +342,8 @@ plt.hlines(
 )
 
 plt.legend(loc='lower right')
+plt.show()
+# plt.savefig("example_ADWINacc.png")
 
 
 # 
@@ -336,13 +352,8 @@ plt.legend(loc='lower right')
 # so drift continues to be detected until the window shrinks enough to be
 # comprised mostly by the new regime.
 # 
-
-# In[ ]:
-
-
-plt.show()
-# plt.savefig("example_ADWIN.png")
-
+# We can see that, by retraining on the new window of data reported by ADWIN, 
+# the accuracy of the classifier is improved over time.
 
 # ## Drift Detection Method (DDM)
 
