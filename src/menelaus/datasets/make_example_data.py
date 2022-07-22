@@ -165,4 +165,5 @@ def fetch_rainfall_data():
         ],
     )
     df = df.iloc[1:, :].reset_index(drop=True)
+    df = df.apply(pd.to_numeric)
     return df

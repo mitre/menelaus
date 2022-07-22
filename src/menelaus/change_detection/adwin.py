@@ -1,3 +1,5 @@
+# most of these get called within loops (or an outer loop on the detector),
+# so this is more efficient
 from numpy import (
     power,
     log,
@@ -7,15 +9,13 @@ from numpy import (
     zeros,
 )
 
-# most of these get called within loops (or an outer loop on the detector),
-# so this is more efficient
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import StreamingDetector
 
 
-class ADWIN(DriftDetector):
+class ADWIN(StreamingDetector):
     """ADWIN (ADaptive WINdowing) is a drift detection algorithm which uses a
     sliding window to estimate the running mean and variance of a given
-    statistic.
+    real-valued number.
 
     As each sample is added, ADWIN stores a running estimate (mean and variance)
     for a given statistic, calculated over a sliding window which will grow to
@@ -37,16 +37,14 @@ class ADWIN(DriftDetector):
     Ref. :cite:t:`bifet2007learning`
 
     Attributes:
-        total_updates (int): number of samples the drift detector has ever
+        total_samples (int): number of samples the drift detector has ever
             been updated with
-        updates_since_reset (int): number of samples since the last time the
+        samples_since_reset (int): number of samples since the last time the
             drift detector was reset
         drift_state (str): detector's current drift state. Can take values
             ``"drift"`` or ``None``.
 
     """
-
-    input_type = "stream"
 
     def __init__(
         self,
@@ -104,20 +102,14 @@ class ADWIN(DriftDetector):
         self._window_size = 0
         self._retraining_recs = [None, None]
 
-    def update(self, y_true=None, y_pred=None, X=None):
+    def update(self, X, y_true=None, y_pred=None):
         """Update the detector with a new sample.
 
         Args:
-          y_true: actual class of next sample
-          y_pred: predicted class of next sample
-          X: next sample in the stream of data - not used in ADWIN
+          y_true: actual class of next sample - not used for change detectors
+          y_pred: predicted class of next sample - not used for change detectors
+          X: next sample in the stream of data
         """
-
-        # Technically, ADWIN could monitor the running mean of some feature
-        # aside from accuracy, but that leads to potentially indeterminate input
-        # (user passes the full y_true, y_pred, X triplet), so -- maybe if
-        # there's a big enough need.
-        new_value = int(y_true == y_pred)
 
         if self.drift_state is not None:
             # note that the other attributes should *not* be initialized after drift
@@ -126,7 +118,7 @@ class ADWIN(DriftDetector):
         super().update(X, y_true, y_pred)
         # add new sample to the head of the window
         self._window_size += 1
-        self._add_sample(new_value)
+        self._add_sample(X)
         self._shrink_window()
 
     def reset(self):
@@ -228,7 +220,7 @@ class ADWIN(DriftDetector):
         size and set the ``drift_state`` to ``"drift"``.
         """
         if (
-            self.total_updates % self.new_sample_thresh == 0
+            self.total_samples % self.new_sample_thresh == 0
             and self._window_size > self.window_size_thresh
         ):
             # either we reduced the window and must restart to check the new
@@ -280,8 +272,8 @@ class ADWIN(DriftDetector):
                             if self._window_size > 0:
                                 n_elements0 -= self._remove_last()
                                 self._retraining_recs = (
-                                    self.total_updates - self._window_size,
-                                    self.total_updates - 1,
+                                    self.total_samples - self._window_size,
+                                    self.total_samples - 1,
                                 )
                                 exit_shrink = True
                                 break

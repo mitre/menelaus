@@ -46,6 +46,7 @@ class LinearFourRates(DriftDetector):
         subsample=1,
         rates_tracked=["tpr", "tnr", "ppv", "npv"],
         parallelize=False,
+        round_val=4,
     ):
         """
         Args:
@@ -76,6 +77,10 @@ class LinearFourRates(DriftDetector):
                 algorithm will be parallelized or not. Advantageous for large
                 datasets, but will slow down runtime for fewer data due to
                 overhead of threading. Defaults to False.
+            round_val: number of decimal points the estimate rate is rounded to
+                when stored in bounds dictionary. The greater the ``round_val``, the
+                more precise the bounds dictionary will be, and the longer the
+                runtime. (Default value = 4)
         """
         super().__init__()
         self.time_decay_factor = time_decay_factor
@@ -86,6 +91,7 @@ class LinearFourRates(DriftDetector):
         self.subsample = subsample
         self.rates_tracked = rates_tracked
         self.parallelize = parallelize
+        self.round_val = round_val
         self.all_drift_states = []
         self._warning_states = {
             0: {"tpr": False, "tnr": False, "ppv": False, "npv": False}
@@ -126,7 +132,7 @@ class LinearFourRates(DriftDetector):
     #       LFR.update(1,1) without misinterpretation, but exposes them to a
     #       potential issue where LFR.update(X, y, y) would assign arguments
     #       incorrectly.
-    def update(self, y_true, y_pred, X=None, round_val=4):
+    def update(self, y_true, y_pred, X=None):
         """Update detector with a new observation:
 
         #. Updates confusion matrix (``self._confusion``) with new predictions
@@ -143,10 +149,6 @@ class LinearFourRates(DriftDetector):
             y_true: actual class
             y_pred: predicted class
             X: new sample - not used in LFR
-            round_val: number of decimal points the estimate rate is rounded to
-                when stored in bounds dictionary. The greater the ``round_val``, the
-                more precise the bounds dictionary will be, and the longer the
-                runtime. (Default value = 4)
         """
 
         if self.drift_state == "drift":
@@ -216,8 +218,8 @@ class LinearFourRates(DriftDetector):
                 est_rate = new_rates[rate]
                 curr_denom = self._denominators[rate + "_N"]
 
-                r_est_rate = round(est_rate, round_val)
-                r_curr_denom = round(curr_denom, round_val)
+                r_est_rate = round(est_rate, self.round_val)
+                r_curr_denom = round(curr_denom, self.round_val)
 
                 bound_dict = self._update_bounds_dict(
                     est_rate, curr_denom, r_est_rate, r_curr_denom
