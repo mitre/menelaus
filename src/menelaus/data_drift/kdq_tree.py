@@ -455,8 +455,6 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
     output structured for use with ``plotly.express.treemap``.
 
     Ref. :cite:t:`dasu2006information`
-
-
     """
 
     def __init__(

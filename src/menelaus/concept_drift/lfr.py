@@ -24,9 +24,6 @@ class LinearFourRates(DriftDetector):
     has been simulated before, the bounds are re-used.
 
     Ref. :cite:t:`wang2015concept`
-
-    Attributes:
-
     """
 
     input_type = "stream"

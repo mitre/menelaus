@@ -25,9 +25,6 @@ class ADWINOutcome(ADWIN):
     window is stored in ``self.retraining_recs``.
 
     Ref. :cite:t:`bifet2007learning`
-
-
-
     """
 
     def __init__(

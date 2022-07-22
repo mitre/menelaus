@@ -27,9 +27,6 @@ class MD3(DriftDetector):
     its value is in the range of [0, 1].
 
     Ref. :cite:t:`sethi2017reliable`
-
-    Attributes:
-
     """
 
     input_type = "stream"

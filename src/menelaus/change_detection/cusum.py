@@ -10,9 +10,6 @@ class CUSUM(DriftDetector):
     feature variable of interest.
 
     Ref. :cite:t:`hinkley1971inference`
-
-    Attributes:
-
     """
 
     input_type = "stream"

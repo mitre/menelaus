@@ -25,9 +25,6 @@ class EDDM(DriftDetector):
     (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
 
     Ref. :cite:t:`baena2006early`
-
-    Attributes:
-
     """
 
     input_type = "stream"

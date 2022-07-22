@@ -32,9 +32,6 @@ class STEPD(DriftDetector):
     set.
 
     Ref. :cite:t:`nishida2007detecting`
-
-    Attributes:
-
     """
 
     input_type = "stream"

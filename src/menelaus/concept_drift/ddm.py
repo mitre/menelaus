@@ -21,13 +21,6 @@ class DDM(DriftDetector):
     (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
 
     Ref. :cite:t:`gama2004learning`
-
-    Attributes:
-
-        n_threshold: the minimum number of samples required to test whether
-            drift has occurred
-        warning_scale: defines the threshold over which to enter the warning state.
-        drift_scale: defines the threshold over which to enter the drift state.
     """
 
     input_type = "stream"

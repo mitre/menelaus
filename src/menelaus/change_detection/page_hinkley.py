@@ -22,9 +22,6 @@ class PageHinkley(DriftDetector):
     large, the PH test will be more robust, but may miss true drift.
 
     Ref. :cite:t:`page1954continuous`
-
-    Attributes:
-
     """
 
     input_type = "stream"
