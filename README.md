@@ -168,7 +168,7 @@ Install the library using the `[dev]` option, as above.
   python scripts in the `examples` directory should also be regenerated via:
   ```python
   cd docs/source/examples
-  python convert_notebooks.py
+  python ../../../src/menelaus/utils/_convert_notebooks.py
   ```
   Note that this will require the installation of `jupyter` and `nbconvert`,
   which can be added to installation via `pip install -e ".[dev, test]"`.
