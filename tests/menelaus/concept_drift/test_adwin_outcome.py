@@ -1,5 +1,5 @@
 import pytest
-from menelaus.concept_drift.adwin_acc import ADWINacc
+from menelaus.concept_drift.adwin_outcome import ADWINOutcome
 
 # All but the first test here are completely redundant with change_detection.test_adwin.
 # Because we want to get the docstrings to generate properly, and also be search-able,
@@ -7,7 +7,7 @@ from menelaus.concept_drift.adwin_acc import ADWINacc
 
 
 def test_aliased_input():
-    det = ADWINacc()
+    det = ADWINOutcome()
 
     det.update(y_true=1, y_pred=0)
     assert det.total_samples == 1
@@ -19,7 +19,7 @@ def test_aliased_input():
 
 def test_mean():
     """Check that ADWIN.mean returns sane values"""
-    det = ADWINacc(new_sample_thresh=2)
+    det = ADWINOutcome(new_sample_thresh=2)
     assert det.mean() == 0
     n_samples = 5
     for _ in range(n_samples):
@@ -29,7 +29,7 @@ def test_mean():
 
 def test_variance():
     """Check that ADWIN.variance returns sane values"""
-    det = ADWINacc(new_sample_thresh=2)
+    det = ADWINOutcome(new_sample_thresh=2)
     assert det.variance() == 0
     n_samples = 10
     for _ in range(n_samples):
@@ -43,7 +43,7 @@ def test_drift():
     - drift is identified
     - ADWIN.retraining_recs takes on the proper values before and after drift
     """
-    det = ADWINacc(new_sample_thresh=2)
+    det = ADWINOutcome(new_sample_thresh=2)
     n_samples = 60
     for _ in range(n_samples):
         det.update(1, 1)
