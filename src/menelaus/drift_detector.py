@@ -174,10 +174,16 @@ class BatchDetector(ABC):
         else:
             self._drift_state = value
 
+class BatchEnsembler(BatchDetector):
+    # should get most of functionality from parent classes
+    # just need to add detector list, pipeline init
+    # any related logic to curried functions
+    # I think "operator" functions should go in class files in detector code
+    pass
 
-#######################
-# Deprecated in 0.2.0
-#######################
+##############################
+# To Be Deprecated in 0.2.0+
+##############################
 class DriftDetector(ABC):
     """Base class for Menelaus drift detectors.
     A DriftDetector object implements the ``update`` and ``reset`` methods and
