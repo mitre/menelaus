@@ -1,4 +1,12 @@
 from abc import ABC, abstractmethod
+from typing import List
+from toolz import pipe
+
+
+class Ensembler(ABC):
+    def __init__(self, detectors: List, pipeline: List):
+        self.detectors = detectors
+        self.pipeline = pipeline
 
 
 class StreamingDetector(ABC):
@@ -174,12 +182,26 @@ class BatchDetector(ABC):
         else:
             self._drift_state = value
 
-class BatchEnsembler(BatchDetector):
-    # should get most of functionality from parent classes
-    # just need to add detector list, pipeline init
-    # any related logic to curried functions
+
+class BatchEnsembler(BatchDetector, Ensembler):
+    def __init__(self, detectors: List, pipeline: List):
+        BatchDetector.__init__(self)
+        Ensembler.__init__(self, detectors, pipeline)
+
+    def update(self, X, y_true, y_pred):
+        self = pipe(self, *self.pipeline) # how does it use extra args? read docs
+        return self
+
+    def reset(self):
+        BatchDetector.reset(self)
+
+    def set_reference(self):
+        # really not sure what to do here
+        pass
+
+    # other properties? inherited automatically?
     # I think "operator" functions should go in class files in detector code
-    pass
+
 
 ##############################
 # To Be Deprecated in 0.2.0+
