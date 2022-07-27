@@ -81,7 +81,7 @@ clf = GaussianNB()
 clf.fit(X_train, y_train)
 
 acc_orig = np.cumsum(clf.predict(X_test) == y_true)
-acc_orig = acc_orig / np.
+acc_orig = acc_orig / np.arange(1, 1 + len(acc_orig))
 
 # Set up LFR detector to detect at significance of .001. 5000 Monte Carlo
 # simulations will be run every 10 samples to detect drift.
@@ -135,7 +135,7 @@ for i in range(training_size, len(df)):
 
 status['original_accuracy'] = acc_orig
 status['accuracy'] = np.cumsum(status.y_true == status.y_pred)
-status['accuracy'] = status['accuracy'] / np.cumsum(np.repeat(1, status.shape[0]))
+status['accuracy'] = status['accuracy'] / np.arange(1, 1 + len(status))
 
 
 # In[ ]:
@@ -233,7 +233,7 @@ clf.fit(X_train, y_train)
 
 # get running accuracy from the original classifier to compare performance
 acc_orig = np.cumsum(clf.predict(X_test) == y_true)
-acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
+acc_orig = acc_orig / np.arange(1, 1 + len(acc_orig))
 
 adwin = ADWINOutcome()
 
@@ -356,7 +356,7 @@ clf = GaussianNB()
 clf.fit(X_train, y_train)
 
 acc_orig = np.cumsum(clf.predict(X_test) == y_true)
-acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
+acc_orig = acc_orig / np.arange(1, 1 + len(acc_orig))
 
 
 # 
@@ -502,7 +502,7 @@ clf = GaussianNB()
 clf.fit(X_train, y_train)
 
 acc_orig = np.cumsum(clf.predict(X_test) == y_true)
-acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
+acc_orig = acc_orig / np.arange(1, 1 + len(acc_orig))
 
 
 # - n_threshold specifies the number of new samples which must be observed before
@@ -660,7 +660,7 @@ for i in range(len(df_test)):
 y_pred = np.array(y_pred).reshape(len(y_pred))
 
 acc_orig = np.cumsum(y_pred == y_true)
-acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
+acc_orig = acc_orig / np.arange(1, 1 + len(acc_orig))
 acc_orig = acc_orig.reset_index()['y']
 
 
