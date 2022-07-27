@@ -4,9 +4,10 @@ from toolz import pipe
 
 
 class Ensembler(ABC):
-    def __init__(self, detectors: List, pipeline: List):
+    def __init__(self, detectors: List, pre_processors: List, post_processors: List):
         self.detectors = detectors
-        self.pipeline = pipeline
+        self.pre_processors = pre_processors
+        self.post_processors = post_processors
 
 
 class StreamingDetector(ABC):
