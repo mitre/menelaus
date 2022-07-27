@@ -3,28 +3,29 @@
 
 # # Concept Drift Detector Examples
 
-# The examples in this notebook show how to set up, run, and produce output from detectors in the
-# concept_drift module. The parameters aren't necessarily tuned for best
+# The examples in this notebook show how to set up, run, and produce output from detectors in the 
+# concept_drift module. The parameters aren't necessarily tuned for best 
 # performance for the input data, just notional.
-#
-# Circle is a synthetic data source, where drift occurs in both var1, var2, and the
-# conditional distributions P(y|var1) and P(y|var2). The drift occurs from index
+# 
+# Circle is a synthetic data source, where drift occurs in both var1, var2, and the 
+# conditional distributions P(y|var1) and P(y|var2). The drift occurs from index 
 # 1000 to 1250, and affects 66% of the sample.
-#
+# 
 # Rainfall is a real data source into which concept drift has been injected. This
 # set contains approximately 18,000 samples, and the data has been standardized.
 # Drift starts from index 12,000 and continues through the rest of the dataset.
 # In this example, we take the first 10,000 samples of the dataset for training
 # an initial classifier, and then use the remaining samples for testing.
-#
-# These detectors are generally to be applied to the true class and predicted class
-# from a particular model. So, each of the summary plots displays the running
-# accuracy of the classifier alongside the drift detector's output.
-#
-# They also track the indices of portions of the incoming data stream which are
-# more similar to each other -- i.e., data that seems to be part of the same
+# 
+# These detectors are generally to be applied to the true class and predicted class 
+# from a particular model. For the sake of example, a simple running accuracy of the 
+# classifier is presented for each detector as a measure of its performance, 
+# rather than e.g. the prequential error.
+# 
+# They also track the indices of portions of the incoming data stream which are 
+# more similar to each other -- i.e., data that seems to be part of the same 
 # concept, which could be used to retrain a model.
-#
+# 
 # NOTE: The LinearFourRates example has a relatively long runtime, roughly 5 minutes.
 
 # In[ ]:
@@ -57,27 +58,8 @@ training_size = 500
 rainfall_df = fetch_rainfall_data()
 rainfall_drift_start, rainfall_drift_end = 12000, 18158
 rainfall_training_size = 10000
-rainfall_columns = [
-    "temperature",
-    "dew_point",
-    "sea_level_pressure",
-    "visibility",
-    "average_wind_speed",
-    "max_sustained_wind_speed",
-    "minimum_temperature",
-    "maximum_temperature",
-    "rain",
-]
-rainfall_features = [
-    "temperature",
-    "dew_point",
-    "sea_level_pressure",
-    "visibility",
-    "average_wind_speed",
-    "max_sustained_wind_speed",
-    "minimum_temperature",
-    "maximum_temperature",
-]
+rainfall_columns = ["temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature", "rain"]
+rainfall_features = ["temperature", "dew_point", "sea_level_pressure", "visibility", "average_wind_speed", "max_sustained_wind_speed", "minimum_temperature", "maximum_temperature"]
 rainfall_df[rainfall_features] = rainfall_df[rainfall_features].astype(float)
 
 
@@ -93,8 +75,13 @@ rainfall_df[rainfall_features] = rainfall_df[rainfall_features].astype(float)
 # Set up classifier: train on first training_size rows
 X_train = df.loc[0:training_size, ["var1", "var2"]]
 y_train = df.loc[0:training_size, "y"]
+X_test = df.loc[training_size:len(df), ["var1", "var2"]]
+y_true = df.loc[training_size:len(df), "y"]
 clf = GaussianNB()
 clf.fit(X_train, y_train)
+
+acc_orig = np.cumsum(clf.predict(X_test) == y_true)
+acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
 
 # Set up LFR detector to detect at significance of .001. 5000 Monte Carlo
 # simulations will be run every 10 samples to detect drift.
@@ -108,8 +95,7 @@ lfr = LinearFourRates(
 )
 
 # Set up DF to store results.
-status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
-correct = 0
+status = pd.DataFrame(columns=["index", "y_true", "y_pred", "drift_detected"])
 
 
 # In[ ]:
@@ -122,19 +108,13 @@ np.random.seed(123)  # set seed for this example
 # Run LFR and retrain.
 
 rec_list = []
-n = 1
 for i in range(training_size, len(df)):
     X_test = df.loc[[i], ["var1", "var2"]]
     y_pred = int(clf.predict(X_test))
     y_true = int(df.loc[[i], "y"])
 
-    # increment accuracy
-    if y_pred == y_true:
-        correct += 1
-    accuracy = correct / n
-
     lfr.update(y_true, y_pred)
-    status.loc[i] = [i, y_true, y_pred, lfr.drift_state, accuracy]
+    status.loc[i] = [i, y_true, y_pred, lfr.drift_state]
 
     # If drift is detected, examine the retraining recommendations and retrain.
     if lfr.drift_state == "drift":
@@ -153,7 +133,9 @@ for i in range(training_size, len(df)):
         clf = GaussianNB()
         clf.fit(X_train, y_train)
 
-    n += 1
+status['original_accuracy'] = acc_orig
+status['accuracy'] = np.cumsum(status.y_true == status.y_pred)
+status['accuracy'] = status['accuracy'] / np.cumsum(np.repeat(1, status.shape[0]))
 
 
 # In[ ]:
@@ -162,7 +144,8 @@ for i in range(training_size, len(df)):
 ## Plotting ##
 
 plt.figure(figsize=(20, 5))
-plt.scatter("index", "accuracy", data=status, label="Accuracy")
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color='red')
+plt.scatter("index", "accuracy", data=status, label="Retrain Accuracy", color='green')
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -212,32 +195,28 @@ plt.hlines(
 )
 
 plt.legend()
+plt.show()
+# plt.savefig("example_LFR.png")
 
 
-#
+# 
 # One of the four rates immediately passes outside its threshold when drift is
 # induced. The same occurs shortly after leaving the drift region. The
 # recommended retraining data includes most of the drift induction window and
 # the data after regime change.
-#
+# 
 # The classifier's accuracy decreases again later, which causes the detector to
 # enter a "warning" state. Note that the retraining recommendations *begin* with
 # the index corresponding to the warning state, and end where drift is detected.
-#
-
-# In[ ]:
-
-
-plt.show()
-
+# 
 
 # ## ADaptive WINdowing (ADWIN)
 
 # ADWIN is a change detection algorithm that can be used to monitor a real-valued number. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
-#
+# 
 # It can be used to monitor the accuracy of a classifier by checking `y_true == y_pred` at each time step. So, for convenience, `concept_drift.ADWINOutcome`, takes `y_true` and `y_pred` as arugments, as shown below. `change_detection.ADWIN` can be used more generally, as shown in the change detection examples.
 
-# In[36]:
+# In[ ]:
 
 
 ## Setup ##
@@ -245,50 +224,39 @@ plt.show()
 # Set up classifier: train on first training_size rows
 X_train = df.loc[0:training_size, ["var1", "var2"]]
 y_train = df.loc[0:training_size, "y"]
-X_test = df.loc[training_size : len(df), ["var1", "var2"]]
-y_pred = df.loc[training_size : len(df), "y"]
+X_test = df.loc[training_size:len(df), ["var1", "var2"]]
+y_true = df.loc[training_size:len(df), "y"]
 
 np.random.seed(123)
 clf = GaussianNB()
 clf.fit(X_train, y_train)
 
 # get running accuracy from the original classifier to compare performance
-acc_orig = np.cumsum(clf.predict(X_test) == y_pred)
+acc_orig = np.cumsum(clf.predict(X_test) == y_true)
 acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
 
 adwin = ADWINOutcome()
 
 # Set up DF to record results.
 status = pd.DataFrame(
-    columns=["index", "results", "accuracy", "adwin mean", "drift_detected"]
+    columns=["index", "y_true", "y_pred", "adwin mean", "drift_detected"]
 )
-correct = 0
 rec_list = []
 
 
-# In[37]:
+# In[ ]:
 
 
 # run ADWIN
-n = 1
 for i in range(training_size, len(df)):
 
     X_test = df.loc[[i], ["var1", "var2"]]
     y_pred = int(clf.predict(X_test))
     y_true = int(df.loc[[i], "y"])
 
-    # increment accuracy
-    if y_pred == y_true:
-        correct += 1
-    accuracy = correct / n
-
     adwin.update(y_true, y_pred)
     status.loc[i] = [
-        i,
-        int(y_true == y_pred),
-        accuracy,
-        adwin.mean(),
-        adwin.drift_state,
+        i, y_true, y_pred, adwin.mean(), adwin.drift_state,
     ]
 
     # If drift is detected, examine the window and retrain.
@@ -305,21 +273,19 @@ for i in range(training_size, len(df)):
         clf = GaussianNB()
         clf.fit(X_train, y_train)
 
-    n += 1
+status['original_accuracy'] = acc_orig
+status['accuracy'] = np.cumsum(status.y_true == status.y_pred)
+status['accuracy'] = status['accuracy'] / np.cumsum(np.repeat(1, status.shape[0]))
 
-status["original_accuracy"] = acc_orig
 
-
-# In[42]:
+# In[ ]:
 
 
 ## Plotting ##
 
 plt.figure(figsize=(20, 6))
-plt.scatter(
-    "index", "original_accuracy", data=status, label="Original Accuracy", color="red"
-)
-plt.scatter("index", "accuracy", data=status, label="Retrain Accuracy", color="green")
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color='red')
+plt.scatter("index", "accuracy", data=status, label="Retrain Accuracy", color='green')
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -358,12 +324,12 @@ plt.hlines(
     label="Retraining Windows",
 )
 
-plt.legend(loc="lower right")
+plt.legend(loc='lower right')
 plt.show()
 # plt.savefig("example_ADWINOutcome.png")
 
 
-#
+# 
 # After drift is induced, the accuracy decreases enough for ADWIN to shrink its
 # window and alarm;  subsequent windows also include data from the old regime, so
 # drift continues to be detected until the window shrinks enough to be comprised
@@ -383,11 +349,17 @@ np.random.seed(123)
 # setup classifier: train on first training_size rows
 X_train = df.loc[0:training_size, ["var1", "var2"]]
 y_train = df.loc[0:training_size, "y"]
+X_test = df.loc[training_size:len(df), ["var1", "var2"]]
+y_true = df.loc[training_size:len(df), "y"]
+
 clf = GaussianNB()
 clf.fit(X_train, y_train)
 
+acc_orig = np.cumsum(clf.predict(X_test) == y_true)
+acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
 
-#
+
+# 
 # These parameter values are chosen somewhat arbitrarily.
 # At least 100 samples must be seen before DDM tests for drift (the n_threshold
 # parameter); the other two define the warning and drift regions. The minimum
@@ -395,7 +367,7 @@ clf.fit(X_train, y_train)
 # warning_scale and drift_scale roughly correspond to how many standard standard
 # deviations away the current estimate must be in order for the detector to
 # alarm.
-#
+# 
 
 # In[ ]:
 
@@ -403,8 +375,7 @@ clf.fit(X_train, y_train)
 ddm = DDM(n_threshold=100, warning_scale=7, drift_scale=10)
 
 # setup DF to store results
-status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
-correct = 0
+status = pd.DataFrame(columns=["index", "y_true", "y_pred", "drift_detected"])
 rec_list = []
 
 
@@ -412,20 +383,14 @@ rec_list = []
 
 
 # run DDM and retrain
-n = 1
 for i in range(training_size, len(df)):
 
     X_test = df.loc[[i], ["var1", "var2"]]
     y_pred = int(clf.predict(X_test))
     y_true = int(df.loc[[i], "y"])
 
-    # increment accuracy
-    if y_pred == y_true:
-        correct += 1
-    accuracy = correct / n
-
     ddm.update(y_true, y_pred)
-    status.loc[i] = [i, y_true, y_pred, ddm.drift_state, accuracy]
+    status.loc[i] = [i, y_true, y_pred, ddm.drift_state]
 
     # If drift is detected, examine the window and retrain.
     if ddm.drift_state == "drift":
@@ -443,7 +408,9 @@ for i in range(training_size, len(df)):
         clf = GaussianNB()
         clf.fit(X_train, y_train)
 
-    n += 1
+status['original_accuracy'] = acc_orig
+status['accuracy'] = np.cumsum(status.y_true == status.y_pred)
+status['accuracy'] = status['accuracy'] / np.cumsum(np.repeat(1, status.shape[0]))
 
 
 # In[ ]:
@@ -452,7 +419,8 @@ for i in range(training_size, len(df)):
 ## Plotting ##
 
 plt.figure(figsize=(20, 6))
-plt.scatter("index", "accuracy", data=status, label="Accuracy")
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color='red')
+plt.scatter("index", "accuracy", data=status, label="Retrain Accuracy", color='green')
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -503,21 +471,16 @@ plt.hlines(
 )
 
 plt.legend()
-
-
-#
-# DDM initially alarms during the drift induction window, triggering retraining.
-# The subsequent dip in accuracy is large enough to put the detector in the
-# "warning" state, but not large enough for "drift" to be identified.
-#
-#
-
-# In[ ]:
-
-
 plt.show()
 # plt.savefig("example_DDM.png")
 
+
+# 
+# DDM initially alarms during the drift induction window, triggering retraining.
+# The subsequent dip in accuracy is large enough to put the detector in the
+# "warning" state, but not large enough for "drift" to be identified.
+# 
+# 
 
 # ## Early Drift Detection Method (EDDM)
 
@@ -532,19 +495,25 @@ np.random.seed(123)
 # setup classifier: train on first 500 rows
 X_train = df.loc[0:training_size, ["var1", "var2"]]
 y_train = df.loc[0:training_size, "y"]
+X_test = df.loc[training_size:len(df), ["var1", "var2"]]
+y_true = df.loc[training_size:len(df), "y"]
+
 clf = GaussianNB()
 clf.fit(X_train, y_train)
+
+acc_orig = np.cumsum(clf.predict(X_test) == y_true)
+acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
 
 
 # - n_threshold specifies the number of new samples which must be observed before
 # tests for drift are run.
-#
+# 
 # - The warning_thresh and drift_thresh values roughly correspond to the ratio of
 # the 95th percentile for the current distance distribution vs. the 95th percentile
 # for the "best" distance distribution observed so far. So, lower values correspond to less conservative monitoring - the current
 # distance between errors is allowed to be a smaller fraction of the "best"
 # distance.
-#
+# 
 
 # In[ ]:
 
@@ -552,8 +521,7 @@ clf.fit(X_train, y_train)
 eddm = EDDM(n_threshold=30, warning_thresh=0.7, drift_thresh=0.5)
 
 # setup DF to store results
-status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
-correct = 0
+status = pd.DataFrame(columns=["index", "y_true", "y_pred", "drift_detected"])
 rec_list = []
 
 
@@ -561,20 +529,14 @@ rec_list = []
 
 
 # run EDDM and retrain
-n = 1
 for i in range(training_size, len(df)):
 
     X_test = df.loc[[i], ["var1", "var2"]]
     y_pred = int(clf.predict(X_test))
     y_true = int(df.loc[[i], "y"])
 
-    # increment accuracy
-    if y_pred == y_true:
-        correct += 1
-    accuracy = correct / n
-
     eddm.update(y_true, y_pred)
-    status.loc[i] = [i, y_true, y_pred, eddm.drift_state, accuracy]
+    status.loc[i] = [i, y_true, y_pred, eddm.drift_state]
 
     # If drift is detected, examine the window and retrain.
     if eddm.drift_state == "drift":
@@ -592,7 +554,9 @@ for i in range(training_size, len(df)):
         clf = GaussianNB()
         clf.fit(X_train, y_train)
 
-    n += 1
+status['original_accuracy'] = acc_orig
+status['accuracy'] = np.cumsum(status.y_true == status.y_pred)
+status['accuracy'] = status['accuracy'] / np.cumsum(np.repeat(1, status.shape[0]))
 
 
 # In[ ]:
@@ -601,7 +565,8 @@ for i in range(training_size, len(df)):
 ## Plotting ##
 
 plt.figure(figsize=(20, 6))
-plt.scatter("index", "accuracy", data=status, label="Accuracy")
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color='red')
+plt.scatter("index", "accuracy", data=status, label="Retrain Accuracy", color='green')
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -652,20 +617,15 @@ plt.hlines(
 )
 
 plt.legend()
+plt.show()
+# plt.savefig("example_EDDM.png")
 
 
 # EDDM enters a drift state shortly after the drift induction window, triggering
 # retraining. The later increase in the error rate causes the detector to enter
 # the warning state, but is not large enough to be identified as drift with this
 # threshold setting.
-#
-
-# In[ ]:
-
-
-plt.show()
-# plt.savefig("example_EDDM.png")
-
+# 
 
 # ## Statistical Test of Equal Proportions to Detect Concept Drift (STEPD)
 
@@ -677,70 +637,79 @@ plt.show()
 ## Setup ##
 
 np.random.seed(123)
-df_ex = df
-train_ix = [0, training_size]
+# setup classifier: train on first 500 rows
+X_train = df.loc[0:training_size, ["var1", "var2"]]
+y_train = df.loc[0:training_size, "y"]
+X_test = df.loc[training_size:len(df), ["var1", "var2"]]
+y_true = df.loc[training_size:len(df), "y"]
+
+clf = GaussianNB()
+clf.fit(X_train, y_train)
+
+# Calculate the accuracy the classifier would have had without any retraining 
+# recommendations from STEPD.
+
+df_test = df.loc[training_size:, :]
+
+y_pred = []
+for i in range(len(df_test)):
+    X_curr = df.loc[i:i, ["var1", "var2"]]
+    y_curr = df.loc[i:i, "y"]
+    y_pred.append(clf.predict(X_curr))
+    clf.partial_fit(X_curr, y_curr)
+y_pred = np.array(y_pred).reshape(len(y_pred))
+
+acc_orig = np.cumsum(y_pred == y_true)
+acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
+acc_orig = acc_orig.reset_index()['y']
 
 
-# For the purposes of this example, our online classifier is an SGDClassifier
-# with a constant learning rate, since this is available in the pre-existing
-# package dependency sklearn.
-clf = SGDClassifier(learning_rate="constant", shuffle=False, eta0=0.2)
-clf.fit(
-    df_ex.loc[train_ix[0] : train_ix[1], ["var1", "var2"]].values,
-    df_ex.loc[train_ix[0] : train_ix[1], "y"].values,
-)
+# In[ ]:
 
 
-stepd = STEPD(window_size=100)
+
+#reset the classifier for loop with detection
+np.random.seed(123)
+clf.fit(X_train, y_train)
+
+stepd = STEPD(window_size=250)
 
 # setup DF to store results
-status = pd.DataFrame(columns=["index", "y", "y_pred", "drift_detected", "accuracy"])
-correct = 0
+status = pd.DataFrame(columns=["index", "y_true", "y_pred", "drift_detected"])
 rec_list = []
 
+for i in range(len(df_test)):
+    X_curr = df.loc[i:i, ["var1", "var2"]]
+    y_curr = df.loc[i:i, "y"]
+    y_pred = clf.predict(X_curr)[0]
 
-# In[ ]:
+    stepd.update(y_true=y_curr.values[0], y_pred=y_pred)
+    status.loc[i] = [i, y_curr.values[0], y_pred, stepd.drift_state]
 
-
-# run STEPD and retrain
-n = 1
-for i, row in df_ex.iloc[training_size:].iterrows():
-    y_pred = clf.predict(np.array(row[["var1", "var2"]]).reshape(1, -1))
-    y_true = row["y"]
-
-    if y_pred == y_true:
-        correct += 1
-    accuracy = correct / n
-
-    stepd.update(y_true, y_pred)
-    status.loc[i] = [i, y_true, y_pred, stepd.drift_state, accuracy]
-    # train_ix[1] = train_ix[1] + 1
-
+    # If drift is detected, examine the window and retrain.
     if stepd.drift_state == "drift":
-        rec_list.append(stepd.retraining_recs)
-        # retrain the classifier using STEPD's recommendations
-        train_ix = stepd.retraining_recs
-        train_ix[0] = train_ix[0] + training_size  # adjust for starting index
-        train_ix[1] = train_ix[1] + training_size
-        clf.fit(
-            df_ex.loc[train_ix[0] : train_ix[1], ["var1", "var2"]].values,
-            df_ex.loc[train_ix[0] : train_ix[1], "y"].values,
-        )
+        #account for the training_size offset
+        recs = [x + training_size for x in stepd.retraining_recs]
+        rec_list.append(recs)
 
+        # If retraining is not desired, omit the next four lines.
+        X_train = df.loc[recs[0]:recs[1], ["var1", "var2"]]
+        y_train = df.loc[recs[0]:recs[1], "y"]
+        clf = GaussianNB()
+        clf.fit(X_train, y_train)
     else:
-        # update the classifier with the newest sample
-        clf.partial_fit(row[["var1", "var2"]].values.reshape(1, -1), [row["y"]])
+        clf.partial_fit(X_curr, y_curr.values)
 
-    n += 1
-
-
-# In[ ]:
-
+status['original_accuracy'] = acc_orig
+status['accuracy'] = np.cumsum(status.y_true == status.y_pred)
+status['accuracy'] = status['accuracy'] / np.cumsum(np.repeat(1, status.shape[0]))
+status['index'] = range(training_size, len(status) + training_size)
 
 ## Plotting ##
 
 plt.figure(figsize=(20, 6))
-plt.scatter("index", "accuracy", data=status, label="Accuracy")
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color='red')
+plt.scatter("index", "accuracy", data=status, label="Retrain Accuracy", color='green')
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -790,21 +759,21 @@ plt.hlines(
     label="Retraining Windows",
 )
 
-plt.legend(loc="upper left")
-
-
-# STEPD identifies drift quite early in the drift induction window, triggering
-# retraining on a relatively small amount of data; after this, the online
-# classifier updates sufficiently that its accuracy is roughly flat over the
-# remaining data, albeit with a big enough change to trigger more warnings.
-#
-
-# In[ ]:
-
-
+plt.legend(loc='lower left')
 plt.show()
 # plt.savefig("example_STEPD.png")
 
+
+# With a window roughly the same size as the drift induction window, STEPD doesn't
+# enter a warning state until roughly 400 samples after the drift induction
+# window. 
+# 
+# Because the online classifier is updating at each step, its performance is
+# relatively flat until roughly 400 samples after the drift induction window.
+# STEPD enters a warning state after this degradation, at which point the
+# classifier is retrained on samples buffered by STEPD during the time in the
+# warning region. Retraining the classifier on this sample, then performing
+# subsequent updates, slightly improves performance.
 
 # ## Margin Density Drift Detection (MD3) Method
 
@@ -821,7 +790,7 @@ X_train = rainfall_df.loc[0:rainfall_training_size, rainfall_features]
 y_train = rainfall_df.loc[0:rainfall_training_size, "rain"]
 
 np.random.seed(123)
-clf = svm.SVC(kernel="linear")
+clf = svm.SVC(kernel='linear')
 clf.fit(X_train, y_train.values.ravel())
 retrain_clf = clone(clf)
 retrain_clf.fit(X_train, y_train.values.ravel())
@@ -833,14 +802,7 @@ md3.set_reference(X=training_data, target_name="rain")
 
 # Set up DF to record results.
 status = pd.DataFrame(
-    columns=[
-        "index",
-        "y",
-        "margin_density",
-        "original_accuracy",
-        "retrain_accuracy",
-        "drift_detected",
-    ]
+    columns=["index", "y_true", "margin_density", "original_accuracy", "retrain_accuracy", "drift_detected"]
 )
 correct_orig, correct_retrain = 0, 0
 n = 1
@@ -858,7 +820,7 @@ for i in range(rainfall_training_size, len(rainfall_df)):
     y_pred_orig = int(clf.predict(X_test))
     y_pred_retrain = int(retrain_clf.predict(X_test))
     y_true = int(rainfall_df.loc[[i], "rain"])
-
+    
     # increment accuracy
     if y_pred_orig == y_true:
         correct_orig += 1
@@ -872,9 +834,7 @@ for i in range(rainfall_training_size, len(rainfall_df)):
         oracle_label = rainfall_df.loc[[i], rainfall_columns]
         md3.give_oracle_label(oracle_label)
         if md3.waiting_for_oracle == False:
-            retrain_clf.fit(
-                md3.reference_batch_features, md3.reference_batch_target.values.ravel()
-            )
+            retrain_clf.fit(md3.reference_batch_features, md3.reference_batch_target.values.ravel())
         status.loc[i] = [
             i,
             y_true,
@@ -895,13 +855,13 @@ for i in range(rainfall_training_size, len(rainfall_df)):
             accuracy_retrain,
             md3.drift_state,
         ]
-
+    
     # If there was a drift warning, track the window of the labeled
     # oracle data used
     if md3.drift_state == "warning":
         oracle_start = i + 1
         oracle_end = i + md3.oracle_data_length_required
-
+        
         oracle_list.append([oracle_start, oracle_end])
 
     n += 1
@@ -914,12 +874,8 @@ for i in range(rainfall_training_size, len(rainfall_df)):
 
 plt.figure(figsize=(20, 6))
 plt.scatter("index", "margin_density", data=status, label="Margin Density")
-plt.scatter(
-    "index", "original_accuracy", data=status, label="Original Accuracy", color="red"
-)
-plt.scatter(
-    "index", "retrain_accuracy", data=status, label="Retrain Accuracy", color="green"
-)
+plt.scatter("index", "original_accuracy", data=status, label="Original Accuracy", color="red")
+plt.scatter("index", "retrain_accuracy", data=status, label="Retrain Accuracy", color="green")
 plt.grid(False, axis="x")
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -929,9 +885,7 @@ plt.xlabel("Index", fontsize=18)
 ylims = [-0.05, 1.1]
 plt.ylim(ylims)
 
-plt.axvspan(
-    rainfall_drift_start, rainfall_drift_end, alpha=0.5, label="Drift Induction Window"
-)
+plt.axvspan(rainfall_drift_start, rainfall_drift_end, alpha=0.5, label="Drift Induction Window")
 
 # Draw red lines that indicate where drift was detected
 plt.vlines(
@@ -971,12 +925,8 @@ plt.hlines(
 )
 
 plt.legend()
+plt.show()
+# plt.savefig("example_MD3.png")
 
 
 # After drift is induced, the margin density decreases enough for MD3 to emit a warning. From there, the predictive accuracy of the classifier is tested, and this has already decreased sufficiently for the detector to alarm. Then, a new reference batch is set and the detector continues tracking the margin density statistic until the next warning. It can be seen from the plot that retraining at drift results in better accuracy moving forward compared with a model that is kept static.
-
-# In[ ]:
-
-
-plt.show()
-# plt.savefig("example_MD3.png")
