@@ -81,7 +81,7 @@ clf = GaussianNB()
 clf.fit(X_train, y_train)
 
 acc_orig = np.cumsum(clf.predict(X_test) == y_true)
-acc_orig = acc_orig / np.cumsum(np.repeat(1, len(acc_orig)))
+acc_orig = acc_orig / np.
 
 # Set up LFR detector to detect at significance of .001. 5000 Monte Carlo
 # simulations will be run every 10 samples to detect drift.
