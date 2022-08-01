@@ -175,63 +175,6 @@ class BatchDetector(ABC):
             self._drift_state = value
 
 
-evaluators = {'eval_scheme_1': lambda x: print(x)}
-
-
-class Ensembler():
-    def __init__(self, detectors: dict, evaluator: str, constraints: dict = None):
-        self.detectors = detectors
-        self.evaluator = evaluators[evaluator]
-        self.constraints = constraints
-
-    def set_reference(self, X, y_true, y_pred):
-        for det_key in self.detectors:
-            X = self.constrain(X, det_key)
-            self.detectors[det_key].set_reference(X=X, y_true=y_true, y_pred=y_pred)
-
-    def update(self, X, y_true, y_pred):
-        for det_key in self.detectors:
-            X = self.constrain(X, det_key)
-            self.detectors[det_key].update(X=X, y_true=y_true, y_pred=y_pred)
-        self.evaluate()
-
-    def constrain(self, data, det_key: str):
-        # TODO - can y_true, y_pred be supported in this pattern?
-        # TODO - this allows for list manipulation of PD columns
-        #           will need to think about cases where numpy arrays
-        #           are mixed in
-        ret = data
-        if self.constraints:
-            constraint = self.constraints[det_key]
-            ret = data[constraint]
-        return ret
-
-    def evaluate(self):
-        self.drift_state = self.evaluator(self.detectors.values())
-
-    def reset(self):
-        for det_key in self.detectors:
-            self.detectors[det_key].reset()
-
-
-class BatchEnsembler(BatchDetector, Ensembler):
-    def __init__(self, detectors: dict, evaluator: str, constraints: dict = None):
-        BatchDetector.__init__(self)
-        Ensembler.__init__(self, detectors, evaluator, constraints)
-
-    def update(self, X, y_true, y_pred):
-        Ensembler.update(self, X=X, y_true=y_true, y_pred=y_pred)
-        BatchDetector.update(self, X=X, y_true=y_true, y_pred=y_pred)
-
-    def reset(self):
-        Ensembler.reset(self)
-        BatchDetector.reset(self)
-
-    def set_reference(self, X, y_true=None, y_pred=None):
-        Ensembler.set_reference(self, X=X, y_true=y_true, y_pred=y_pred)
-        BatchDetector.set_reference(self, X=X, y_true=y_true, y_pred=y_pred)
-
-
 ##############################
 # To Be Deprecated in 0.2.0+
 ##############################

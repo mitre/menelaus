@@ -17,35 +17,35 @@ evaluators = {
 
 
 class Ensemble():
-    def __init__(self, detectors: dict, evaluator: str, constraints: dict = None):
+    def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
         self.detectors = detectors.copy()
         self.evaluator = evaluators[evaluator]
-        self.constraints = constraints
+        self.columns = columns
 
     def set_reference(self, X, y_true, y_pred):
         for det_key in self.detectors:
             # XXX - Cannot re-define X = constrain(), else external reference is modified
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
-            X_constrained = self.constrain(X, det_key)
-            self.detectors[det_key].set_reference(X=X_constrained, y_true=y_true, y_pred=y_pred)
+            X_selected = self.select_data(X, det_key)
+            self.detectors[det_key].set_reference(X=X_selected, y_true=y_true, y_pred=y_pred)
 
     def update(self, X, y_true=None, y_pred=None):
         for det_key in self.detectors:
             # XXX - Cannot re-define X = constrain(), else external reference is modified
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
-            X_constrained = self.constrain(X, det_key)
-            self.detectors[det_key].update(X=X_constrained, y_true=y_true, y_pred=y_pred)
+            X_selected = self.select_data(X, det_key)
+            self.detectors[det_key].update(X=X_selected, y_true=y_true, y_pred=y_pred)
         self.evaluate()
 
-    def constrain(self, data, det_key: str):
+    def select_data(self, data, det_key: str):
         # TODO - can y_true, y_pred be supported in this pattern?
         # TODO - this allows for list manipulation of PD columns
         #           will need to think about cases where numpy arrays
         #           are mixed in
         ret = data.copy()
-        if self.constraints:
-            constraint = self.constraints[det_key]
-            ret = data[constraint]
+        if self.columns:
+            cols = self.columns[det_key]
+            ret = data[cols]
         return ret
 
     def evaluate(self):
@@ -57,9 +57,9 @@ class Ensemble():
 
 
 class BatchEnsemble(BatchDetector, Ensemble):
-    def __init__(self, detectors: dict, evaluator: str, constraints: dict = None):
+    def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
         BatchDetector.__init__(self)
-        Ensemble.__init__(self, detectors, evaluator, constraints)
+        Ensemble.__init__(self, detectors, evaluator, columns)
 
     def update(self, X, y_true=None, y_pred=None):
         Ensemble.update(self, X=X, y_true=y_true, y_pred=y_pred)
