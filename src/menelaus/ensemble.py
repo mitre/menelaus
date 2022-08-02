@@ -3,22 +3,22 @@ from menelaus.drift_detector import BatchDetector
 
 def eval_simple_majority(detectors):
     """
-        Evaluator function that determines drift for an ensemble,
-        based on whether a simple majority of the ensemble's
-        detectors have voted for drift.
+    Evaluator function that determines drift for an ensemble,
+    based on whether a simple majority of the ensemble's
+    detectors have voted for drift.
 
-        TODO - determine if this correctly calculates simple majority
+    TODO - determine if this correctly calculates simple majority
 
-        Args:
-            detectors (list): list of detector objects to examine
-        
-        Returns
-            str: 'drift' if drift is determined, or ``None``
+    Args:
+        detectors (list): list of detector objects to examine
+
+    Returns
+        str: 'drift' if drift is determined, or ``None``
     """
     simple_majority_threshold = len(detectors) // 2
-    num_drift = len([det for det in detectors if det.drift_state == 'drift'])
+    num_drift = len([det for det in detectors if det.drift_state == "drift"])
     if num_drift > simple_majority_threshold:
-        return 'drift'
+        return "drift"
     else:
         return None
 
@@ -26,21 +26,20 @@ def eval_simple_majority(detectors):
 # Keeping all evaluator functions in a table enables
 # ensembles to look up via str value, rather than
 # needing a function passed in.
-evaluators = {
-    'simple-majority': eval_simple_majority
-}
+evaluators = {"simple-majority": eval_simple_majority}
 
 
-class Ensemble():
+class Ensemble:
     """
     Parent class for Ensemble detectors. Does not inherit from any
     detector parent class, but has similar functions to set reference,
     update, reset, filter data columns over each internal detector. Can
     also evaluate the results from all detectors per some voting scheme.
-    
+
     Any class hoping to implement ensemble functionality should implement
     from this.
     """
+
     def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
         self.detectors = detectors.copy()
         self.evaluator = evaluators[evaluator]
@@ -59,7 +58,9 @@ class Ensemble():
             # XXX - Cannot re-define X = constrain(), else external reference is modified
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
             X_selected = self.select_data(X, det_key)
-            self.detectors[det_key].set_reference(X=X_selected, y_true=y_true, y_pred=y_pred)
+            self.detectors[det_key].set_reference(
+                X=X_selected, y_true=y_true, y_pred=y_pred
+            )
 
     def update(self, X, y_true=None, y_pred=None):
         """
@@ -81,7 +82,7 @@ class Ensemble():
     def select_data(self, data, det_key: str):
         """
         Filters given data according to the columns expected
-        by each detector in the ensemble, as specified at 
+        by each detector in the ensemble, as specified at
         initialization (uses ``self.columns``, if it exists).
 
         Intended for use within ``update`` or ``set_reference``.
@@ -120,12 +121,13 @@ class Ensemble():
 
 class BatchEnsemble(BatchDetector, Ensemble):
     """
-        Implements Ensemble class for batch-based drift detectors. Inherits
-        from Ensemble and BatchDetector (i.e., BatchEnsemble IS-A BatchDetector).
-        As such it has the functions of a regular detector, to set reference,
-        update, and reset. Only internally, these operate not only on the 
-        ensemble's own attributes, but on the set of detectors given to it.
+    Implements Ensemble class for batch-based drift detectors. Inherits
+    from Ensemble and BatchDetector (i.e., BatchEnsemble IS-A BatchDetector).
+    As such it has the functions of a regular detector, to set reference,
+    update, and reset. Only internally, these operate not only on the
+    ensemble's own attributes, but on the set of detectors given to it.
     """
+
     def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
         """
         Args:
@@ -169,7 +171,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
 
     def set_reference(self, X, y_true=None, y_pred=None):
         """
-        Initialize ensemble itself, and each constituent detector 
+        Initialize ensemble itself, and each constituent detector
         with a reference batch. Calls ``Ensemble.set_reference`` to do so.
 
         Args:
