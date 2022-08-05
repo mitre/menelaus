@@ -4,9 +4,9 @@ name: examples
 
 on:
   push:
-    branches: [ "main" ] 
+    branches: [ "main" , "dev"] 
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main" , "dev"]
 
 permissions:
   contents: read
@@ -26,9 +26,11 @@ jobs:
         source venv/bin/activate
         python -m pip install --upgrade pip
         pip install -e .[test]
+    - name: Convert notebooks to scripts
+        cd docs/source/examples
+        python convert_notebooks.py
+        cd ../../..
     - name: Test examples
       run: |
-        source venv/bin/activate
-        ipython kernel install --name "venv" --user
         cd tests/examples
         pytest
