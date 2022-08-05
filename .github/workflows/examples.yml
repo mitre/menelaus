@@ -4,9 +4,9 @@ name: examples
 
 on:
   push:
-    branches: [ "main" , "dev"] 
+    branches: [ "main" ] 
   pull_request:
-    branches: [ "main" , "dev"]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -32,4 +32,4 @@ jobs:
     - name: Test example scripts
       run: |
         cd tests/examples
-        pytest --no-cov
+        pytest
