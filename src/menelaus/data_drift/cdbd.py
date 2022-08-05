@@ -102,15 +102,15 @@ class CDBD(HistogramDensityMethod):
                 See class docstrings for more information on this modification.
                 Defaults to 1.
 
-                * if detect_batch = 1 - HDDDM can detect drift on the first test
+                * if detect_batch = 1 - CDBD can detect drift on the first test
                   batch passed to the update method. BE AWARE, total samples
                   and samples since reset will be number of batches passed to HDM
                   plus 1, due to splitting of reference batch
 
-                * if detect_batch = 2 - HDDDM can detect drift on the second test
+                * if detect_batch = 2 - CDBD can detect drift on the second test
                   batch passed to the update method.
 
-                * if detect_batch = 3 - HDDDM can detect drift on the third test
+                * if detect_batch = 3 - CDBD can detect drift on the third test
                   batch passed to the update method.
 
             statistic (str): statistical method used to compute adaptive
@@ -177,8 +177,8 @@ class CDBD(HistogramDensityMethod):
 
         Args:
           X (DataFrame): next batch of data to detect drift on.
-          y_true (numpy.ndarray): true labels of next batch - not used in HDDDM
-          y_pred (numpy.ndarray): predicted labels of next batch - not used in HDDDM
+          y_true (numpy.ndarray): true labels of next batch - not used in CDBD
+          y_pred (numpy.ndarray): predicted labels of next batch - not used in CDBD
         """
 
         # Ensure only being used with 1 variable in test

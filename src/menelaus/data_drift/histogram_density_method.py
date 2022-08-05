@@ -60,13 +60,12 @@ class HistogramDensityMethod(DriftDetector):
            drift is not detected. The reference batch is updated to include this
            most recent test batch. All statistics are maintained.
 
-    Two key modifications, present in this parent method, were added to Ditzler
-    and Polikar's presentation of HDDDM:
+    Two key modifications were added to Ditzler and Polikar's presentation:
 
-        * For HDDDM, to answer the research question of "Where is drift
-          occuring?", it stores the distance values and Epsilon values for each
-          feature. These statistics can be used to identify and visualize the
-          features containing the most significant drifts.
+        * For HDDDM, to answer the question of "where is drift occuring?", it
+          stores the distance values and Epsilon values for each feature. These
+          statistics can be used to identify and visualize the features
+          containing the most significant drifts.
 
             * The Hellinger distance values are calculated for each feature in
               the test batch. These values can be accessed when drift occurs
@@ -75,49 +74,38 @@ class HistogramDensityMethod(DriftDetector):
             * The Epsilon values for each feature are stored, for each set of
               reference and test batches. For each feature, these values
               represent the difference in Hellinger distances within the test
-              and reference batch at time t, to the Hellinger distances within
-              the test and reference batch at time t-1. These can be acccessed
+              and reference batch at time *t*, to the Hellinger distances within
+              the test and reference batch at time *t-1*. These can be acccessed
               with each update call using the self.feature_epsilons variable.
               They also can be accessed when drift occurs using the
               self.feature_info dictionary.
 
         * The original algorithm cannot detect drift until it is updated with
-          the third test batch after initial setup or third test batch after
-          each drift detection. When HDM is updated with the first test batch
-          (T=1), the distance is calculated between test and reference batch.
-          When updated with the second test batch (T=2), HDM calculates the
-          distance and Epsilon, the difference in distances. When HDM is updated
-          with the third test batch (T=3), the distance and Epsilon are
-          calculated. The adaptive threshold Beta is computed using Epsilon
-          values from lambda -> T-1 (lambda is either T=0 or the test batch
-          number on which drift was last detected). Beta needs at least one
-          prior value of Epsilon to be calculated. Now that Beta can be
-          calculated, HDM can detect drift on the 3rd test batch. In order to
-          allow for more immediate detection of drift, we added the following
-          options, specified through the parameter "detect_batch":
+          the third test batch after either a) initilization or b) reset upon
+          drift, because the threshold for drift detection is defined from the
+          *difference* Epsilon. To have at sufficient values to define this
+          threshold, then, three batches are needed. The ``detect_batch``
+          parameter can be set such that bootstrapping is used to define this
+          threshold earlier than the third test batch.
 
-            * if ``detect_batch`` = 3, HDM will operate as described above.
+            * if ``detect_batch == 3``, HDM will operate as described above.
 
-            * if ``detect_batch`` = 2, HDM will detect drift on the second test
-              batch. On the second test batch only, HDM uses a bootstrapped
-              estimate of an initial Epsilon value, to serve as a proxy for the
-              first value of Epsilon occurring at T-1. This initial estimate of
-              Epsilon is used to calculate Beta, allowing for drift to be
-              detected on the second test batch. On the third test batch, this
-              value is removed from all Epsilon and Beta calculations.
+            * if ``detect_batch == 2``, HDM will detect drift on the second test
+              batch. On the second test batch, HDM uses bootstrapped samples
+              from the reference batch to estimate the mean and standard deviation
+              of Epsilon; this is used to calculate the necessary threshold.
+              On the third test batch, this value is removed from all proceeding
 
-            * if ``detect_batch`` = 1, HDM will detect drift on the first test
+            *  if ``detect_batch`` = 1, HDM will detect drift on the first test
               batch. The initial reference batch is split randomly into two
-              halves. The first halve will serve as the original reference
+              halves. The first half will serve as the original reference
               batch. The second half will serve as a proxy for the first test
-              batch, allowing us to calculate the distance statistic.
-              When HDM is updated with the first actual test batch, HDM will
-              perform the method for bootstrapping Epsilon, as described in the
-              above bullet for ``detect_batch`` = 2. This will allow a Beta
-              threshold to be calculated using the first test batch, allowing
-              for detection of drift on this batch. BE AWARE, total samples
-              and samples since reset will be number of batches passed to HDM
-              plus 1, due to splitting of reference batch
+              batch, allowing us to calculate the distance statistic. When HDM
+              is updated with the first actual test batch, HDM will perform the
+              method for bootstrapping Epsilon, as described in the above bullet
+              for ``detect_batch`` = 2. This will allow a Beta threshold to be
+              calculated using the first test batch, allowing for detection of
+              drift on this batch.
 
     Ref. :cite:t:`lindstrom2013drift` and :cite:t:`ditzler2011hellinger`
 
