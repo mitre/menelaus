@@ -24,12 +24,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e .[test]
-    - name: Convert notebooks to scripts
+    - name: Convert example notebooks to scripts
       run: |
         cd docs/source/examples
         python convert_notebooks.py
         cd ../../..
-    - name: Test examples
+    - name: Test example scripts
       run: |
         cd tests/examples
-        pytest
+        pytest --no-cov
