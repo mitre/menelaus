@@ -22,11 +22,10 @@ jobs:
         python-version: "3.10"
     - name: Install dependencies
       run: |
-        python -m venv ./venv
-        source venv/bin/activate
         python -m pip install --upgrade pip
         pip install -e .[test]
     - name: Convert notebooks to scripts
+      run: |
         cd docs/source/examples
         python convert_notebooks.py
         cd ../../..
