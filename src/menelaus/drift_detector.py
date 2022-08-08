@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pandas import DataFrame
-from numpy import array
+import numpy as np
 
 
 class StreamingDetector(ABC):
@@ -15,6 +15,7 @@ class StreamingDetector(ABC):
         self._samples_since_reset = 0
         self._drift_state = None
         self.input_cols = None
+        self.input_col_dim = None
 
     @abstractmethod
     def update(self, X, y_true, y_pred):
@@ -27,8 +28,6 @@ class StreamingDetector(ABC):
             y_pred (numpy.ndarray): if applicable, predicted labels of input data
         """
         self._validate_input(X, y_true, y_pred)
-        # if self.input_cols is None:
-        #     self.input_cols = X.columns
         self.total_samples += 1
         self.samples_since_reset += 1
 
@@ -42,18 +41,36 @@ class StreamingDetector(ABC):
         self.drift_state = None
 
     def _validate_X(self, X):
-        # if not isinstance(X, DataFrame):
-        #     raise ValueError("Feature input should be pandas.DataFrame.")
-        # if (self.input_cols is not None) and (not X.columns.equals(self.input_cols)):
-        #     raise ValueError("Feature input column names don't match initial input.")
-        # if X.shape[1] != 1:
-        #     raise ValueError(
-        #         "Input for streaming detectors should contain only one observation."
-        #     )
-        pass
+        if isinstance(X, DataFrame):
+            # The first update with a dataframe will constrain subsequent input.
+            if self.input_cols is None:
+                self.input_cols = X.columns
+                self.input_col_dim = len(self.input_cols)
+            elif self.input_cols is not None:
+                if not X.columns.equals(self.input_cols):
+                    raise ValueError(
+                        "Columns of new data must match with columns of prior data."
+                    )
+        elif isinstance(X, np.ndarray):
+            # This allows starting with a dataframe, then later passing bare
+            # numpy arrays. For now, assume users are not miscreants.
+            if self.input_col_dim is None:
+                self.input_col_dim = X.shape[1]
+            elif self.input_col_dim is not None:
+                if not X.shape[1] != self.input_col_dim:
+                    raise ValueError(
+                        "Column-dimension of new data must match prior data."
+                    )
+        else:
+            raise ValueError("Input format must be pandas DataFrame or numpy array.")
+
+        if X.shape[0] != 1:
+            raise ValueError(
+                "Input for streaming detectors should contain only one observation."
+            )
 
     def _validate_y(self, y):
-        ary = array(y).ravel()
+        ary = np.array(y).ravel()
         if ary.shape != (1,):
             raise ValueError(
                 "Input for streaming detectors should contain only one observation."
