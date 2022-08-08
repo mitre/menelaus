@@ -1,8 +1,8 @@
 import pandas as pd
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import StreamingDetector
 
 
-class PageHinkley(DriftDetector):
+class PageHinkley(StreamingDetector):
     """Page-Hinkley is a univariate change detection algorithm, designed
     to detect changes in a sequential Gaussian signal. Both the running mean and
     the running Page Hinkley (PH) statistic are incremented with each
@@ -84,7 +84,7 @@ class PageHinkley(DriftDetector):
             self.reset()
         super().update(X, y_true, y_pred)
 
-        self._mean = self._mean + (X - self._mean) / self.updates_since_reset
+        self._mean = self._mean + (X - self._mean) / self.samples_since_reset
         self._sum = self._sum + X - self._mean - self.delta
         theta = self.threshold * self._mean
 
@@ -101,7 +101,7 @@ class PageHinkley(DriftDetector):
 
         drift_check = ph_difference > theta
 
-        if drift_check and self.updates_since_reset > self.burn_in:
+        if drift_check and self.samples_since_reset > self.burn_in:
             self.drift_state = "drift"
 
         self._change_scores.append(X)

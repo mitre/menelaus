@@ -1,8 +1,8 @@
 import numpy as np
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import StreamingDetector
 
 
-class CUSUM(DriftDetector):
+class CUSUM(StreamingDetector):
     """CUSUM is a method from the field of statistical process control. This
     detector tests for changes in the mean of a time series by calculating a
     moving average over recent observations. CUSUM can be used for tracking a
@@ -86,19 +86,19 @@ class CUSUM(DriftDetector):
         self._stream.append(X)
 
         # cannot compute s_h/s_l so set to 0
-        if (self.target is None) & (self.updates_since_reset < self.burn_in):
+        if (self.target is None) & (self.samples_since_reset < self.burn_in):
             s_h = 0
             s_l = 0
             self._upper_bound.append(s_h)
             self._lower_bound.append(s_l)
 
         # derive mean and sd from first n points if they are not specified
-        if (self.target is None) & (self.updates_since_reset == self.burn_in):
+        if (self.target is None) & (self.samples_since_reset == self.burn_in):
             self.target = np.mean(self._stream)
             self.sd_hat = np.std(self._stream)
 
         # if sd = 0 then no variance in stream and no drift -- raise error
-        if (self.sd_hat == 0) & (self.updates_since_reset > self.burn_in):
+        if (self.sd_hat == 0) & (self.samples_since_reset > self.burn_in):
             raise ValueError(
                 """Standard deviation is 0. Confirm imput is a time series with
                 more than 1 unique value."""
@@ -108,31 +108,31 @@ class CUSUM(DriftDetector):
         if self.target is not None:
             s_h = max(
                 0,
-                self._upper_bound[self.updates_since_reset - 1]
-                + (self._stream[self.updates_since_reset - 1] - self.target)
+                self._upper_bound[self.samples_since_reset - 1]
+                + (self._stream[self.samples_since_reset - 1] - self.target)
                 / self.sd_hat
                 - self.delta,
             )
             s_l = max(
                 0,
-                self._lower_bound[self.updates_since_reset - 1]
+                self._lower_bound[self.samples_since_reset - 1]
                 - self.delta
-                - (self._stream[self.updates_since_reset - 1] - self.target)
+                - (self._stream[self.samples_since_reset - 1] - self.target)
                 / self.sd_hat,
             )
             self._upper_bound.append(s_h)
             self._lower_bound.append(s_l)
 
         # check alarm if past burn in
-        if self.updates_since_reset > self.burn_in:
+        if self.samples_since_reset > self.burn_in:
             if self.direction is None:
-                if (self._upper_bound[self.updates_since_reset] > self.threshold) | (
-                    self._lower_bound[self.updates_since_reset] > self.threshold
+                if (self._upper_bound[self.samples_since_reset] > self.threshold) | (
+                    self._lower_bound[self.samples_since_reset] > self.threshold
                 ):
                     self.drift_state = "drift"
             elif self.direction == "positive":
-                if self._upper_bound[self.updates_since_reset] > self.threshold:
+                if self._upper_bound[self.samples_since_reset] > self.threshold:
                     self.drift_state = "drift"
             elif self.direction == "negative":
-                if self._lower_bound[self.updates_since_reset] > self.threshold:
+                if self._lower_bound[self.samples_since_reset] > self.threshold:
                     self.drift_state = "drift"
