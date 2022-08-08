@@ -71,7 +71,7 @@ class HDDDM(HistogramDensityMethod):
         * The original algorithm cannot detect drift until it is updated with
           the third test batch after either a) initilization or b) reset upon
           drift, because the threshold for drift detection is defined from the
-          *difference* Epsilon. To have at sufficient values to define this
+          *difference* Epsilon. To have sufficient values to define this
           threshold, then, three batches are needed. The ``detect_batch``
           parameter can be set such that bootstrapping is used to define this
           threshold earlier than the third test batch.

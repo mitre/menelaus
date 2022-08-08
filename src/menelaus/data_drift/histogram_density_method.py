@@ -83,7 +83,7 @@ class HistogramDensityMethod(DriftDetector):
         * The original algorithm cannot detect drift until it is updated with
           the third test batch after either a) initilization or b) reset upon
           drift, because the threshold for drift detection is defined from the
-          *difference* Epsilon. To have at sufficient values to define this
+          *difference* Epsilon. To have sufficient values to define this
           threshold, then, three batches are needed. The ``detect_batch``
           parameter can be set such that bootstrapping is used to define this
           threshold earlier than the third test batch.
@@ -464,7 +464,7 @@ class HistogramDensityMethod(DriftDetector):
     def _estimate_initial_epsilon(
         self, reference, num_subsets, histogram_mins, histogram_maxes
     ):
-        """Computes a bootstrapped initial estimate of Epsilon on 2nd test 
+        """Computes a bootstrapped initial estimate of Epsilon on 2nd test
         batch, allowing HDM to detect drift on the 2nd batch.
 
         1. Subsets reference data with replacement
@@ -531,9 +531,9 @@ class HistogramDensityMethod(DriftDetector):
         histograms. JS is a bounded, symmetric form of KL divergence.
 
         Args:
-            reference_density (list): Univariate output of _build_histograms 
+            reference_density (list): Univariate output of _build_histograms
                 from reference batch.
-            test_density (list): Univariate output of _build_histograms from 
+            test_density (list): Univariate output of _build_histograms from
                 test batch.
 
         Returns:
