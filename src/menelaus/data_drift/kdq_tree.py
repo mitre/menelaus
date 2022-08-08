@@ -408,6 +408,8 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         StreamingDetector.update(self, X, y_true, y_pred)
         if isinstance(X, pd.DataFrame):
             ary = X.values
+        else:
+            ary = X
         KdqTreeDetector._evaluate_kdqtree(self, ary, "stream")
 
 

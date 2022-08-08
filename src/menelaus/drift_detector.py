@@ -57,7 +57,7 @@ class StreamingDetector(ABC):
             if self.input_col_dim is None:
                 self.input_col_dim = X.shape[1]
             elif self.input_col_dim is not None:
-                if not X.shape[1] != self.input_col_dim:
+                if X.shape[1] != self.input_col_dim:
                     raise ValueError(
                         "Column-dimension of new data must match prior data."
                     )
