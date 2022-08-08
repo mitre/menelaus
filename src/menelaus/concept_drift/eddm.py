@@ -1,8 +1,8 @@
 import numpy as np
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import DriftDetector, StreamingDetector
 
 
-class EDDM(DriftDetector):
+class EDDM(StreamingDetector):
     """EDDM is a drift detection algorithm for binary classifiers which uses the
     distance between two classification errors. The running average distance
     between two errors (``dist_i``) and its standard deviation (``s_i``) are
@@ -22,7 +22,7 @@ class EDDM(DriftDetector):
     distance for "large" samples.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
+    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``.
 
     Ref. :cite:t:`baena2006early`
     """
@@ -90,7 +90,7 @@ class EDDM(DriftDetector):
             # calculate the distance between two errors
             self._index_error_last = self._index_error_curr
             self._index_error_curr = (
-                self.updates_since_reset - 1
+                self.samples_since_reset - 1
             )  # n is count, not index!
             dist = self._index_error_curr - self._index_error_last
 
@@ -140,12 +140,12 @@ class EDDM(DriftDetector):
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
-            self._retraining_recs[0] = self.total_updates - 1
+            self._retraining_recs[0] = self.total_samples - 1
 
         if self.drift_state == "drift":
-            self._retraining_recs[1] = self.total_updates - 1
+            self._retraining_recs[1] = self.total_samples - 1
             if self._retraining_recs[0] is None:
-                self._retraining_recs[0] = self.total_updates - 1
+                self._retraining_recs[0] = self.total_samples - 1
 
     @property
     def retraining_recs(self):
