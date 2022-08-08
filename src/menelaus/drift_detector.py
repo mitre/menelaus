@@ -42,6 +42,20 @@ class StreamingDetector(ABC):
         self.drift_state = None
 
     def _validate_X(self, X):
+        """Validate that the input only contains one observation, and that its
+        dimensions/column names match earlier input. If there is no
+        earlier input, store the dimension/column names.
+
+        Args:
+            X (array-like or numeric): Input features.
+
+        Raises:
+            ValueError: if a dataframe has ever been passed, raised if X's
+                column names don't match
+            ValueError: if an array has ever been passed, raised if X's number
+                of columns don't match
+            ValueError: raised if X contains more than one observation
+        """
         ary = copy.copy(X)
         if isinstance(ary, DataFrame):
             # The first update with a dataframe will constrain subsequent input.
@@ -75,6 +89,15 @@ class StreamingDetector(ABC):
             )
 
     def _validate_y(self, y):
+        """Validate that input contains only one observation.
+
+        Args:
+            y (numeric): the current value for `y_true` or `y_pred`, given to
+                `update`.
+
+        Raises:
+            ValueError: raised if more than one observation is passed.
+        """
         ary = np.array(y).ravel()
         if ary.shape != (1,):
             raise ValueError(
@@ -82,8 +105,15 @@ class StreamingDetector(ABC):
             )
 
     def _validate_input(self, X, y_true, y_pred):
-        # should call whatever combination of _validate_* on the input
-        # perhaps validate_y is called on both y_true, y_pred
+        """Helper method for `update`. Validates whether the input is appropriate
+        for a streaming detector. See `_validate_y` and `_validate_X` for full
+        documentation.
+
+        Args:
+            X (numpy.ndarray): input data
+            y_true (numpy.ndarray): if applicable, true labels of input data
+            y_pred (numpy.ndarray): if applicable, predicted labels of input data
+        """
         if X is not None:
             self._validate_X(X)
         if y_true is not None:
