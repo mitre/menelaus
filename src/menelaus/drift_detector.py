@@ -55,8 +55,10 @@ class StreamingDetector(ABC):
                     )
         else:
             ary = np.array(ary)
-            if 0 <= len(ary.shape) <= 1:
+            if len(ary.shape) == 0:
                 ary = ary.reshape(-1, 1)
+            elif len(ary.shape) == 1:
+                ary = ary.reshape(1, -1)
             if self.input_col_dim is None:
                 # This allows starting with a dataframe, then later passing bare
                 # numpy arrays. For now, assume users are not miscreants.
