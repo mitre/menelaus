@@ -4,9 +4,9 @@ from menelaus.data_drift.histogram_density_method import HistogramDensityMethod
 class HDDDM(HistogramDensityMethod):
 
     """HDDDM is a batch-based, unsupervised drift detection algorithm that
-    detects changes in feature distributions. It uses the Hellinger
-    distance metric to compare test and reference batches and is capable of
-    detecting gradual or abrupt changes in data.
+    detects changes in feature distributions. It uses the Hellinger distance
+    metric to compare test and reference batches and is capable of detecting
+    gradual or abrupt changes in data.
 
     This method relies upon three statistics:
 
@@ -14,28 +14,28 @@ class HDDDM(HistogramDensityMethod):
           frequency counts for each bin between reference and test datasets,
           averaged across all features.
 
-        * Epsilon: the differences in Hellinger distances between sets
-          of reference and test batches.
+        * Epsilon: the differences in Hellinger distances between sets of
+          reference and test batches.
 
-        * Beta: the adaptive threshold adapted at each time stamp. It is
-          based on the mean of Epsilon plus the scaled standard
-          deviation of Epsilon. The scale applied to the standard deviation is
-          determined by the ``statistic`` parameter. It is either the number of
-          standard deviations deemed significant (``"stdev"``) or the t-statistic
+        * Beta: the adaptive threshold adapted at each time stamp. It is based
+          on the mean of Epsilon plus the scaled standard deviation of Epsilon.
+          The scale applied to the standard deviation is determined by the
+          ``statistic`` parameter. It is either the number of standard
+          deviations deemed significant (``"stdev"``) or the t-statistic
           (``"tstat"``).
 
     HDDDM operates by:
 
         #. Estimating density functions of reference and test data using
            histograms. The number of bins in each histogram equals the square
-           root of the length of reference window. Bins are aligned
-           by computing the minimum and maximum value for each feature from both
-           test and reference window.
+           root of the length of reference window. Bins are aligned by computing
+           the minimum and maximum value for each feature from both test and
+           reference window.
 
-        #. Computing the distance between reference and test
-           distributions. The Hellinger distance is first calculated between
-           each feature in the reference and test batches. Then, the final
-           Hellinger statistic used is the average of each feature's distance.
+        #. Computing the distance between reference and test distributions. The
+           Hellinger distance is first calculated between each feature in the
+           reference and test batches. Then, the final Hellinger statistic used
+           is the average of each feature's distance.
 
         #. Computing Epsilon.
 
@@ -51,21 +51,21 @@ class HDDDM(HistogramDensityMethod):
     HDDDM:
 
         * To answer the research question of "where is drift occuring?", it
-          stores the distance values and Epsilon values for each
-          feature. These statistics can be used to identify and visualize the
-          features containing the most significant drifts.
+          stores the distance values and Epsilon values for each feature. These
+          statistics can be used to identify and visualize the features
+          containing the most significant drifts.
 
             * The Hellinger distance values are calculated for each feature in
-              the test batch. These values can be accessed when drift
-              occurs using the ``self.feature_info`` dictionary.
+              the test batch. These values can be accessed when drift occurs
+              using the ``self.feature_info`` dictionary.
 
             * The Epsilon values for each feature are stored, for each set of
               reference and test batches. For each feature, these values
               represent the difference in Hellinger distances within the test
               and reference batch at time *t*, to the Hellinger distances within
               the test and reference batch at time *t-1*. These can be acccessed
-              with each update call using the ``self.feature_epsilons`` variable.
-              They also can be accessed when drift occurs using the
+              with each update call using the ``self.feature_epsilons``
+              variable. They also can be accessed when drift occurs using the
               ``self.feature_info`` dictionary.
 
         * The original algorithm cannot detect drift until it is updated with
@@ -76,21 +76,22 @@ class HDDDM(HistogramDensityMethod):
           parameter can be set such that bootstrapping is used to define this
           threshold earlier than the third test batch.
 
-            * if ``detect_batch == 3``, HDDDM will operate as described above.
+            * if ``detect_batch == 3``, HDDDM will operate as described in
+              :cite:t:`ditzler2011hellinger`.
 
-            * if ``detect_batch == 2``, HDDDM will detect drift on the second test
-              batch. On the second test batch, HDDDM uses bootstrapped samples
-              from the reference batch to estimate the mean and standard deviation
-              of Epsilon; this is used to calculate the necessary threshold.
-              On the third test batch, this value is removed from all proceeding
-              calculations.
+            * if ``detect_batch == 2``, HDDDM will detect drift on the second
+              test batch. On the second test batch, HDDDM uses bootstrapped
+              samples from the reference batch to estimate the mean and standard
+              deviation of Epsilon; this is used to calculate the necessary
+              threshold. On the third test batch, this value is removed from all
+              proceeding calculations.
 
-            * if ``detect_batch == 1``, HDDDM will detect drift on the first test
-              batch. The initial reference batch is split randomly into two
-              halves. The first half will serve as the original reference
-              batch. The second half will serve as a proxy for the first test
-              batch, allowing us to calculate the distance statistic. When HDDDM
-              is updated with the first actual test batch, HDDDM will perform the
+            * if ``detect_batch == 1``, HDDDM will detect drift on the first
+              test batch. The initial reference batch is split randomly into two
+              halves. The first half will serve as the original reference batch.
+              The second half will serve as a proxy for the first test batch,
+              allowing us to calculate the distance statistic. When HDDDM is
+              updated with the first actual test batch, HDDDM will perform the
               method for bootstrapping Epsilon, as described in the above bullet
               for ``detect_batch == 2``. This will allow a Beta threshold to be
               calculated using the first test batch, allowing for detection of
@@ -100,22 +101,25 @@ class HDDDM(HistogramDensityMethod):
 
     Attributes:
         Epsilon (list): stores Epsilon values since the last drift detection.
-        reference_n (int): number of samples in reference batch.
-        total_epsilon (int): stores running sum of Epsilon values until drift is detected,
+        reference_n (int): number of samples in reference batch. total_epsilon
+        (int): stores running sum of Epsilon values until drift is detected,
             initialized to 0.
-        bins (int): number of bins in histograms, equivalent to square root of number of
+        bins (int): number of bins in histograms, equivalent to square root of
+        number of
             samples in reference batch.
-        num_feat (int): number of features in reference batch.
-        lambda (int): batch number on which last drift was detected.
-        distances (dict): For each batch seen (key), stores the Hellinger distance between test and
-            reference batch (value). Useful for visualizing drift detection statistics.
+        num_feat (int): number of features in reference batch. lambda (int):
+        batch number on which last drift was detected. distances (dict): For
+        each batch seen (key), stores the Hellinger distance between test and
+            reference batch (value). Useful for visualizing drift detection
+            statistics.
         epsilon_values (dict):For each batch seen (key), stores the Epsilon
-            value between the current and previous test and reference
-            batches (value). Useful for visualizing drift detection
-            statistics. Does not store the bootstrapped estimate of Epsilon,
-            if used.
-        thresholds (dict): For each batch seen (key), stores the Beta thresholds between test and
-            reference batch (value). Useful for visualizing drift detection statistics.
+            value between the current and previous test and reference batches
+            (value). Useful for visualizing drift detection statistics. Does not
+            store the bootstrapped estimate of Epsilon, if used.
+        thresholds (dict): For each batch seen (key), stores the Beta thresholds
+        between test and
+            reference batch (value). Useful for visualizing drift detection
+            statistics.
     """
 
     input_type = "batch"
@@ -151,16 +155,16 @@ class HDDDM(HistogramDensityMethod):
               See class docstrings for more information on this modification.
               Defaults to 1.
 
-                * if ``detect_batch == 1`` - HDDDM can detect drift on the first test
-                  batch passed to the update method. Total batches and batches
-                  since reset will be number of batches passed to HDM plus 1,
-                  due to splitting of reference batch
+                * if ``detect_batch == 1`` - HDDDM can detect drift on the first
+                  test batch passed to the update method. Total batches and
+                  batches since reset will be number of batches passed to HDM
+                  plus 1, due to splitting of reference batch
 
-                * if ``detect_batch == 2`` - HDDDM can detect drift on the second test
-                  batch passed to the update method.
+                * if ``detect_batch == 2`` - HDDDM can detect drift on the
+                  second test batch passed to the update method.
 
-                * if ``detect_batch == 3`` - HDDDM can detect drift on the third test
-                  batch passed to the update method.
+                * if ``detect_batch == 3`` - HDDDM can detect drift on the third
+                  test batch passed to the update method.
 
             statistic (str): statistical method used to compute adaptive
                 threshold. Defaults to ``"tstat"``.

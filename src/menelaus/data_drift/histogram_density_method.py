@@ -19,29 +19,29 @@ class HistogramDensityMethod(DriftDetector):
               normalized, squared differences in frequency counts for each bin
               between reference and test datasets, averaged across all features.
 
-            * KL divergence (default if called via CDBD): Jensen-Shannon distances, a
-              symmetric and bounded measure based upon Kullback-Leibler
-              Divergence
+            * KL divergence (default if called via CDBD): Jensen-Shannon
+              distances, a symmetric and bounded measure based upon
+              Kullback-Leibler Divergence
 
             * Optional user-defined distance metric
 
-        * Epsilon: the differences in Hellinger distances between sets
-          of reference and test batches.
+        * Epsilon: the differences in Hellinger distances between sets of
+          reference and test batches.
 
-        * Beta: the adaptive threshold adapted at each time stamp. It is
-          based on the mean of Epsilon plus the scaled standard
-          deviation of Epsilon. The scale applied to the standard deviation is
-          determined by the ``statistic`` parameter. It is either the number of
-          standard deviations deemed significant (``"stdev"``) or the t-statistic
+        * Beta: the adaptive threshold adapted at each time stamp. It is based
+          on the mean of Epsilon plus the scaled standard deviation of Epsilon.
+          The scale applied to the standard deviation is determined by the
+          ``statistic`` parameter. It is either the number of standard
+          deviations deemed significant (``"stdev"``) or the t-statistic
           (``"tstat"``).
 
     HDM operates by:
 
         #. Estimating density functions of reference and test data using
            histograms. The number of bins in each histogram equals the square
-           root of the length of reference window. Bins are aligned
-           by computing the minimum and maximum value for each feature from both
-           test and reference window.
+           root of the length of reference window. Bins are aligned by computing
+           the minimum and maximum value for each feature from both test and
+           reference window.
 
         #. Computing the distance between reference and test distributions. In
            HDDDM, the Hellinger distance is first calculated between each
@@ -88,20 +88,22 @@ class HistogramDensityMethod(DriftDetector):
           parameter can be set such that bootstrapping is used to define this
           threshold earlier than the third test batch.
 
-            * if ``detect_batch == 3``, HDM will operate as described above.
+            * if ``detect_batch == 3``, HDM will operate as described in
+              :cite:t:`ditzler2011hellinger`.
 
             * if ``detect_batch == 2``, HDM will detect drift on the second test
               batch. On the second test batch, HDM uses bootstrapped samples
-              from the reference batch to estimate the mean and standard deviation
-              of Epsilon; this is used to calculate the necessary threshold.
-              On the third test batch, this value is removed from all proceeding
+              from the reference batch to estimate the mean and standard
+              deviation of Epsilon; this is used to calculate the necessary
+              threshold. On the third test batch, this value is removed from all
+              proceeding
 
             *  if ``detect_batch`` = 1, HDM will detect drift on the first test
               batch. The initial reference batch is split randomly into two
-              halves. The first half will serve as the original reference
-              batch. The second half will serve as a proxy for the first test
-              batch, allowing us to calculate the distance statistic. When HDM
-              is updated with the first actual test batch, HDM will perform the
+              halves. The first half will serve as the original reference batch.
+              The second half will serve as a proxy for the first test batch,
+              allowing us to calculate the distance statistic. When HDM is
+              updated with the first actual test batch, HDM will perform the
               method for bootstrapping Epsilon, as described in the above bullet
               for ``detect_batch`` = 2. This will allow a Beta threshold to be
               calculated using the first test batch, allowing for detection of
@@ -111,17 +113,16 @@ class HistogramDensityMethod(DriftDetector):
 
     Attributes:
         Epsilon (list): stores Epsilon values since the last drift detection.
-        reference_n (int): number of samples in reference batch .
-        total_epsilon (int): stores running sum of Epsilon values until drift is
+        reference_n (int): number of samples in reference batch . total_epsilon
+        (int): stores running sum of Epsilon values until drift is
             detected, initialized to 0.
         distances (dict): For each batch seen (key), stores the distance between
             test and reference batch (value). Useful for visualizing drift
             detection statistics.
         epsilon_values (dict):For each batch seen (key), stores the Epsilon
-            value between the current and previous test and reference
-            batches (value). Useful for visualizing drift detection
-            statistics. Does not store the bootstrapped estimate of Epsilon,
-            if used.
+            value between the current and previous test and reference batches
+            (value). Useful for visualizing drift detection statistics. Does not
+            store the bootstrapped estimate of Epsilon, if used.
         thresholds (dict): For each batch seen (key), stores the Beta thresholds
             between test and reference batch (value). Useful for visualizing
             drift detection statistics.
@@ -140,8 +141,8 @@ class HistogramDensityMethod(DriftDetector):
 
         """
         Args:
-            divergence (str or function): divergence measure used to compute distance
-                between histograms. Default is "H".
+            divergence (str or function): divergence measure used to compute
+                distance between histograms. Default is "H".
 
                 * "H"  - Hellinger distance, original use is for HDDDM
 
@@ -149,25 +150,25 @@ class HistogramDensityMethod(DriftDetector):
 
                 * User can pass in custom divergence function. Input is two
                   two-dimensional arrays containing univariate histogram
-                  estimates of density, one for reference, one for test. It
-                  must return the distance value between histograms. To be
-                  a valid distance metric, it must satisfy the following
-                  properties: non-negativity, identity, symmetry,
-                  and triangle inequality, e.g. that in
-                  examples/cdbd_example.py or examples/hdddm_example.py.
+                  estimates of density, one for reference, one for test. It must
+                  return the distance value between histograms. To be a valid
+                  distance metric, it must satisfy the following properties:
+                  non-negativity, identity, symmetry, and triangle inequality,
+                  e.g. that in examples/cdbd_example.py or
+                  examples/hdddm_example.py.
 
             detect_batch (int): the test batch on which drift will be detected.
                 See class docstrings for more information on this modification.
                 Defaults to 1.
 
-                * if ``detect_batch == 1`` - HDM can detect drift on the first test
-                  batch passed to the update method
+                * if ``detect_batch == 1`` - HDM can detect drift on the first
+                  test batch passed to the update method
 
-                * if ``detect_batch == 2`` - HDM can detect drift on the second test
-                  batch passed to the update method
+                * if ``detect_batch == 2`` - HDM can detect drift on the second
+                  test batch passed to the update method
 
-                * if ``detect_batch == 3`` - HDM can detect drift on the third test
-                  batch passed to the update method
+                * if ``detect_batch == 3`` - HDM can detect drift on the third
+                  test batch passed to the update method
 
             statistic (str): statistical method used to compute adaptive
                 threshold. Defaults to ``"tstat"``.
@@ -221,9 +222,9 @@ class HistogramDensityMethod(DriftDetector):
 
     def set_reference(self, X, y_true=None, y_pred=None):
         """
-        Initialize detector with a reference batch. After drift, reference batch is
-        automatically set to most recent test batch. Option for user to specify
-        alternative reference batch using this method.
+        Initialize detector with a reference batch. After drift, reference batch
+        is automatically set to most recent test batch. Option for user to
+        specify alternative reference batch using this method.
 
         Args:
             X (pandas.DataFrame): initial baseline dataset
@@ -393,8 +394,8 @@ class HistogramDensityMethod(DriftDetector):
         Computes Hellinger distance between reference and test histograms
 
         Args:
-            reference_density (list): Univariate output of _build_histograms from reference
-                batch.
+            reference_density (list): Univariate output of _build_histograms
+                from reference batch.
             test_density (list): Univariate tput of _build_histograms from test
                 batch.
 
@@ -463,8 +464,8 @@ class HistogramDensityMethod(DriftDetector):
     def _estimate_initial_epsilon(
         self, reference, num_subsets, histogram_mins, histogram_maxes
     ):
-        """Computes a bootstrapped initial estimate of Epsilon on 2nd test batch, allowing HDM
-        to detect drift on the 2nd batch.
+        """Computes a bootstrapped initial estimate of Epsilon on 2nd test 
+        batch, allowing HDM to detect drift on the 2nd batch.
 
         1. Subsets reference data with replacement
         2. Computes distance between each subset.
@@ -530,9 +531,10 @@ class HistogramDensityMethod(DriftDetector):
         histograms. JS is a bounded, symmetric form of KL divergence.
 
         Args:
-            reference_density (list): Univariate output of _build_histograms from reference
-                batch.
-            test_density (list): Univariate output of _build_histograms from test batch.
+            reference_density (list): Univariate output of _build_histograms 
+                from reference batch.
+            test_density (list): Univariate output of _build_histograms from 
+                test batch.
 
         Returns:
             JS divergence between univariate reference and test density
