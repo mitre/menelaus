@@ -101,25 +101,23 @@ class HDDDM(HistogramDensityMethod):
 
     Attributes:
         Epsilon (list): stores Epsilon values since the last drift detection.
-        reference_n (int): number of samples in reference batch. total_epsilon
-        (int): stores running sum of Epsilon values until drift is detected,
-            initialized to 0.
+        reference_n (int): number of samples in reference batch.
+        total_epsilon (int): stores running sum of Epsilon values until drift is
+          detected, initialized to 0.
         bins (int): number of bins in histograms, equivalent to square root of
-        number of
-            samples in reference batch.
-        num_feat (int): number of features in reference batch. lambda (int):
-        batch number on which last drift was detected. distances (dict): For
-        each batch seen (key), stores the Hellinger distance between test and
-            reference batch (value). Useful for visualizing drift detection
-            statistics.
-        epsilon_values (dict):For each batch seen (key), stores the Epsilon
-            value between the current and previous test and reference batches
-            (value). Useful for visualizing drift detection statistics. Does not
-            store the bootstrapped estimate of Epsilon, if used.
+          number of samples in reference batch.
+        num_feat (int): number of features in reference batch.
+        lambda (int): batch number on which last drift was detected.
+        distances (dict): For each batch seen (key), stores the Hellinger
+          distance between test and reference batch (value). Useful for
+          visualizing drift detection statistics.
+        epsilon_values (dict): For each batch seen (key), stores the Epsilon
+          value between the current and previous test and reference batches
+          (value). Useful for visualizing drift detection statistics. Does not
+          store the bootstrapped estimate of Epsilon, if used.
         thresholds (dict): For each batch seen (key), stores the Beta thresholds
-        between test and
-            reference batch (value). Useful for visualizing drift detection
-            statistics.
+          between test and reference batch (value). Useful for visualizing drift
+          detection statistics.
     """
 
     input_type = "batch"

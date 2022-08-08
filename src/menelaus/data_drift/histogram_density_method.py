@@ -98,7 +98,7 @@ class HistogramDensityMethod(DriftDetector):
               threshold. On the third test batch, this value is removed from all
               proceeding
 
-            *  if ``detect_batch`` = 1, HDM will detect drift on the first test
+            * if ``detect_batch`` = 1, HDM will detect drift on the first test
               batch. The initial reference batch is split randomly into two
               halves. The first half will serve as the original reference batch.
               The second half will serve as a proxy for the first test batch,
@@ -113,8 +113,8 @@ class HistogramDensityMethod(DriftDetector):
 
     Attributes:
         Epsilon (list): stores Epsilon values since the last drift detection.
-        reference_n (int): number of samples in reference batch . total_epsilon
-        (int): stores running sum of Epsilon values until drift is
+        reference_n (int): number of samples in reference batch.
+        total_epsilon (int): stores running sum of Epsilon values until drift is
             detected, initialized to 0.
         distances (dict): For each batch seen (key), stores the distance between
             test and reference batch (value). Useful for visualizing drift
