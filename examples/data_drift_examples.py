@@ -54,7 +54,7 @@ circle_data.shape
 # This section details how to setup, run, and produce plots for CDBD. This script
 # monitors the feature "confidence", simulated confidence scores output by a
 # classifier. Drift occurs in 2018 and persists through 2021. See
-# src/menelaus/tools/artifacts/README_example_data.txt for more info.
+# `make_example_batch_data` for more info.
 # 
 # CDBD must be setup and run with batches of data containing 1 variable. 
 # 
@@ -158,8 +158,8 @@ cdbd.update(pd.DataFrame(example_data[example_data.year == 2008].loc[:, "confide
 
 # This section details how to setup, run, and produce plots for HDDDM, using both
 # numeric and categorical data. Drift occurs in 2009, 2012, 2015, 2018, and 2021.
-# Drift in 2018 persists through 2021. See
-# src/menelaus/tools/artifacts/README_example_data.txt for more info.
+# Drift in 2018 persists through 2021. See `make_example_batch_data` for more info.
+# 
 # It additionally contains an example of using a custom divergence function. 
 # 
 # HDDDM must be setup and run with batches of data. 
@@ -504,7 +504,7 @@ for title, df_plot in plot_data.items():
 # 
 # Drift in the example dataset occurs in 2009, 2012, 2015, 2018, and 2021. Drift
 # in 2018 persists through 2021. See
-# src/menelaus/tools/artifacts/README_example_data.txt for more details.
+# `make_example_batch_data` for more details.
 # 
 # This example takes roughly a minute to run.
 
