@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from pandas import DataFrame
+from numpy import array
 
 
 class StreamingDetector(ABC):
@@ -12,6 +14,7 @@ class StreamingDetector(ABC):
         self._total_samples = 0
         self._samples_since_reset = 0
         self._drift_state = None
+        self.input_cols = None
 
     @abstractmethod
     def update(self, X, y_true, y_pred):
@@ -23,6 +26,9 @@ class StreamingDetector(ABC):
             y_true (numpy.ndarray): if applicable, true labels of input data
             y_pred (numpy.ndarray): if applicable, predicted labels of input data
         """
+        self._validate_input(X, y_true, y_pred)
+        # if self.input_cols is None:
+        #     self.input_cols = X.columns
         self.total_samples += 1
         self.samples_since_reset += 1
 
@@ -34,6 +40,34 @@ class StreamingDetector(ABC):
         """
         self.samples_since_reset = 0
         self.drift_state = None
+
+    def _validate_X(self, X):
+        # if not isinstance(X, DataFrame):
+        #     raise ValueError("Feature input should be pandas.DataFrame.")
+        # if (self.input_cols is not None) and (not X.columns.equals(self.input_cols)):
+        #     raise ValueError("Feature input column names don't match initial input.")
+        # if X.shape[1] != 1:
+        #     raise ValueError(
+        #         "Input for streaming detectors should contain only one observation."
+        #     )
+        pass
+
+    def _validate_y(self, y):
+        ary = array(y).ravel()
+        if ary.shape != (1,):
+            raise ValueError(
+                "Input for streaming detectors should contain only one observation."
+            )
+
+    def _validate_input(self, X, y_true, y_pred):
+        # should call whatever combination of _validate_* on the input
+        # perhaps validate_y is called on both y_true, y_pred
+        if X is not None:
+            self._validate_X(X)
+        if y_true is not None:
+            self._validate_y(y_true)
+        if y_pred is not None:
+            self._validate_y(y_pred)
 
     @property
     def total_samples(self):
