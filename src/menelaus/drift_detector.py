@@ -106,8 +106,8 @@ class StreamingDetector(ABC):
 
     def _validate_input(self, X, y_true, y_pred):
         """Helper method for `update`. Validates whether the input is appropriate
-        for a streaming detector. See `_validate_y` and `_validate_X` for full
-        documentation.
+        for a streaming detector. Errors will be raised if the input is more
+        than one observation, or if its dimensions don't match subsequent input.
 
         Args:
             X (numpy.ndarray): input data
