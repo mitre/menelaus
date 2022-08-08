@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pandas import DataFrame
 import numpy as np
+import copy
 
 
 class StreamingDetector(ABC):
@@ -41,30 +42,32 @@ class StreamingDetector(ABC):
         self.drift_state = None
 
     def _validate_X(self, X):
-        if isinstance(X, DataFrame):
+        ary = copy.copy(X)
+        if isinstance(ary, DataFrame):
             # The first update with a dataframe will constrain subsequent input.
             if self.input_cols is None:
-                self.input_cols = X.columns
+                self.input_cols = ary.columns
                 self.input_col_dim = len(self.input_cols)
             elif self.input_cols is not None:
-                if not X.columns.equals(self.input_cols):
+                if not ary.columns.equals(self.input_cols):
                     raise ValueError(
                         "Columns of new data must match with columns of prior data."
                     )
-        elif isinstance(X, np.ndarray):
-            # This allows starting with a dataframe, then later passing bare
-            # numpy arrays. For now, assume users are not miscreants.
+        else:
+            ary = np.array(ary)
+            if 0 <= len(ary.shape) <= 1:
+                ary = ary.reshape(-1, 1)
             if self.input_col_dim is None:
-                self.input_col_dim = X.shape[1]
+                # This allows starting with a dataframe, then later passing bare
+                # numpy arrays. For now, assume users are not miscreants.
+                self.input_col_dim = ary.shape[1]
             elif self.input_col_dim is not None:
-                if X.shape[1] != self.input_col_dim:
+                if ary.shape[1] != self.input_col_dim:
                     raise ValueError(
                         "Column-dimension of new data must match prior data."
                     )
-        else:
-            raise ValueError("Input format must be pandas DataFrame or numpy array.")
 
-        if X.shape[0] != 1:
+        if ary.shape[0] != 1:
             raise ValueError(
                 "Input for streaming detectors should contain only one observation."
             )
