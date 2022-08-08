@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.stats
-from menelaus.drift_detector import DriftDetector, StreamingDetector
+from menelaus.drift_detector import StreamingDetector
 
 
 class STEPD(StreamingDetector):

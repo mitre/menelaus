@@ -1,5 +1,5 @@
 import numpy as np
-from menelaus.drift_detector import DriftDetector, StreamingDetector
+from menelaus.drift_detector import StreamingDetector
 
 
 class EDDM(StreamingDetector):

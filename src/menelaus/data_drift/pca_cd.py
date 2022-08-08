@@ -4,7 +4,7 @@ from scipy.spatial.distance import jensenshannon
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KernelDensity
-from menelaus.drift_detector import DriftDetector, StreamingDetector
+from menelaus.drift_detector import StreamingDetector
 from menelaus.change_detection.page_hinkley import PageHinkley
 
 
@@ -222,10 +222,9 @@ class PCACD(StreamingDetector):
             )
 
             # Compute change score
-            if ((self.total_samples - 1) % self.step) == 0 and (
-                self.total_samples - 1
-            ) != 0:
-
+            if (((self.total_samples - 1) % self.step) == 0) and (
+                (self.total_samples - 1) != 0
+            ):
                 # Compute density distribution for test data
                 self._density_test = {}
                 for i in range(self.num_pcs):

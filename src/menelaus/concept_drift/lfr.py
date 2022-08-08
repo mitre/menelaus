@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
-from menelaus.drift_detector import DriftDetector, StreamingDetector
+from menelaus.drift_detector import StreamingDetector
 
 
 class LinearFourRates(StreamingDetector):
