@@ -74,10 +74,15 @@ def test_streaming_validation_X_columns():
 def test_streaming_validation_X_dimensions():
     det = StreamingDetector()
     input1 = np.array([1, 2, 3])
-    input2 = np.array([1, 2, 3, 4])
+    input2 = pd.DataFrame(input1.reshape(1,-1), columns=['a', 'b', 'c'])
+    input3 = input2.values
+    input4 = np.array([1, 2, 3, 4])
+    
     det.update(input1, y_true=None, y_pred=None)
+    det.update(input2, y_true=None, y_pred=None)
+    det.update(input3, y_true=None, y_pred=None)
     with pytest.raises(ValueError) as _:
-        det.update(input2, y_true=None, y_pred=None)
+        det.update(input4, y_true=None, y_pred=None)
 
 
 def test_input_type():
