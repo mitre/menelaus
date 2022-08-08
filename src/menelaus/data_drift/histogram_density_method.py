@@ -160,13 +160,13 @@ class HistogramDensityMethod(DriftDetector):
                 See class docstrings for more information on this modification.
                 Defaults to 1.
 
-                * if detect_batch = 1 - HDM can detect drift on the first test
+                * if ``detect_batch == 1`` - HDM can detect drift on the first test
                   batch passed to the update method
 
-                * if detect_batch = 2 - HDM can detect drift on the second test
+                * if ``detect_batch == 2`` - HDM can detect drift on the second test
                   batch passed to the update method
 
-                * if detect_batch = 3 - HDM can detect drift on the third test
+                * if ``detect_batch == 3`` - HDM can detect drift on the third test
                   batch passed to the update method
 
             statistic (str): statistical method used to compute adaptive

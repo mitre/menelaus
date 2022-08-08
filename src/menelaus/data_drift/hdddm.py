@@ -76,23 +76,23 @@ class HDDDM(HistogramDensityMethod):
           parameter can be set such that bootstrapping is used to define this
           threshold earlier than the third test batch.
 
-            * if ``detect_batch`` = 3, HDDDM will operate as described above.
+            * if ``detect_batch == 3``, HDDDM will operate as described above.
 
-            * if ``detect_batch`` = 2, HDDDM will detect drift on the second test
+            * if ``detect_batch == 2``, HDDDM will detect drift on the second test
               batch. On the second test batch, HDDDM uses bootstrapped samples
               from the reference batch to estimate the mean and standard deviation
               of Epsilon; this is used to calculate the necessary threshold.
               On the third test batch, this value is removed from all proceeding
               calculations.
 
-            * if ``detect_batch`` = 1, HDDDM will detect drift on the first test
+            * if ``detect_batch == 1``, HDDDM will detect drift on the first test
               batch. The initial reference batch is split randomly into two
               halves. The first half will serve as the original reference
               batch. The second half will serve as a proxy for the first test
               batch, allowing us to calculate the distance statistic. When HDDDM
               is updated with the first actual test batch, HDDDM will perform the
               method for bootstrapping Epsilon, as described in the above bullet
-              for ``detect_batch`` = 2. This will allow a Beta threshold to be
+              for ``detect_batch == 2``. This will allow a Beta threshold to be
               calculated using the first test batch, allowing for detection of
               drift on this batch.
 
@@ -151,15 +151,15 @@ class HDDDM(HistogramDensityMethod):
               See class docstrings for more information on this modification.
               Defaults to 1.
 
-                * if detect_batch = 1 - HDDDM can detect drift on the first test
+                * if ``detect_batch == 1`` - HDDDM can detect drift on the first test
                   batch passed to the update method. Total batches and batches
                   since reset will be number of batches passed to HDM plus 1,
                   due to splitting of reference batch
 
-                * if detect_batch = 2 - HDDDM can detect drift on the second test
+                * if ``detect_batch == 2`` - HDDDM can detect drift on the second test
                   batch passed to the update method.
 
-                * if detect_batch = 3 - HDDDM can detect drift on the third test
+                * if ``detect_batch == 3`` - HDDDM can detect drift on the third test
                   batch passed to the update method.
 
             statistic (str): statistical method used to compute adaptive
