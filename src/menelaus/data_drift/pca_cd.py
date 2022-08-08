@@ -4,11 +4,11 @@ from scipy.spatial.distance import jensenshannon
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KernelDensity
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import DriftDetector, StreamingDetector
 from menelaus.change_detection.page_hinkley import PageHinkley
 
 
-class PCACD(DriftDetector):
+class PCACD(StreamingDetector):
     """Principal Component Analysis Change Detection (PCA-CD) is a drift
     detection algorithm which checks for change in the distribution of the given
     data using one of several divergence metrics calculated on the data's
@@ -117,6 +117,7 @@ class PCACD(DriftDetector):
             y_true (numpy.ndarray): true label of observation - not used in PCACD
             y_pred (numpy.ndarray): predicted label of observation - not used in PCACD
         """
+        super().update(X, y_true, y_pred)
 
         if self._build_reference_and_test:
             if self.drift_state is not None:
@@ -221,7 +222,9 @@ class PCACD(DriftDetector):
             )
 
             # Compute change score
-            if (self.total_updates % self.step) == 0 and self.total_updates != 0:
+            if ((self.total_samples - 1) % self.step) == 0 and (
+                self.total_samples - 1
+            ) != 0:
 
                 # Compute density distribution for test data
                 self._density_test = {}
@@ -270,8 +273,6 @@ class PCACD(DriftDetector):
                 if self._drift_detection_monitor.drift_state is not None:
                     self._build_reference_and_test = True
                     self.drift_state = "drift"
-
-        super().update(X, y_true, y_pred)
 
     def reset(self):
         """Initialize the detector's drift state and other relevant attributes.
