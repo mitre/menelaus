@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 from numpy import unique
 import pandas as pd
@@ -98,41 +99,6 @@ class KdqTreeDetector:
         self._test_data_size = 0
         self._kdqtree = None
         self._critical_dist = None
-        self.input_cols = None
-
-    def _prepare_data(self, data):
-        """
-        Validates and processes new data to be used in update sequence,
-        adjusting saved feature names where needed.
-
-        Args:
-            data (pandas.DataFrame or numpy.ndarray): new data for update
-
-        Returns
-            pandas.DataFrame or numpy.ndarray: validated data for update
-        """
-        if isinstance(data, pd.DataFrame):
-            if self.input_cols is None:
-                # The first update with a dataframe will constrain subsequent
-                # input. This will also fire if set_reference has been used with
-                # a dataframe.
-                self.input_cols = data.columns
-            elif self.input_cols is not None:
-                if not data.columns.equals(self.input_cols):
-                    raise ValueError(
-                        "Columns of new data must match with columns of reference data."
-                    )
-            ary = data.values
-        elif isinstance(data, np.ndarray):
-            # This allows starting with a dataframe, then later passing bare
-            # numpy arrays. For now, assume users are not miscreants.
-            ary = data
-        else:
-            raise ValueError(
-                """This method is only available for data inputs in the form of 
-                a Pandas DataFrame or a Numpy Array."""
-            )
-        return ary
 
     def _evaluate_kdqtree(self, ary, input_type):
         """
@@ -508,13 +474,16 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             y_true (numpy.array): actual labels of dataset - not used in KdqTree
             y_pred (numpy.array): predicted labels of dataset - not used in KdqTree
         """
-        if isinstance(X, pd.DataFrame):
+        super()._validate_input(X, y_true, y_pred)
+        ary = copy.copy(X)
+        if isinstance(ary, pd.DataFrame):
             # XXX - notice how inner_set calling KLD requires us to continue
             #       branching on input_type, which is not ideal - Anmol Srivastava
-            self._inner_set_reference(X.values, input_type="batch")
-            self.input_cols = X.columns
-        elif isinstance(X, np.ndarray):
-            self._inner_set_reference(X, input_type="batch")
+            self._inner_set_reference(ary.values, input_type="batch")
+        elif isinstance(ary, np.ndarray):
+            # This maybe ought to put some more effort into trying to format the
+            # user's input as a numpy array, as in _validate_X.
+            self._inner_set_reference(ary, input_type="batch")
         else:
             raise ValueError(
                 "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
@@ -539,14 +508,16 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             y_true (numpy.ndarray): true labels of input data - not used in KdqTree
             y_pred (numpy.ndarray): predicted labels of input data - not used in KdqTree
         """
-        ary = self._prepare_data(X)
 
         if self.drift_state == "drift":
+            # Note that set_reference resets the detector.
             self.set_reference(self.ref_data)
 
         BatchDetector.update(self, X, y_true, y_pred)
-        KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")
 
-        # if _evaluate_kdqtree resulted in drift for batch data, do a redundant check
-        if self.drift_state == "drift" and isinstance(X, pd.DataFrame):
-            self.input_cols = X.columns
+        if isinstance(X, pd.DataFrame):
+            ary = X.values
+        elif isinstance(X, np.ndarray):
+            ary = X
+
+        KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")

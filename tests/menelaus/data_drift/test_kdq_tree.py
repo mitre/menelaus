@@ -91,7 +91,7 @@ def test_set_reference(kdq_det_batch):
     det = det = KdqTreeBatch(count_ubound=1, bootstrap_samples=10)
     new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES)))
     det.set_reference(new_sample)
-    assert det.input_cols.equals(new_sample.columns)
+    assert det.input_col_dim == new_sample.shape[1]
 
 
 def test_init_validation_stream(kdq_det_stream):
