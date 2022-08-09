@@ -82,8 +82,8 @@ def test_detect_batch_1_init():
     )
     hdm.set_reference(reference)
 
-    assert hdm.total_updates == 1
-    assert hdm.updates_since_reset == 1
+    assert hdm.total_batches == 1
+    assert hdm.batches_since_reset == 1
     assert hdm.drift_state == None
     assert hdm._prev_feature_distances != []
     assert hdm.reference_n == len(reference)
@@ -109,8 +109,8 @@ def test_detect_batch_1_no_drift():
     # update with identical test batch
     hdm.update(reference)
 
-    assert hdm.total_updates == 2
-    assert hdm.updates_since_reset == 2
+    assert hdm.total_batches == 2
+    assert hdm.batches_since_reset == 2
     assert hdm.drift_state == None
     assert hdm.reference_n == len(reference) * 2
     assert hdm.feature_epsilons != []
@@ -195,8 +195,8 @@ def test_detect_batch_1_reset():
     # test reset updating with identical batch to test
     hdm.update(test)
 
-    assert hdm.total_updates == 4
-    assert hdm.updates_since_reset == 2
+    assert hdm.total_batches == 4
+    assert hdm.batches_since_reset == 2
     assert len(hdm.epsilon) == 2  # epsilon is reset
     assert hdm.beta != None
     assert hdm.drift_state is None
@@ -217,8 +217,8 @@ def test_detect_batch_2_init():
     )
     hdm.set_reference(reference)
 
-    assert hdm.total_updates == 0
-    assert hdm.updates_since_reset == 0
+    assert hdm.total_batches == 0
+    assert hdm.batches_since_reset == 0
     assert hdm.drift_state == None
     assert hdm.reference_n == len(reference)
 
@@ -249,7 +249,7 @@ def test_detect_batch_2_no_drift():
     hdm.update(reference)
 
     assert hdm.drift_state == None
-    assert hdm.total_updates == 2
+    assert hdm.total_batches == 2
     assert hdm.feature_epsilons != []
     assert len(hdm.epsilon) == 2
     assert hdm.beta != None
@@ -314,8 +314,8 @@ def test_detect_batch_2_reset():
     # test reset updating with identical batch to test batch 2
     hdm.update(test)
 
-    assert hdm.total_updates == 3
-    assert hdm.updates_since_reset == 1
+    assert hdm.total_batches == 3
+    assert hdm.batches_since_reset == 1
     assert len(hdm.epsilon) == 0  # epsilon is reset
     assert hdm.beta != None
     assert hdm._drift_state == None
@@ -336,8 +336,8 @@ def test_detect_batch_3_init():
     )
     hdm.set_reference(reference)
 
-    assert hdm.total_updates == 0
-    assert hdm.updates_since_reset == 0
+    assert hdm.total_batches == 0
+    assert hdm.batches_since_reset == 0
     assert hdm.drift_state == None
     assert hdm.reference_n == len(reference)
 
@@ -371,7 +371,7 @@ def test_detect_batch_3_no_drift():
     hdm.update(reference)
 
     assert hdm.drift_state == None
-    assert hdm.total_updates == 3
+    assert hdm.total_batches == 3
     assert hdm.feature_epsilons != []
     assert len(hdm.epsilon) == 2
     assert hdm.beta != None
@@ -442,8 +442,8 @@ def test_detect_batch_3_reset():
     # test reset updating with identical batch to test batch 3
     hdm.update(test)
 
-    assert hdm.total_updates == 4
-    assert hdm.updates_since_reset == 1
+    assert hdm.total_batches == 4
+    assert hdm.batches_since_reset == 1
     assert len(hdm.epsilon) == 0  # epsilon is reset
     assert hdm.beta != None
     assert hdm._drift_state == None

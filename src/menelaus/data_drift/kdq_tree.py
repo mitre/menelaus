@@ -474,7 +474,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             y_true (numpy.array): actual labels of dataset - not used in KdqTree
             y_pred (numpy.array): predicted labels of dataset - not used in KdqTree
         """
-        super()._validate_input(X, y_true, y_pred)
+        super().set_reference(X, y_true, y_pred)
         ary = copy.copy(X)
         if isinstance(ary, pd.DataFrame):
             # XXX - notice how inner_set calling KLD requires us to continue

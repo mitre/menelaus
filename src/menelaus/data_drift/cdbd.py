@@ -166,7 +166,7 @@ class CDBD(HistogramDensityMethod):
         super().set_reference(X, y_true, y_pred)
 
         # Ensure only being used with 1 variable in reference
-        if self._num_features != 1:
+        if self.input_col_dim != 1:
             raise ValueError("CDBD should only be used to monitor 1 variable")
 
     def update(self, X, y_true=None, y_pred=None):

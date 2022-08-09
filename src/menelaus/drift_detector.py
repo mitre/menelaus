@@ -207,7 +207,7 @@ class BatchDetector(ABC):
             y_true (numpy.array): actual labels of dataset
             y_pred (numpy.array): predicted labels of dataset
         """
-        raise NotImplementedError
+        self._validate_input(X, y_true, y_pred)
 
     @abstractmethod
     def reset(self, *args, **kwargs):

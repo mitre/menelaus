@@ -215,7 +215,7 @@ class HDDDM(HistogramDensityMethod):
         """
 
         # Ensure batch datasets have equivalent features
-        if not self._num_features == X.shape[1]:
+        if not self.input_col_dim == X.shape[1]:
             raise ValueError("Batch features must match")
 
         super().update(X, y_true, y_pred)
