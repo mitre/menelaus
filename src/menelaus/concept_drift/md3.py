@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
@@ -116,8 +117,10 @@ class MD3(DriftDetector):
                 dataframe which is the target variable
         """
 
-        self.reference_batch_features = X.loc[:, X.columns != target_name]
-        self.reference_batch_target = X.loc[:, X.columns == target_name]
+        self.reference_batch_features = copy.deepcopy(
+            X.loc[:, X.columns != target_name]
+        )
+        self.reference_batch_target = copy.deepcopy(X.loc[:, X.columns == target_name])
 
         self.reference_distribution = self.calculate_distribution_statistics(X)
 

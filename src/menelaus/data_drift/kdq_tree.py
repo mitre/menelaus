@@ -373,9 +373,9 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
 
         StreamingDetector.update(self, X, y_true, y_pred)
         if isinstance(X, pd.DataFrame):
-            ary = X.values
+            ary = copy.deepcopy(X.values)
         else:
-            ary = X
+            ary = copy.deepcopy(X)
         KdqTreeDetector._evaluate_kdqtree(self, ary, "stream")
 
 
@@ -512,8 +512,8 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         BatchDetector.update(self, X, y_true, y_pred)
 
         if isinstance(X, pd.DataFrame):
-            ary = X.values
+            ary = copy.deepcopy(X.values)
         elif isinstance(X, np.ndarray):
-            ary = X
+            ary = copy.deepcopy(X)
 
         KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")
