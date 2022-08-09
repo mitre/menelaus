@@ -484,10 +484,6 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             # This maybe ought to put some more effort into trying to format the
             # user's input as a numpy array, as in _validate_X.
             self._inner_set_reference(ary, input_type="batch")
-        else:
-            raise ValueError(
-                "This method is only available for data inputs in the form of a Pandas DataFrame or a Numpy Array."
-            )
 
     def update(self, X, y_true=None, y_pred=None):
         """
