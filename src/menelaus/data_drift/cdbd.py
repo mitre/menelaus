@@ -162,12 +162,11 @@ class CDBD(HistogramDensityMethod):
             y_true (numpy.array): true labels for dataset - not used by CDBD
             y_pred (numpy.array): predicted labels for dataset - not used by CDBD
         """
+        # Ensure only being used with 1 variable in reference
+        if X.shape[1] != 1:
+            raise ValueError("CDBD should only be used to monitor 1 variable")
 
         super().set_reference(X, y_true, y_pred)
-
-        # Ensure only being used with 1 variable in reference
-        if self.input_col_dim != 1:
-            raise ValueError("CDBD should only be used to monitor 1 variable")
 
     def update(self, X, y_true=None, y_pred=None):
         """

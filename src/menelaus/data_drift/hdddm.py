@@ -213,9 +213,4 @@ class HDDDM(HistogramDensityMethod):
           y_true (numpy.ndarray): true labels of next batch - not used in HDDDM
           y_pred (numpy.ndarray): predicted labels of next batch - not used in HDDDM
         """
-
-        # Ensure batch datasets have equivalent features
-        if not self.input_col_dim == X.shape[1]:
-            raise ValueError("Batch features must match")
-
         super().update(X, y_true, y_pred)
