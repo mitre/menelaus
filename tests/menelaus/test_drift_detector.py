@@ -11,13 +11,6 @@ StreamingDetector.__abstractmethods__ = set()
 BatchDetector.__abstractmethods__ = set()
 
 
-def test_set_reference_batch():
-    """Ensure error on call to set_reference from batch ABC"""
-    det = BatchDetector()
-    with pytest.raises(NotImplementedError) as _:
-        det.set_reference(None, None, None)
-
-
 def test_drift_state_validation_streaming():
     """Ensure ValueError on invalid drift_state for StreamingDetector"""
     det = StreamingDetector()
@@ -74,6 +67,38 @@ def test_streaming_validation_X_columns():
 
 def test_streaming_validation_X_dimensions():
     det = StreamingDetector()
+    input1 = np.array([1, 2, 3])
+    input2 = pd.DataFrame(input1.reshape(1, -1), columns=["a", "b", "c"])
+    input3 = input2.values
+    input4 = np.array([1, 2, 3, 4])
+
+    det.update(input1, y_true=None, y_pred=None)
+    det.update(input2, y_true=None, y_pred=None)
+    det.update(input3, y_true=None, y_pred=None)
+    with pytest.raises(ValueError) as _:
+        det.update(input4, y_true=None, y_pred=None)
+
+
+def test_batch_validation_y_one_column():
+    det = BatchDetector()
+    det.update(X=None, y_true=1, y_pred=[1])
+    with pytest.raises(ValueError) as _:
+        det.update(
+            X=None, y_true=np.array([[1, 2], [1, 2]]), y_pred=np.array([[0], [0]])
+        )
+
+
+def test_batch_validation_X_columns():
+    det = BatchDetector()
+    input1 = pd.DataFrame({"a": [1], "b": [2]})
+    input2 = pd.DataFrame({"c": [1], "d": [2]})
+    det.update(input1, y_true=None, y_pred=None)
+    with pytest.raises(ValueError) as _:
+        det.update(input2, y_true=None, y_pred=None)
+
+
+def test_batch_validation_X_dimensions():
+    det = BatchDetector()
     input1 = np.array([1, 2, 3])
     input2 = pd.DataFrame(input1.reshape(1, -1), columns=["a", "b", "c"])
     input3 = input2.values
