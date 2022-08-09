@@ -56,8 +56,8 @@ class StreamingDetector(ABC):
                 of columns don't match
             ValueError: raised if X contains more than one observation
         """
-        ary = copy.copy(X)
-        if isinstance(ary, DataFrame):
+        if isinstance(X, DataFrame):
+            ary = X
             # The first update with a dataframe will constrain subsequent input.
             if self.input_cols is None:
                 self.input_cols = ary.columns
@@ -68,6 +68,7 @@ class StreamingDetector(ABC):
                         "Columns of new data must match with columns of prior data."
                     )
         else:
+            ary = copy.copy(X)
             ary = np.array(ary)
             if len(ary.shape) == 0:
                 ary = ary.reshape(-1, 1)
