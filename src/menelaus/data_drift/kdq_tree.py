@@ -475,7 +475,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             y_pred (numpy.array): predicted labels of dataset - not used in KdqTree
         """
         super().set_reference(X, y_true, y_pred)
-        ary = copy.copy(X)
+        ary = copy.deepcopy(X)
         if isinstance(ary, pd.DataFrame):
             # XXX - notice how inner_set calling KLD requires us to continue
             #       branching on input_type, which is not ideal - Anmol Srivastava

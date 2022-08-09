@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import pandas as pd
 import scipy.stats
@@ -233,7 +234,7 @@ class HistogramDensityMethod(BatchDetector):
         """
         super().set_reference(X, y_true, y_pred)
         # Initialize attributes
-        self.reference = X
+        self.reference = copy.deepcopy(X)
         self.reset()
 
     def update(self, X, y_true=None, y_pred=None):
