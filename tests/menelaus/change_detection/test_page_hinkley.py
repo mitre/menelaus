@@ -9,7 +9,7 @@ def test_build_no_drift():
         # constant update
         monitor.update(1)
         assert monitor.drift_state is None
-        assert monitor.updates_since_reset == i + 1
+        assert monitor.samples_since_reset == i + 1
 
 
 def test_build_pos_drift():

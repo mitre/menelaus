@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from pandas import DataFrame
+import numpy as np
+import copy
 
 
 class StreamingDetector(ABC):
@@ -12,6 +15,8 @@ class StreamingDetector(ABC):
         self._total_samples = 0
         self._samples_since_reset = 0
         self._drift_state = None
+        self.input_cols = None
+        self.input_col_dim = None
 
     @abstractmethod
     def update(self, X, y_true, y_pred):
@@ -23,6 +28,7 @@ class StreamingDetector(ABC):
             y_true (numpy.ndarray): if applicable, true labels of input data
             y_pred (numpy.ndarray): if applicable, predicted labels of input data
         """
+        self._validate_input(X, y_true, y_pred)
         self.total_samples += 1
         self.samples_since_reset += 1
 
@@ -34,6 +40,87 @@ class StreamingDetector(ABC):
         """
         self.samples_since_reset = 0
         self.drift_state = None
+
+    def _validate_X(self, X):
+        """Validate that the input only contains one observation, and that its
+        dimensions/column names match earlier input. If there is no
+        earlier input, store the dimension/column names.
+
+        Args:
+            X (array-like or numeric): Input features.
+
+        Raises:
+            ValueError: if a dataframe has ever been passed, raised if X's
+                column names don't match
+            ValueError: if an array has ever been passed, raised if X's number
+                of columns don't match
+            ValueError: raised if X contains more than one observation
+        """
+        if isinstance(X, DataFrame):
+            ary = X
+            # The first update with a dataframe will constrain subsequent input.
+            if self.input_cols is None:
+                self.input_cols = ary.columns
+                self.input_col_dim = len(self.input_cols)
+            elif self.input_cols is not None:
+                if not ary.columns.equals(self.input_cols):
+                    raise ValueError(
+                        "Columns of new data must match with columns of prior data."
+                    )
+        else:
+            ary = copy.copy(X)
+            ary = np.array(ary)
+            if len(ary.shape) == 0:
+                ary = ary.reshape(-1, 1)
+            elif len(ary.shape) == 1:
+                ary = ary.reshape(1, -1)
+            if self.input_col_dim is None:
+                # This allows starting with a dataframe, then later passing bare
+                # numpy arrays. For now, assume users are not miscreants.
+                self.input_col_dim = ary.shape[1]
+            elif self.input_col_dim is not None:
+                if ary.shape[1] != self.input_col_dim:
+                    raise ValueError(
+                        "Column-dimension of new data must match prior data."
+                    )
+
+        if ary.shape[0] != 1:
+            raise ValueError(
+                "Input for streaming detectors should contain only one observation."
+            )
+
+    def _validate_y(self, y):
+        """Validate that input contains only one observation.
+
+        Args:
+            y (numeric): the current value for `y_true` or `y_pred`, given to
+                `update`.
+
+        Raises:
+            ValueError: raised if more than one observation is passed.
+        """
+        ary = np.array(y).ravel()
+        if ary.shape != (1,):
+            raise ValueError(
+                "Input for streaming detectors should contain only one observation."
+            )
+
+    def _validate_input(self, X, y_true, y_pred):
+        """Helper method for `update`. Validates whether the input is appropriate
+        for a streaming detector. Errors will be raised if the input is more
+        than one observation, or if X's dimensions don't match prior input.
+
+        Args:
+            X (numpy.ndarray): input data
+            y_true (numpy.ndarray): if applicable, true labels of input data
+            y_pred (numpy.ndarray): if applicable, predicted labels of input data
+        """
+        if X is not None:
+            self._validate_X(X)
+        if y_true is not None:
+            self._validate_y(y_true)
+        if y_pred is not None:
+            self._validate_y(y_pred)
 
     @property
     def total_samples(self):

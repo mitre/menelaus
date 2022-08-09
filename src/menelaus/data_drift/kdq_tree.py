@@ -402,12 +402,14 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
             y_true (numpy.ndarray): true labels of input data - not used in KdqTree
             y_pred (numpy.ndarray): predicted labels of input data - not used in KdqTree
         """
-        ary = self._prepare_data(X)
-
         if self.drift_state == "drift":
             self.reset()
 
         StreamingDetector.update(self, X, y_true, y_pred)
+        if isinstance(X, pd.DataFrame):
+            ary = X.values
+        else:
+            ary = X
         KdqTreeDetector._evaluate_kdqtree(self, ary, "stream")
 
 

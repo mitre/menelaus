@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import StreamingDetector
 
 
-class LinearFourRates(DriftDetector):
+class LinearFourRates(StreamingDetector):
     """Linear Four Rates detects drift in a learner's true positive rate (TPR),
     true negative rate (TNR), negative predictive value (NPV), and
     positive predictive value (PPV) over time. It relies on the assumption that
@@ -157,21 +157,21 @@ class LinearFourRates(DriftDetector):
         # init next index for test stats
         self._r_stat.update(
             {
-                self.updates_since_reset: self._r_stat[
-                    self.updates_since_reset - 1
+                self.samples_since_reset: self._r_stat[
+                    self.samples_since_reset - 1
                 ].copy()
             }
         )
         self._p_table.update(
             {
-                self.updates_since_reset: self._p_table[
-                    self.updates_since_reset - 1
+                self.samples_since_reset: self._p_table[
+                    self.samples_since_reset - 1
                 ].copy()
             }
         )
         self._warning_states.update(
             {
-                self.updates_since_reset: {
+                self.samples_since_reset: {
                     "tpr": False,
                     "tnr": False,
                     "ppv": False,
@@ -181,7 +181,7 @@ class LinearFourRates(DriftDetector):
         )
         self._alarm_states.update(
             {
-                self.updates_since_reset: {
+                self.samples_since_reset: {
                     "tpr": False,
                     "tnr": False,
                     "ppv": False,
@@ -193,19 +193,19 @@ class LinearFourRates(DriftDetector):
         def _calculate_rate_bounds(rate):
             if new_rates[rate] != old_rates[rate]:
                 new_r_stat = self.time_decay_factor * self._r_stat[
-                    self.updates_since_reset
+                    self.samples_since_reset
                 ][rate] + (1 - self.time_decay_factor) * (y_t == y_p)
             else:
-                new_r_stat = self._r_stat[self.updates_since_reset - 1][rate]
+                new_r_stat = self._r_stat[self.samples_since_reset - 1][rate]
 
-            self._p_table[self.updates_since_reset][rate] = new_rates[rate]
-            self._r_stat[self.updates_since_reset][rate] = new_r_stat
+            self._p_table[self.samples_since_reset][rate] = new_rates[rate]
+            self._r_stat[self.samples_since_reset][rate] = new_r_stat
             self._denominators[rate + "_N"] = self._get_four_denominators(
                 self._confusion
             )[rate + "_N"]
 
-            if (self.updates_since_reset > self.burn_in) & (
-                self.updates_since_reset % self.subsample == 0
+            if (self.samples_since_reset > self.burn_in) & (
+                self.samples_since_reset % self.subsample == 0
             ):
                 est_rate = new_rates[rate]
                 curr_denom = self._denominators[rate + "_N"]
@@ -222,10 +222,10 @@ class LinearFourRates(DriftDetector):
                 lb_detect = bound_dict["lb_detect"]
                 ub_detect = bound_dict["ub_detect"]
 
-                self._warning_states[self.updates_since_reset][rate] = (
+                self._warning_states[self.samples_since_reset][rate] = (
                     new_r_stat < lb_warn
                 ) | (new_r_stat > ub_warn)
-                self._alarm_states[self.updates_since_reset][rate] = (
+                self._alarm_states[self.samples_since_reset][rate] = (
                     new_r_stat < lb_detect
                 ) | (new_r_stat > ub_detect)
 
@@ -237,10 +237,10 @@ class LinearFourRates(DriftDetector):
             for rate in self.rates_tracked:
                 _calculate_rate_bounds(rate)
 
-        if any(self._alarm_states[self.updates_since_reset].values()):
+        if any(self._alarm_states[self.samples_since_reset].values()):
             self.all_drift_states.append("drift")
             self.drift_state = "drift"
-        elif any(self._warning_states[self.updates_since_reset].values()):
+        elif any(self._warning_states[self.samples_since_reset].values()):
             self.all_drift_states.append("warning")
             self.drift_state = "warning"
         else:
@@ -259,12 +259,12 @@ class LinearFourRates(DriftDetector):
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
-            self._retraining_recs[0] = self.total_updates - 1
+            self._retraining_recs[0] = self.total_samples - 1
 
         if self.drift_state == "drift":
-            self._retraining_recs[1] = self.total_updates - 1
+            self._retraining_recs[1] = self.total_samples - 1
             if self._retraining_recs[0] is None:
-                self._retraining_recs[0] = self.total_updates - 1
+                self._retraining_recs[0] = self.total_samples - 1
 
     @staticmethod
     def _get_four_rates(confusion):

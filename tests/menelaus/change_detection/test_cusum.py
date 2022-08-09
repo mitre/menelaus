@@ -15,7 +15,7 @@ def test_no_drift():
         assert cusum.drift_state is None
         assert len(cusum._stream) == stream_size
         assert (
-            cusum.updates_since_reset == stream_size
+            cusum.samples_since_reset == stream_size
         )  # no reset til at least after burn in
 
 

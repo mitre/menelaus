@@ -1,8 +1,8 @@
 import numpy as np
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import StreamingDetector
 
 
-class DDM(DriftDetector):
+class DDM(StreamingDetector):
     """DDM is a drift detection algorithm which uses a binary classifier's error
     rate, which is binomially distributed. The minimum probability of an error
     and its standard deviation (``p_min``, ``s_min``) are found during training. If the
@@ -18,7 +18,7 @@ class DDM(DriftDetector):
     detector's state is set to ``"drift"``.
 
     The index of the first sample which triggered a warning/drift state
-    (relative to ``self.updates_since_reset``) is stored in ``self.retraining_recs``.
+    (relative to ``self.samples_since_reset``) is stored in ``self.retraining_recs``.
 
     Ref. :cite:t:`gama2004learning`
     """
@@ -81,16 +81,16 @@ class DDM(DriftDetector):
         error_rate_prev = self._error_rate
         self._error_rate = (
             self._error_rate
-            + (classifier_result - self._error_rate) / self.updates_since_reset
+            + (classifier_result - self._error_rate) / self.samples_since_reset
         )
         self._error_std = self._error_std + (classifier_result - self._error_rate) * (
             classifier_result - error_rate_prev
         )
-        self._error_std = np.sqrt(self._error_std / self.updates_since_reset)
+        self._error_std = np.sqrt(self._error_std / self.samples_since_reset)
 
         # it's unclear whether the 'burn-in' period should be updating the
         # minimums - seems like a bad idea though.
-        if self.updates_since_reset < self.n_threshold:
+        if self.samples_since_reset < self.n_threshold:
             return
 
         if (
@@ -125,12 +125,12 @@ class DDM(DriftDetector):
         drift/warning region.
         """
         if self.drift_state == "warning" and self._retraining_recs[0] is None:
-            self._retraining_recs[0] = self.total_updates - 1
+            self._retraining_recs[0] = self.total_samples - 1
 
         if self.drift_state == "drift":
-            self._retraining_recs[1] = self.total_updates - 1
+            self._retraining_recs[1] = self.total_samples - 1
             if self._retraining_recs[0] is None:
-                self._retraining_recs[0] = self.total_updates - 1
+                self._retraining_recs[0] = self.total_samples - 1
 
     @property
     def retraining_recs(self):

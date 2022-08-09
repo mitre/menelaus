@@ -93,7 +93,7 @@ def test_reset():
     det.update(drift.iloc[[i]])
     assert det._build_reference_and_test is True
     assert det._drift_state is None
-    assert det.updates_since_reset == 1
+    assert det.samples_since_reset == 0
 
 
 def test_kl_no_drift():
