@@ -211,7 +211,7 @@ class KdqTreeDetector:
             )
         else:
             return self._kdqtree.to_plotly_dataframe(
-                tree_id1, tree_id2, max_depth, self.input_cols
+                tree_id1, tree_id2, max_depth, self._input_cols
             )
 
     def _get_critical_kld(self, ref_counts, sample_size):

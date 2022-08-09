@@ -259,7 +259,7 @@ class HistogramDensityMethod(BatchDetector):
         # Estimate reference and test histograms
         mins = []
         maxes = []
-        for f in range(self.input_col_dim):
+        for f in range(self._input_col_dim):
             reference_variable = self.reference.iloc[:, f]
             test_variable = X.iloc[:, f]
             mins.append(np.concatenate((reference_variable, test_variable)).min())
@@ -270,13 +270,13 @@ class HistogramDensityMethod(BatchDetector):
         # Divergence metric
         total_distance = 0
         feature_distances = []
-        for f in range(self.input_col_dim):
+        for f in range(self._input_col_dim):
             f_distance = self.distance_function(
                 self._reference_density[f], test_density[f]
             )
             total_distance += f_distance
             feature_distances.append(f_distance)
-        self.current_distance = (1 / self.input_col_dim) * total_distance
+        self.current_distance = (1 / self._input_col_dim) * total_distance
         self.distances[self.total_batches] = self.current_distance
 
         # For each feature, calculate Epsilon, difference in distances
@@ -310,7 +310,7 @@ class HistogramDensityMethod(BatchDetector):
                 if current_epsilon > self.beta:
 
                     # Feature information
-                    if self.input_col_dim > 1:
+                    if self._input_col_dim > 1:
 
                         self.feature_info = {
                             "Epsilons": self.feature_epsilons,
@@ -384,7 +384,7 @@ class HistogramDensityMethod(BatchDetector):
                 bins=self._bins,
                 range=(min_values[f], max_values[f]),
             )[0]
-            for f in range(self.input_col_dim)
+            for f in range(self._input_col_dim)
         ]
 
         return histograms
@@ -506,7 +506,7 @@ class HistogramDensityMethod(BatchDetector):
 
                 # Divergence metric
                 total_distance = 0
-                for f in range(self.input_col_dim):
+                for f in range(self._input_col_dim):
                     f_distance = self.distance_function(subset1[f], subset2[f])
                     total_distance += f_distance
                 distances.append(total_distance)

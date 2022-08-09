@@ -15,8 +15,8 @@ class StreamingDetector(ABC):
         self._total_samples = 0
         self._samples_since_reset = 0
         self._drift_state = None
-        self.input_cols = None
-        self.input_col_dim = None
+        self._input_cols = None
+        self._input_col_dim = None
 
     @abstractmethod
     def update(self, X, y_true, y_pred):
@@ -59,11 +59,11 @@ class StreamingDetector(ABC):
         if isinstance(X, DataFrame):
             ary = X
             # The first update with a dataframe will constrain subsequent input.
-            if self.input_cols is None:
-                self.input_cols = ary.columns
-                self.input_col_dim = len(self.input_cols)
-            elif self.input_cols is not None:
-                if not ary.columns.equals(self.input_cols):
+            if self._input_cols is None:
+                self._input_cols = ary.columns
+                self._input_col_dim = len(self._input_cols)
+            elif self._input_cols is not None:
+                if not ary.columns.equals(self._input_cols):
                     raise ValueError(
                         "Columns of new data must match with columns of prior data."
                     )
@@ -74,12 +74,12 @@ class StreamingDetector(ABC):
                 ary = ary.reshape(-1, 1)
             elif len(ary.shape) == 1:
                 ary = ary.reshape(1, -1)
-            if self.input_col_dim is None:
+            if self._input_col_dim is None:
                 # This allows starting with a dataframe, then later passing bare
                 # numpy arrays. For now, assume users are not miscreants.
-                self.input_col_dim = ary.shape[1]
-            elif self.input_col_dim is not None:
-                if ary.shape[1] != self.input_col_dim:
+                self._input_col_dim = ary.shape[1]
+            elif self._input_col_dim is not None:
+                if ary.shape[1] != self._input_col_dim:
                     raise ValueError(
                         "Column-dimension of new data must match prior data."
                     )
@@ -180,8 +180,8 @@ class BatchDetector(ABC):
         self._total_batches = 0
         self._batches_since_reset = 0
         self._drift_state = None
-        self.input_cols = None
-        self.input_col_dim = None
+        self._input_cols = None
+        self._input_col_dim = None
 
     @abstractmethod
     def update(self, X, y_true, y_pred):
@@ -235,11 +235,11 @@ class BatchDetector(ABC):
         if isinstance(X, DataFrame):
             ary = X
             # The first update with a dataframe will constrain subsequent input.
-            if self.input_cols is None:
-                self.input_cols = ary.columns
-                self.input_col_dim = len(self.input_cols)
-            elif self.input_cols is not None:
-                if not ary.columns.equals(self.input_cols):
+            if self._input_cols is None:
+                self._input_cols = ary.columns
+                self._input_col_dim = len(self._input_cols)
+            elif self._input_cols is not None:
+                if not ary.columns.equals(self._input_cols):
                     raise ValueError(
                         "Columns of new data must match with columns of prior data."
                     )
@@ -251,12 +251,12 @@ class BatchDetector(ABC):
                 ary = ary.reshape(-1, 1)
             elif len(ary.shape) == 1:
                 ary = ary.reshape(1, -1)
-            if self.input_col_dim is None:
+            if self._input_col_dim is None:
                 # This allows starting with a dataframe, then later passing bare
                 # numpy arrays. For now, assume users are not miscreants.
-                self.input_col_dim = ary.shape[1]
-            elif self.input_col_dim is not None:
-                if ary.shape[1] != self.input_col_dim:
+                self._input_col_dim = ary.shape[1]
+            elif self._input_col_dim is not None:
+                if ary.shape[1] != self._input_col_dim:
                     raise ValueError(
                         "Column-dimension of new data must match prior data."
                     )
