@@ -1,11 +1,12 @@
+import copy
 import numpy as np
 import pandas as pd
 import scipy.stats
-from menelaus.drift_detector import DriftDetector
+from menelaus.drift_detector import BatchDetector
 from scipy.spatial.distance import jensenshannon
 
 
-class HistogramDensityMethod(DriftDetector):
+class HistogramDensityMethod(BatchDetector):
     """
     The Histogram Density Method (HDM) is the base class for both HDDDM and
     CDBD. HDDDM differs from CDBD by relying upon the Hellinger distance measure
@@ -231,10 +232,9 @@ class HistogramDensityMethod(DriftDetector):
             y_true (numpy.array): true labels for dataset - not used by HDM
             y_pred (numpy.array): predicted labels for dataset - not used by HDM
         """
-
+        super().set_reference(X, y_true, y_pred)
         # Initialize attributes
-        self.reference = X
-        self._num_features = self.reference.shape[1]
+        self.reference = copy.deepcopy(X)
         self.reset()
 
     def update(self, X, y_true=None, y_pred=None):
@@ -259,7 +259,7 @@ class HistogramDensityMethod(DriftDetector):
         # Estimate reference and test histograms
         mins = []
         maxes = []
-        for f in range(self._num_features):
+        for f in range(self._input_col_dim):
             reference_variable = self.reference.iloc[:, f]
             test_variable = X.iloc[:, f]
             mins.append(np.concatenate((reference_variable, test_variable)).min())
@@ -270,26 +270,26 @@ class HistogramDensityMethod(DriftDetector):
         # Divergence metric
         total_distance = 0
         feature_distances = []
-        for f in range(self._num_features):
+        for f in range(self._input_col_dim):
             f_distance = self.distance_function(
                 self._reference_density[f], test_density[f]
             )
             total_distance += f_distance
             feature_distances.append(f_distance)
-        self.current_distance = (1 / self._num_features) * total_distance
-        self.distances[self.total_updates] = self.current_distance
+        self.current_distance = (1 / self._input_col_dim) * total_distance
+        self.distances[self.total_batches] = self.current_distance
 
         # For each feature, calculate Epsilon, difference in distances
-        if self.total_updates > 1:
+        if self.total_batches > 1:
             self.feature_epsilons = [
                 a_i - b_i
                 for a_i, b_i in zip(feature_distances, self._prev_feature_distances)
             ]
 
         # Compute Epsilon and Beta
-        if self.updates_since_reset >= 2:
+        if self.batches_since_reset >= 2:
 
-            if self.updates_since_reset == 2 and self.detect_batch != 3:
+            if self.batches_since_reset == 2 and self.detect_batch != 3:
                 initial_epsilon = self._estimate_initial_epsilon(
                     self.reference, self.subsets, mins, maxes
                 )
@@ -297,20 +297,20 @@ class HistogramDensityMethod(DriftDetector):
 
             current_epsilon = abs(self.current_distance - self._prev_distance) * 1.0
             self.epsilon.append(current_epsilon)
-            self.epsilon_values[self.total_updates] = current_epsilon
+            self.epsilon_values[self.total_batches] = current_epsilon
 
-            condition1 = bool(self.updates_since_reset >= 2 and self.detect_batch != 3)
-            condition2 = bool(self.updates_since_reset >= 3 and self.detect_batch == 3)
+            condition1 = bool(self.batches_since_reset >= 2 and self.detect_batch != 3)
+            condition2 = bool(self.batches_since_reset >= 3 and self.detect_batch == 3)
             if condition1 or condition2:
 
                 self.beta = self._adaptive_threshold(self.statistic, test_n)
-                self.thresholds[self.total_updates] = self.beta
+                self.thresholds[self.total_batches] = self.beta
 
                 # Detect drift
                 if current_epsilon > self.beta:
 
                     # Feature information
-                    if self._num_features > 1:
+                    if self._input_col_dim > 1:
 
                         self.feature_info = {
                             "Epsilons": self.feature_epsilons,
@@ -322,7 +322,7 @@ class HistogramDensityMethod(DriftDetector):
 
                     self._drift_state = "drift"
                     self.reference = X
-                    self._lambda = self.total_updates
+                    self._lambda = self.total_batches
 
         if self._drift_state != "drift":
             self._prev_distance = self.current_distance
@@ -335,7 +335,7 @@ class HistogramDensityMethod(DriftDetector):
     def reset(self):
         """
         Initialize relevant attributes to original values, to ensure information
-        only stored from updates_since_reset (lambda) onwards. Intended for use
+        only stored from batches_since_reset (lambda) onwards. Intended for use
         after ``drift_state == 'drift'``.
         """
 
@@ -384,7 +384,7 @@ class HistogramDensityMethod(DriftDetector):
                 bins=self._bins,
                 range=(min_values[f], max_values[f]),
             )[0]
-            for f in range(self._num_features)
+            for f in range(self._input_col_dim)
         ]
 
         return histograms
@@ -429,22 +429,22 @@ class HistogramDensityMethod(DriftDetector):
             Adaptive threshold Beta.
         """
 
-        if self.updates_since_reset == 3 and self.detect_batch != 3:
+        if self.batches_since_reset == 3 and self.detect_batch != 3:
             self.total_epsilon -= self.epsilon[0]
             self.epsilon = self.epsilon[1:]
 
         # update scale for denominator (t - lambda - 1), accounting for our initial Epsilon estimate
-        if self.updates_since_reset == 2 and self.detect_batch != 3:
+        if self.batches_since_reset == 2 and self.detect_batch != 3:
             d_scale = 1
         else:
-            d_scale = self.total_updates - self._lambda - 1
+            d_scale = self.total_batches - self._lambda - 1
 
-        # Increment running mean of epsilon from updates_since_reset (lambda) -> t-1
+        # Increment running mean of epsilon from batches_since_reset (lambda) -> t-1
         self.total_epsilon += self.epsilon[-2]  # was -2 before total samples change...
 
         epsilon_hat = (1 / d_scale) * self.total_epsilon
 
-        # Compute standard deviation for updates_since_reset (lambda) -> t-1
+        # Compute standard deviation for batches_since_reset (lambda) -> t-1
         total_stdev = sum(
             (self.epsilon[i] - epsilon_hat) ** 2 for i in range(len(self.epsilon) - 1)
         )
@@ -506,7 +506,7 @@ class HistogramDensityMethod(DriftDetector):
 
                 # Divergence metric
                 total_distance = 0
-                for f in range(self._num_features):
+                for f in range(self._input_col_dim):
                     f_distance = self.distance_function(subset1[f], subset2[f])
                     total_distance += f_distance
                 distances.append(total_distance)

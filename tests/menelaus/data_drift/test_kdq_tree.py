@@ -70,7 +70,7 @@ def test_reset_stream(kdq_det_stream):
     assert det.drift_state is None
     det.reset()
     det.update(new_sample)
-    assert det.input_cols.equals(new_sample.columns)
+    assert det._input_cols.equals(new_sample.columns)
 
 
 def test_reset_batch(kdq_det_batch):
@@ -87,11 +87,11 @@ def test_set_reference(kdq_det_batch):
     det.update(new_sample)
     assert det.drift_state is None
 
-    # make sure that input_cols is set appropriately when initialized
+    # make sure that _input_cols is set appropriately when initialized
     det = det = KdqTreeBatch(count_ubound=1, bootstrap_samples=10)
     new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES)))
     det.set_reference(new_sample)
-    assert det.input_cols.equals(new_sample.columns)
+    assert det._input_col_dim == new_sample.shape[1]
 
 
 def test_init_validation_stream(kdq_det_stream):

@@ -15,8 +15,8 @@ class StreamingDetector(ABC):
         self._total_samples = 0
         self._samples_since_reset = 0
         self._drift_state = None
-        self.input_cols = None
-        self.input_col_dim = None
+        self._input_cols = None
+        self._input_col_dim = None
 
     @abstractmethod
     def update(self, X, y_true, y_pred):
@@ -59,11 +59,11 @@ class StreamingDetector(ABC):
         if isinstance(X, DataFrame):
             ary = X
             # The first update with a dataframe will constrain subsequent input.
-            if self.input_cols is None:
-                self.input_cols = ary.columns
-                self.input_col_dim = len(self.input_cols)
-            elif self.input_cols is not None:
-                if not ary.columns.equals(self.input_cols):
+            if self._input_cols is None:
+                self._input_cols = ary.columns
+                self._input_col_dim = len(self._input_cols)
+            elif self._input_cols is not None:
+                if not ary.columns.equals(self._input_cols):
                     raise ValueError(
                         "Columns of new data must match with columns of prior data."
                     )
@@ -74,12 +74,12 @@ class StreamingDetector(ABC):
                 ary = ary.reshape(-1, 1)
             elif len(ary.shape) == 1:
                 ary = ary.reshape(1, -1)
-            if self.input_col_dim is None:
+            if self._input_col_dim is None:
                 # This allows starting with a dataframe, then later passing bare
                 # numpy arrays. For now, assume users are not miscreants.
-                self.input_col_dim = ary.shape[1]
-            elif self.input_col_dim is not None:
-                if ary.shape[1] != self.input_col_dim:
+                self._input_col_dim = ary.shape[1]
+            elif self._input_col_dim is not None:
+                if ary.shape[1] != self._input_col_dim:
                     raise ValueError(
                         "Column-dimension of new data must match prior data."
                     )
@@ -180,6 +180,8 @@ class BatchDetector(ABC):
         self._total_batches = 0
         self._batches_since_reset = 0
         self._drift_state = None
+        self._input_cols = None
+        self._input_col_dim = None
 
     @abstractmethod
     def update(self, X, y_true, y_pred):
@@ -191,6 +193,7 @@ class BatchDetector(ABC):
             y_true (numpy.ndarray): if applicable, true labels of input data
             y_pred (numpy.ndarray): if applicable, predicted labels of input data
         """
+        self._validate_input(X, y_true, y_pred)
         self.total_batches += 1
         self.batches_since_reset += 1
 
@@ -204,7 +207,7 @@ class BatchDetector(ABC):
             y_true (numpy.array): actual labels of dataset
             y_pred (numpy.array): predicted labels of dataset
         """
-        raise NotImplementedError
+        self._validate_input(X, y_true, y_pred)
 
     @abstractmethod
     def reset(self, *args, **kwargs):
@@ -214,6 +217,87 @@ class BatchDetector(ABC):
         """
         self.batches_since_reset = 0
         self.drift_state = None
+
+    def _validate_X(self, X):
+        """Validate that the input only contains one observation, and that its
+        dimensions/column names match earlier input. If there is no
+        earlier input, store the dimension/column names.
+
+        Args:
+            X (array-like or numeric): Input features.
+
+        Raises:
+            ValueError: if a dataframe has ever been passed, raised if X's
+                column names don't match
+            ValueError: if an array has ever been passed, raised if X's number
+                of columns don't match
+        """
+        if isinstance(X, DataFrame):
+            ary = X
+            # The first update with a dataframe will constrain subsequent input.
+            if self._input_cols is None:
+                self._input_cols = ary.columns
+                self._input_col_dim = len(self._input_cols)
+            elif self._input_cols is not None:
+                if not ary.columns.equals(self._input_cols):
+                    raise ValueError(
+                        "Columns of new data must match with columns of prior data."
+                    )
+        else:
+            ary = copy.copy(X)
+            ary = np.array(ary)
+            # Batch size of 1 is technically allowed, but it'll probably break downstream
+            if len(ary.shape) == 0:
+                ary = ary.reshape(-1, 1)
+            elif len(ary.shape) == 1:
+                ary = ary.reshape(1, -1)
+            if self._input_col_dim is None:
+                # This allows starting with a dataframe, then later passing bare
+                # numpy arrays. For now, assume users are not miscreants.
+                self._input_col_dim = ary.shape[1]
+            elif self._input_col_dim is not None:
+                if ary.shape[1] != self._input_col_dim:
+                    raise ValueError(
+                        "Column-dimension of new data must match prior data."
+                    )
+
+    def _validate_y(self, y):
+        """Validate that input contains only one column.
+
+        Args:
+            y (numeric): the current value for `y_true` or `y_pred`, given to
+                `update`.
+
+        Raises:
+            ValueError: if an array has been passed that has more than one column
+        """
+        ary = np.array(y)
+        if len(ary.shape) == 0:
+            ary = ary.reshape(-1, 1)
+        elif len(ary.shape) == 1:
+            ary = ary.reshape(1, -1)
+        if ary.shape[1] != 1:
+            raise ValueError(
+                "Input for streaming detectors should contain only one column."
+            )
+
+    def _validate_input(self, X, y_true, y_pred):
+        """Helper method for `update` and `set_reference`. Validates whether the
+        input is appropriate for a batch detector. Errors will be raised if X's
+        dimensions don't match prior input, or a y input has more than one
+        column.
+
+        Args:
+            X (numpy.ndarray): input data
+            y_true (numpy.ndarray): if applicable, true labels of input data
+            y_pred (numpy.ndarray): if applicable, predicted labels of input data
+        """
+        if X is not None:
+            self._validate_X(X)
+        if y_true is not None:
+            self._validate_y(y_true)
+        if y_pred is not None:
+            self._validate_y(y_pred)
 
     @property
     def total_batches(self):
