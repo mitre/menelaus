@@ -37,7 +37,7 @@ def eval_minimum_approval(approvals_needed=1):
             must alarm for the ensemble to alarm.
 
     Returns:
-        function (dict -> str): Function that takes a dictionary
+        function (list -> str): Function that takes a list
             of detectors and returns drift state.
     """
     def f(detectors):
@@ -46,13 +46,13 @@ def eval_minimum_approval(approvals_needed=1):
         approval scheme.
 
         Args:
-            detectors (dict): Detectors in a table.
+            detectors (list): Detectors to use for alarming.
         
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
         num_approvals = 0 
-        for det in detectors.values():
+        for det in detectors:
             if det.drift_state == "drift":
                 num_approvals += 1
             if num_approvals >= approvals_needed:
@@ -68,10 +68,10 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
         2) A subsequent ``c`` count of detectors confirmed drift.
     
     Hypothethically, the distinction between this and
-    `eval_minimum_approval(a+c)`, is that Python now preserves
-    dictionary entries in order of insertion. As such this voting
-    scheme iterates over detectors in order of their insertion into
-    the user-defined table, and uses the first ``approvals_needed``
+    `eval_minimum_approval(a+c)`, is if the detectors were added to
+    a collection in a meaningful order. As such this voting
+    scheme iterates over detectors in preserved order of insertion into
+    the user-defined list, and uses the first ``approvals_needed``
     amount for initial detection, and the next ``confirmations_needed``
     amount for confirmation of drift.
 
@@ -86,15 +86,15 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
             observed.
 
     Returns:
-        function (dict -> str): Function that takes a dictionary
-            of detectors and returns drift state.
+        function (list -> str): Function that takes a list of detectors
+            and returns drift state.
     """
     def f(detectors):
         """
         Function that actually evaluates by confirmed approval scheme.
 
         Args:
-            detectors (dict): Detectors in a table.
+            detectors (list): Detectors to user for alarming.
         
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
@@ -115,6 +115,7 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
                     return "drift"
 
         return None
+    return f
 
 
 # TODO - How to put n-min-approvals version of evaluator
@@ -180,8 +181,16 @@ class Ensemble:
         #           are mixed in
         ret = data.copy()
         if self.columns:
-            cols = self.columns[det_key]
-            ret = data[cols]
+            if det_key in self.columns:
+                cols = self.columns[det_key]
+                ret = data[cols]
+
+                # single observation, single feature (e.g. Change Detectors)
+                # need the value, not a sequence wrapper around the value
+                if len(cols) == 1 and len(ret) == 1:
+                    # TODO right now assume it's a pandas dataframe - FIX!
+                    ret = ret.values[0][0]
+
         return ret
 
     def evaluate(self):
