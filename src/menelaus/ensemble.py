@@ -23,10 +23,109 @@ def eval_simple_majority(detectors):
         return None
 
 
-# Keeping all evaluator functions in a table enables
-# ensembles to look up via str value, rather than
-# needing a function passed in.
-EVALUATORS = {"simple-majority": eval_simple_majority}
+def eval_minimum_approval(approvals_needed=1):
+    """
+    Evaluator function that determines drift based on whether
+    a minimum number of provided detectors have alarmed. This
+    threshold can be 1 to the maximum number of detectors.
+
+    Note that this function is a closure, and so is called a
+    little differently:
+
+    Args:
+        approvals_needed (int): Minimum number of detectors that
+            must alarm for the ensemble to alarm.
+
+    Returns:
+        function (dict -> str): Function that takes a dictionary
+            of detectors and returns drift state.
+    """
+    def f(detectors):
+        """
+        Function that actually operates according to the minimum
+        approval scheme.
+
+        Args:
+            detectors (dict): Detectors in a table.
+        
+        Returns:
+            str: ``"drift_state"`` if drift is determined, or ``None``
+        """
+        num_approvals = 0 
+        for det in detectors.values():
+            if det.drift_state == "drift":
+                num_approvals += 1
+            if num_approvals >= approvals_needed:
+                return "drift"
+        return None
+    return f
+
+
+def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
+    """
+    Evaluator that determines drift based on whether:
+        1) An initial ``a`` count of detectors alarmed for drift.
+        2) A subsequent ``c`` count of detectors confirmed drift.
+    
+    Hypothethically, the distinction between this and
+    `eval_minimum_approval(a+c)`, is that Python now preserves
+    dictionary entries in order of insertion. As such this voting
+    scheme iterates over detectors in order of their insertion into
+    the user-defined table, and uses the first ``approvals_needed``
+    amount for initial detection, and the next ``confirmations_needed``
+    amount for confirmation of drift.
+
+    Note that this function is a closure, and so is called a
+    little differently:
+
+    Args:
+        approvals_needed (int): Minimum number of detectors that
+            must alarm for the ensemble to alarm.
+        confirmations_needed (int): Minimum number of confirmations
+            needed to alarm, after `approvals_needed` alarms have been
+            observed.
+
+    Returns:
+        function (dict -> str): Function that takes a dictionary
+            of detectors and returns drift state.
+    """
+    def f(detectors):
+        """
+        Function that actually evaluates by confirmed approval scheme.
+
+        Args:
+            detectors (dict): Detectors in a table.
+        
+        Returns:
+            str: ``"drift_state"`` if drift is determined, or ``None``
+        """
+
+        num_approvals = 0
+        num_confirmations = 0
+
+        for det in detectors.values():
+            if det.drift_state == "drift":
+
+                if num_approvals < approvals_needed:
+                    num_approvals += 1
+                else:
+                    num_confirmations += 1
+                
+                if num_approvals >= approvals_needed and num_confirmations >= confirmations_needed:
+                    return "drift"
+
+        return None
+
+
+# TODO - How to put n-min-approvals version of evaluator
+#        in table, since the user may change n? Same with others.
+# TODO - Isn't confirmed approval just a version of minimum
+#        approval, with a non-guaranteed order characteristic?
+EVALUATORS = {
+    "simple-majority": eval_simple_majority,
+    "single-approval": eval_minimum_approval(1),
+    "single-confirmed-approval": eval_confirmed_approval(1, 1)
+}
 
 
 class Ensemble:
