@@ -164,7 +164,7 @@ def test_eval_confirmed_approval_1():
     s1.drift_state = s2.drift_state = "drift"
     s3 = STEPD()
     s3.drift_state = None
-    assert eval_minimum_approval(approvals_needed=2)([s1, s2, s3]) == "drift"
+    assert eval_confirmed_approval(approvals_needed=1)([s1, s2, s3]) == "drift"
 
 def test_eval_confirmed_approval_2():
     """Ensure confirmed approval scheme does not false alarm"""
@@ -172,4 +172,4 @@ def test_eval_confirmed_approval_2():
     s1.drift_state = "drift"
     s3 = STEPD()
     s2.drift_state = s3.drift_state = None
-    assert eval_minimum_approval(approvals_needed=2)([s1, s2, s3]) == None
+    assert eval_confirmed_approval(approvals_needed=2)([s1, s2, s3]) == None

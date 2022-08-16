@@ -106,7 +106,7 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
         num_approvals = 0
         num_confirmations = 0
 
-        for det in detectors.values():
+        for det in detectors:
             if det.drift_state == "drift":
 
                 if num_approvals < approvals_needed:
