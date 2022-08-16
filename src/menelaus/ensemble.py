@@ -40,6 +40,7 @@ def eval_minimum_approval(approvals_needed=1):
         function (list -> str): Function that takes a list
             of detectors and returns drift state.
     """
+
     def f(detectors):
         """
         Function that actually operates according to the minimum
@@ -47,17 +48,18 @@ def eval_minimum_approval(approvals_needed=1):
 
         Args:
             detectors (list): Detectors to use for alarming.
-        
+
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
-        num_approvals = 0 
+        num_approvals = 0
         for det in detectors:
             if det.drift_state == "drift":
                 num_approvals += 1
             if num_approvals >= approvals_needed:
                 return "drift"
         return None
+
     return f
 
 
@@ -66,7 +68,7 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
     Evaluator that determines drift based on whether:
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
-    
+
     Hypothethically, the distinction between this and
     `eval_minimum_approval(a+c)`, is if the detectors were added to
     a collection in a meaningful order. As such this voting
@@ -89,13 +91,14 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
         function (list -> str): Function that takes a list of detectors
             and returns drift state.
     """
+
     def f(detectors):
         """
         Function that actually evaluates by confirmed approval scheme.
 
         Args:
             detectors (list): Detectors to user for alarming.
-        
+
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
@@ -110,11 +113,15 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
                     num_approvals += 1
                 else:
                     num_confirmations += 1
-                
-                if num_approvals >= approvals_needed and num_confirmations >= confirmations_needed:
+
+                if (
+                    num_approvals >= approvals_needed
+                    and num_confirmations >= confirmations_needed
+                ):
                     return "drift"
 
         return None
+
     return f
 
 
@@ -125,7 +132,7 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
 EVALUATORS = {
     "simple-majority": eval_simple_majority,
     "single-approval": eval_minimum_approval(1),
-    "single-confirmed-approval": eval_confirmed_approval(1, 1)
+    "single-confirmed-approval": eval_confirmed_approval(1, 1),
 }
 
 
@@ -214,10 +221,11 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     """
     Implements Ensemble class for streaming drift detectors. Inherits
     from Ensemble and StreamingDetector (i.e., StreamingEnsemble IS-A StreamingDetector).
-    As such it has the functions of a regular detector: update, and reset. 
+    As such it has the functions of a regular detector: update, and reset.
     Internally, these operate not only on the ensemble's own attributes,
     but on the set of detectors given to it.
     """
+
     def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
         """
         Args:
@@ -267,6 +275,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
     update, and reset. Only internally, these operate not only on the
     ensemble's own attributes, but on the set of detectors given to it.
     """
+
     def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
         """
         Args:
