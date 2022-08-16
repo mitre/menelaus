@@ -92,12 +92,13 @@ def test_batch_ensemble_2():
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
         evaluator="simple-majority",
-        columns={"k1": ["a"], "k2": ["b", "c"]},
+        # XXX - forcing >1 columns to satisfy KdqTree Batch
+        columns={"k1": ["a", "b"], "k2": ["b", "c"]},
     )
     df = pd.DataFrame({"a": [0, 10.0], "b": [0, 11.0], "c": [0, 12.0]})
     be.set_reference(df.loc[:0])
     be.update(df.loc[1:])
-    assert len(be.detectors["k1"]._input_cols) == 1
+    assert len(be.detectors["k1"]._input_cols) == 2
     assert len(be.detectors["k2"]._input_cols) == 2
 
 def test_batch_ensemble_reset_1():
@@ -107,7 +108,7 @@ def test_batch_ensemble_reset_1():
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
         evaluator="simple-majority",
-        columns={"k1": ["a"], "k2": ["b", "c"]},
+        columns={"k1": ["a", "b"], "k2": ["b", "c"]},
     )
     df = pd.DataFrame({"a": [0, 10.0], "b": [0, 11.0], "c": [0, 12.0]})
     be.set_reference(df.loc[:0])
