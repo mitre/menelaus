@@ -147,10 +147,13 @@ class Ensemble:
     from this.
     """
 
-    def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
+    def __init__(self, detectors: dict, evaluator, columns: dict = None):
         self.detectors = detectors.copy()
-        self.evaluator = EVALUATORS[evaluator]
         self.columns = columns
+        # XXX - Since rigid type-checking is sort of discouraged in Python
+        #       it makes the most sense to just treat evaluator as (always)
+        #       a function operating on detectors.
+        self.evaluator = evaluator
 
     def update(self, X, y_true=None, y_pred=None):
         """

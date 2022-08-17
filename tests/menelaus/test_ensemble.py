@@ -1,6 +1,6 @@
 import pandas as pd
 
-from menelaus.ensemble import StreamingEnsemble, BatchEnsemble
+from menelaus.ensemble import StreamingEnsemble, BatchEnsemble, EVALUATORS
 from menelaus.ensemble import eval_simple_majority, eval_confirmed_approval, eval_minimum_approval
 from menelaus.data_drift import KdqTreeBatch
 from menelaus.concept_drift import STEPD
@@ -14,7 +14,7 @@ def test_stream_ensemble_1():
     step3 = STEPD(window_size=2)
     se = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2, "s3": step3},
-        evaluator="simple-majority"
+        evaluator=EVALUATORS["simple-majority"]
     )
     df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
@@ -27,7 +27,7 @@ def test_stream_ensemble_2():
     step3 = STEPD(window_size=2)
     se = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2, "s3": step3},
-        evaluator="simple-majority",
+        evaluator=EVALUATORS["simple-majority"],
         columns={"s1": ["a"], "s2": ["b", "c"]}
     )
     df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
@@ -41,7 +41,7 @@ def test_stream_ensemble_3():
     adwin3 = ADWIN()
     se = StreamingEnsemble(
         detectors={"a1": adwin1, "a2": adwin2, "a3": adwin3},
-        evaluator="simple-majority",
+        evaluator=EVALUATORS["simple-majority"],
         columns={"a1": ["a"], "a2": ["b"], "a3":["c"]}
     )
     df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
@@ -54,7 +54,7 @@ def test_stream_ensemble_reset_1():
     step2 = STEPD(window_size=2)
     be = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2},
-        evaluator="simple-majority",
+        evaluator=EVALUATORS["simple-majority"],
         columns={"s1": ["a"], "s2": ["b", "c"]},
     )
     df = pd.DataFrame({"a": [0, 10.0], "b": [0, 11.0], "c": [0, 12.0]})
@@ -78,7 +78,8 @@ def test_batch_ensemble_1():
     kdq2 = KdqTreeBatch(bootstrap_samples=1)
     kdq3 = KdqTreeBatch(bootstrap_samples=1)
     be = BatchEnsemble(
-        detectors={"k1": kdq1, "k2": kdq2, "k3": kdq3}, evaluator="simple-majority"
+        detectors={"k1": kdq1, "k2": kdq2, "k3": kdq3},
+        evaluator=EVALUATORS["simple-majority"]
     )
     df = pd.DataFrame({"a": [0, 0], "b": [0, 0], "c": [0, 0]})
     be.set_reference(df.loc[:0])
@@ -91,7 +92,7 @@ def test_batch_ensemble_2():
     kdq2 = KdqTreeBatch(bootstrap_samples=1)
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
-        evaluator="simple-majority",
+        evaluator=EVALUATORS["simple-majority"],
         # XXX - forcing >1 columns to satisfy KdqTree Batch
         columns={"k1": ["a", "b"], "k2": ["b", "c"]},
     )
@@ -107,7 +108,7 @@ def test_batch_ensemble_reset_1():
     kdq2 = KdqTreeBatch(bootstrap_samples=1)
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
-        evaluator="simple-majority",
+        evaluator=EVALUATORS["simple-majority"],
         columns={"k1": ["a", "b"], "k2": ["b", "c"]},
     )
     df = pd.DataFrame({"a": [0, 10.0], "b": [0, 11.0], "c": [0, 12.0]})
