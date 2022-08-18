@@ -129,24 +129,26 @@ df = fetch_rainfall_data()
 detector = ADWINOutcome()
 for i, row in df.iterrows():
     detector.update(X=None, y_true=row['rain'], y_pred=0)
-    print("Drift state after update is:", detector.drift_state)
+    print("Drift state:", detector.drift_state)
 
 # use data drift detector (features-only)
 detector = KdqTreeStreaming(window_size=5)
 for i, row in df.iterrows():
     detector.update(X=df.loc[[i], df.columns != 'rain'], y_true=None, y_pred=None)
-    print("Drift state after update is:", detector.drift_state)
+    print("Drift state:", detector.drift_state)
 
-# use ensemble detector
-detectors = {
-  'k': KdqTreeStreaming(window_size=5),
-  'a': ADWINOutcome()
-}
-ensemble = StreamingEnsemble(detectors, eval_simple_majority)
+# use ensemble detector (detectors + voting function)
+ensemble = StreamingEnsemble(
+  {
+    'a': ADWINOutcome(),
+    'k': KdqTreeStreaming(window_size=5)
+  },
+  eval_simple_majority
+)
 
 for i, row in df.iterrows():
     ensemble.update(X=df.loc[[i], df.columns != 'rain'], y_true=row['rain'], y_pred=0)
-    print("Drift state after update is:", ensemble.drift_state)
+    print("Drift state:", ensemble.drift_state)
 ```
 
 As a concept drift detector, ADWIN requires both a true value (`y_true`) and a
