@@ -61,6 +61,7 @@ class ADWINOutcome(ADWIN):
         Raises:
             ValueError: If ``ADWIN.delta`` is not on the range 0 to 1.
         """
+        # TODO - um, shouldn't this use the init parameters
         super().__init__(
             delta=0.002,
             max_buckets=5,

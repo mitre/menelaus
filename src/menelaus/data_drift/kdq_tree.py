@@ -513,7 +513,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
 
         if isinstance(X, pd.DataFrame):
             ary = copy.deepcopy(X.values)
-        elif isinstance(X, np.ndarray):
+        else:
             ary = copy.deepcopy(X)
 
         KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")
