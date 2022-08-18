@@ -122,8 +122,10 @@ from menelaus.data_drift import KdqTreeStreaming
 from menelaus.datasets import fetch_rainfall_data
 from menelaus.ensemble import StreamingEnsemble, eval_simple_majority
 
+
 # has feature columns, and a binary response 'rain'
 df = fetch_rainfall_data()
+
 
 # use a concept drift detector (response-only)
 detector = ADWINOutcome()
@@ -131,11 +133,13 @@ for i, row in df.iterrows():
     detector.update(X=None, y_true=row['rain'], y_pred=0)
     print("Drift state:", detector.drift_state)
 
+
 # use data drift detector (features-only)
 detector = KdqTreeStreaming(window_size=5)
 for i, row in df.iterrows():
     detector.update(X=df.loc[[i], df.columns != 'rain'], y_true=None, y_pred=None)
     print("Drift state:", detector.drift_state)
+
 
 # use ensemble detector (detectors + voting function)
 ensemble = StreamingEnsemble(
