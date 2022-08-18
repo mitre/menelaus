@@ -150,10 +150,11 @@ class Ensemble:
     def __init__(self, detectors: dict, evaluator, columns: dict = None):
         self.detectors = detectors.copy()
         self.columns = columns
-        # XXX - Since rigid type-checking is sort of discouraged in Python
-        #       it makes the most sense to just treat evaluator as (always)
-        #       a function operating on detectors.
-        self.evaluator = evaluator
+        # XXX - This type of type-checking is discouraged - AS
+        if isinstance(evaluator, str):
+            self.evaluator = EVALUATORS[evaluator]
+        else:
+            self.evaluator = evaluator
 
     def update(self, X, y_true=None, y_pred=None):
         """
