@@ -107,36 +107,49 @@ Menelaus should work with Python 3.8 or higher.
 # Getting Started
 
 Each detector implements the API defined by `menelaus.drift_detector`:
-they have an `update` method which allows new data to be passed, a
-`drift_state` attribute which tells the user whether drift has been
-detected, and a `reset` method (generally called automatically by
-`update`) which clears the `drift_state` along with (usually) some other
-attributes specific to the detector class.
+notably, they have an `update` method which allows new data to be passed, and a `drift_state` attribute which tells the user whether drift has been
+detected, along with (usually) other attributes specific to the detector class.
 
 Generally, the workflow for using a detector, given some data, is as
 follows:
 
 ```python
-import pandas as pd
 from menelaus.concept_drift import ADWINOutcome
 from menelaus.data_drift import KdqTreeStreaming
+from menelaus.datasets import fetch_rainfall_data
+from menelaus.ensemble import StreamingEnsemble, eval_simple_majority
 
-df = pd.read_csv('example.csv')
 
-# use a detector that searches for concept drift
+# has feature columns, and a binary response 'rain'
+df = fetch_rainfall_data()
+
+
+# use a concept drift detector (response-only)
 detector = ADWINOutcome()
 for i, row in df.iterrows():
-   detector.update(row['y_true'], row['y_predicted'], X=None)
-   if detector.drift_state is not None:
-      print("Drift has occurred!")
+    detector.update(X=None, y_true=row['rain'], y_pred=0)
+    assert detector.drift_state != "drift", f"Drift detected in row {i}"
 
-# use a detector that searches for data drift
-detector = KdqTreeStreaming()
-feature_cols = ['a', 'b', 'c']
-for i in range(len(df)):
-   detector.update(X=df.loc[[i], feature_cols], y_true=None, y_pred=None)
-   if detector.drift_state is not None:
-      print("Drift has occurred!")
+
+# use data drift detector (features-only)
+detector = KdqTreeStreaming(window_size=5)
+for i, row in df.iterrows():
+    detector.update(X=df.loc[[i], df.columns != 'rain'], y_true=None, y_pred=None)
+    assert detector.drift_state != "drift", f"Drift detected in row {i}"
+
+
+# use ensemble detector (detectors + voting function)
+ensemble = StreamingEnsemble(
+  {
+    'a': ADWINOutcome(),
+    'k': KdqTreeStreaming(window_size=5)
+  },
+  eval_simple_majority
+)
+
+for i, row in df.iterrows():
+    ensemble.update(X=df.loc[[i], df.columns != 'rain'], y_true=row['rain'], y_pred=0)
+    assert ensemble.drift_state != "drift", f"Drift detected in row {i}"
 ```
 
 As a concept drift detector, ADWIN requires both a true value (`y_true`) and a
