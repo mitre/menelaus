@@ -107,11 +107,8 @@ Menelaus should work with Python 3.8 or higher.
 # Getting Started
 
 Each detector implements the API defined by `menelaus.drift_detector`:
-they have an `update` method which allows new data to be passed, a
-`drift_state` attribute which tells the user whether drift has been
-detected, and a `reset` method (generally called automatically by
-`update`) which clears the `drift_state` along with (usually) some other
-attributes specific to the detector class.
+notaby, they have an `update` method which allows new data to be passed, and a `drift_state` attribute which tells the user whether drift has been
+detected, along with (usually) other attributes specific to the detector class.
 
 Generally, the workflow for using a detector, given some data, is as
 follows:
