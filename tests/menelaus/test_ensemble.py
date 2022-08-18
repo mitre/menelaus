@@ -14,7 +14,7 @@ def test_stream_ensemble_1():
     step3 = STEPD(window_size=2)
     se = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2, "s3": step3},
-        evaluator="simple-majority"
+        evaluator=EVALUATORS["simple-majority"]
     )
     df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
