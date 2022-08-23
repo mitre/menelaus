@@ -1,3 +1,4 @@
+from collections import defaultdict
 from menelaus.drift_detector import BatchDetector, StreamingDetector
 
 
@@ -147,14 +148,19 @@ class Ensemble:
     from this.
     """
 
-    def __init__(self, detectors: dict, evaluator, columns: dict = None):
-        self.detectors = detectors.copy()
-        self.columns = columns
+    def __init__(self, detectors: dict, evaluator, column_selectors: dict = None):
         # XXX - Since rigid type-checking is sort of discouraged in Python
         #       it makes the most sense to just treat evaluator as (always)
         #       a function operating on detectors.
+        self.detectors = detectors.copy()
         self.evaluator = evaluator
 
+        def default_column_selector():
+            return lambda data: data
+
+        self.column_selectors = defaultdict(default_column_selector)
+        self.column_selectors.update(column_selectors)
+        
     def update(self, X, y_true=None, y_pred=None):
         """
         Update each detector in ensemble with new batch of data.
@@ -168,40 +174,9 @@ class Ensemble:
         for det_key in self.detectors:
             # XXX - Cannot re-define X = constrain(), else external reference is modified
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
-            X_selected = self.select_data(X, det_key)
+            X_selected = self.column_selectors[det_key](X)
             self.detectors[det_key].update(X=X_selected, y_true=y_true, y_pred=y_pred)
         self.evaluate()
-
-    def select_data(self, data, det_key: str):
-        """
-        Filters given data according to the columns expected
-        by each detector in the ensemble, as specified at
-        initialization (uses ``self.columns``, if it exists).
-
-        Intended for use within ``update`` or ``set_reference``.
-
-        Args:
-            data (pandas.DataFrame): data to be used
-            det_key (str): identifies detector in ensemble by which
-                to filter data columns
-        """
-        # TODO - can y_true, y_pred be supported in this pattern?
-        # TODO - this allows for list manipulation of PD columns
-        #           will need to think about cases where numpy arrays
-        #           are mixed in
-        ret = data.copy()
-        if self.columns:
-            if det_key in self.columns:
-                cols = self.columns[det_key]
-                ret = data[cols]
-
-                # single observation, single feature (e.g. Change Detectors)
-                # need the value, not a sequence wrapper around the value
-                if len(cols) == 1 and len(ret) == 1:
-                    # TODO right now assume it's a pandas dataframe - FIX!
-                    ret = ret.values[0][0]
-
-        return ret
 
     def evaluate(self):
         """
@@ -229,7 +204,7 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
+    def __init__(self, detectors: dict, evaluator, column_selectors: dict = None):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
@@ -245,7 +220,7 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
                 to ensemble in ``update`` according to each detector.
         """
         StreamingDetector.__init__(self)
-        Ensemble.__init__(self, detectors, evaluator, columns)
+        Ensemble.__init__(self, detectors, evaluator, column_selectors)
 
     def update(self, X, y_true, y_pred):
         """
@@ -279,7 +254,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
     ensemble's own attributes, but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator: str, columns: dict = None):
+    def __init__(self, detectors: dict, evaluator, column_selectors: dict = None):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
@@ -296,7 +271,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
                 each detector.
         """
         BatchDetector.__init__(self)
-        Ensemble.__init__(self, detectors, evaluator, columns)
+        Ensemble.__init__(self, detectors, evaluator, column_selectors)
 
     def update(self, X, y_true=None, y_pred=None):
         """
@@ -333,7 +308,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
         for det_key in self.detectors:
             # XXX - Cannot re-define X = constrain(), else external reference is modified
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
-            X_selected = self.select_data(X, det_key)
+            X_selected = self.column_selectors[det_key](X)
             self.detectors[det_key].set_reference(
                 X=X_selected, y_true=y_true, y_pred=y_pred
             )
