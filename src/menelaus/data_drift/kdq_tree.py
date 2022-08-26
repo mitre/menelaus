@@ -371,6 +371,7 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         if self.drift_state == "drift":
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         StreamingDetector.update(self, X, y_true, y_pred)
         if isinstance(X, pd.DataFrame):
             ary = copy.deepcopy(X.values)
@@ -474,7 +475,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             y_true (numpy.array): actual labels of dataset - not used in KdqTree
             y_pred (numpy.array): predicted labels of dataset - not used in KdqTree
         """
-        super().set_reference(X, y_true, y_pred)
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         ary = copy.deepcopy(X)
         if isinstance(ary, pd.DataFrame):
             # XXX - notice how inner_set calling KLD requires us to continue
@@ -509,6 +510,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             # Note that set_reference resets the detector.
             self.set_reference(self.ref_data)
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         BatchDetector.update(self, X, y_true, y_pred)
 
         if isinstance(X, pd.DataFrame):

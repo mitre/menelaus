@@ -75,21 +75,21 @@ def test_reset_stream(kdq_det_stream):
 
 def test_reset_batch(kdq_det_batch):
     det = copy.copy(kdq_det_batch)
-    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values
+    new_sample = pd.DataFrame(np.random.sample((2, NUM_FEATURES))).values
     det.update(new_sample)
     assert det.drift_state is None
 
 
 def test_set_reference(kdq_det_batch):
     det = copy.copy(kdq_det_batch)
-    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES))).values
+    new_sample = pd.DataFrame(np.random.sample((2, NUM_FEATURES))).values
     det.set_reference(new_sample)
     det.update(new_sample)
     assert det.drift_state is None
 
     # make sure that _input_cols is set appropriately when initialized
     det = det = KdqTreeBatch(count_ubound=1, bootstrap_samples=10)
-    new_sample = pd.DataFrame(np.random.sample((1, NUM_FEATURES)))
+    new_sample = pd.DataFrame(np.random.sample((2, NUM_FEATURES)))
     det.set_reference(new_sample)
     assert det._input_col_dim == new_sample.shape[1]
 

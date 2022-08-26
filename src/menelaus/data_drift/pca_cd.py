@@ -117,6 +117,7 @@ class PCACD(StreamingDetector):
             y_true (numpy.ndarray): true label of observation - not used in PCACD
             y_pred (numpy.ndarray): predicted label of observation - not used in PCACD
         """
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
 
         if self._build_reference_and_test:
