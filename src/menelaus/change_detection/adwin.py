@@ -106,7 +106,12 @@ class ADWIN(StreamingDetector):
             # note that the other attributes should *not* be initialized after drift
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
+
+        # the array should have a single element after validation.
+        X = X[0][0]
+
         # add new sample to the head of the window
         self._window_size += 1
         self._add_sample(X)

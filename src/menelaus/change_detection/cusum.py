@@ -82,6 +82,7 @@ class CUSUM(StreamingDetector):
             self.sd_hat = np.std(self._stream[-self.burn_in :])
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
         self._stream.append(X)
 
