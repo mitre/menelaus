@@ -279,10 +279,12 @@ class BatchDetector(ABC):
         ary = np.array(y)
         if len(ary.shape) <= 1:
             ary = ary.reshape(1, -1)
-        if ary.shape[1] != 1:
+        if ary.shape[0] == 1:
             raise ValueError(
-                "Input for streaming detectors should contain only one column."
+                "Input for batch detectors should contain more than one obsevation."
             )
+        if ary.shape[1] != 1:
+            raise ValueError("y input for detectors should contain only one column.")
         return ary
 
     def _validate_input(self, X, y_true, y_pred):

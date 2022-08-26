@@ -373,10 +373,7 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
 
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         StreamingDetector.update(self, X, y_true, y_pred)
-        if isinstance(X, pd.DataFrame):
-            ary = copy.deepcopy(X.values)
-        else:
-            ary = copy.deepcopy(X)
+        ary = copy.deepcopy(X)
         KdqTreeDetector._evaluate_kdqtree(self, ary, "stream")
 
 
@@ -477,14 +474,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
         """
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         ary = copy.deepcopy(X)
-        if isinstance(ary, pd.DataFrame):
-            # XXX - notice how inner_set calling KLD requires us to continue
-            #       branching on input_type, which is not ideal - Anmol Srivastava
-            self._inner_set_reference(ary.values, input_type="batch")
-        elif isinstance(ary, np.ndarray):
-            # This maybe ought to put some more effort into trying to format the
-            # user's input as a numpy array, as in _validate_X.
-            self._inner_set_reference(ary, input_type="batch")
+        self._inner_set_reference(ary, input_type="batch")
 
     def update(self, X, y_true=None, y_pred=None):
         """
@@ -512,10 +502,6 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
 
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         BatchDetector.update(self, X, y_true, y_pred)
-
-        if isinstance(X, pd.DataFrame):
-            ary = copy.deepcopy(X.values)
-        else:
-            ary = copy.deepcopy(X)
+        ary = copy.deepcopy(X)
 
         KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")

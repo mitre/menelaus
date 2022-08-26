@@ -91,6 +91,17 @@ def test_batch_validation_y_one_column():
         )
 
 
+def test_batch_validation_y_one_obs():
+
+    # cover normal return
+    det = BatchDetector()
+    det._validate_input(X=None, y_true=[[1], [1]], y_pred=[[1], [1]])
+
+    det = BatchDetector()
+    with pytest.raises(ValueError) as _:
+        det._validate_input(X=None, y_true=1, y_pred=[1])
+
+
 def test_batch_validation_X_columns():
     det = KdqTreeBatch(bootstrap_samples=1)
     input1 = pd.DataFrame({"a": [1, 2], "b": [2, 2]})
@@ -114,7 +125,20 @@ def test_batch_validation_X_dimensions():
         det.update(input4, y_true=None, y_pred=None)
 
 
+def test_batch_validation_X_one_obs():
+    det = BatchDetector()
+    input1 = pd.DataFrame({"a": [1], "b": [2]})
+    with pytest.raises(ValueError) as _:
+        det._validate_input(input1, y_true=None, y_pred=None)
+
+
 def test_input_type():
     det = DriftDetector()
     det._input_type = "stream"
     assert det.input_type == "stream"
+
+
+def test_set_reference_unimplemented():
+    det = BatchDetector()
+    with pytest.raises(NotImplementedError) as _:
+        det.set_reference(None, None, None)
