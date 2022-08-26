@@ -82,7 +82,7 @@ class PageHinkley(StreamingDetector):
         """
         if self.drift_state == "drift":
             self.reset()
-        
+
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
 

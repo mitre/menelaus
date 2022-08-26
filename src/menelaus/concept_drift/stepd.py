@@ -81,7 +81,7 @@ class STEPD(StreamingDetector):
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
         # the arrays should have a single element after validation.
-        y_true, y_pred = y_true[0], y_pred[0]        
+        y_true, y_pred = y_true[0], y_pred[0]
         classifier_result = int(y_pred == y_true)
         self._s += classifier_result
 
