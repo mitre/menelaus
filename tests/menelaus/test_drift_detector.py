@@ -1,5 +1,6 @@
 """Module for checking behavior of DriftDetector."""
 from menelaus.drift_detector import DriftDetector, StreamingDetector, BatchDetector
+from menelaus.data_drift import KdqTreeStreaming, KdqTreeBatch
 import pytest
 import numpy as np
 import pandas as pd
@@ -47,17 +48,19 @@ def test_drift_state_validation():
 def test_streaming_validation_y_one_obs():
     det = StreamingDetector()
     with pytest.raises(ValueError) as _:
-        det.update(X=None, y_true=np.array([[1], [1]]), y_pred=np.array([[0], [0]]))
+        det._validate_input(
+            X=None, y_true=np.array([[1], [1]]), y_pred=np.array([[0], [0]])
+        )
 
 
 def test_streaming_validation_X_one_obs():
     det = StreamingDetector()
     with pytest.raises(ValueError) as _:
-        det.update(X=np.array([[5], [4]]), y_true=None, y_pred=None)
+        det._validate_input(X=np.array([[5], [4]]), y_true=None, y_pred=None)
 
 
 def test_streaming_validation_X_columns():
-    det = StreamingDetector()
+    det = KdqTreeStreaming(window_size=2)
     input1 = pd.DataFrame({"a": [1], "b": [2]})
     input2 = pd.DataFrame({"c": [1], "d": [2]})
     det.update(input1, y_true=None, y_pred=None)
@@ -66,7 +69,7 @@ def test_streaming_validation_X_columns():
 
 
 def test_streaming_validation_X_dimensions():
-    det = StreamingDetector()
+    det = KdqTreeStreaming(window_size=2)
     input1 = np.array([1, 2, 3])
     input2 = pd.DataFrame(input1.reshape(1, -1), columns=["a", "b", "c"])
     input3 = input2.values
@@ -83,24 +86,24 @@ def test_batch_validation_y_one_column():
     det = BatchDetector()
     det.update(X=None, y_true=1, y_pred=[1])
     with pytest.raises(ValueError) as _:
-        det.update(
+        det._validate_input(
             X=None, y_true=np.array([[1, 2], [1, 2]]), y_pred=np.array([[0], [0]])
         )
 
 
 def test_batch_validation_X_columns():
-    det = BatchDetector()
-    input1 = pd.DataFrame({"a": [1], "b": [2]})
-    input2 = pd.DataFrame({"c": [1], "d": [2]})
+    det = KdqTreeBatch(bootstrap_samples=1)
+    input1 = pd.DataFrame({"a": [1, 2], "b": [2, 2]})
+    input2 = pd.DataFrame({"c": [1, 2], "d": [2, 2]})
     det.update(input1, y_true=None, y_pred=None)
     with pytest.raises(ValueError) as _:
         det.update(input2, y_true=None, y_pred=None)
 
 
 def test_batch_validation_X_dimensions():
-    det = BatchDetector()
-    input1 = np.array([1, 2, 3])
-    input2 = pd.DataFrame(input1.reshape(1, -1), columns=["a", "b", "c"])
+    det = KdqTreeBatch(bootstrap_samples=1)
+    input1 = np.array(range(6))
+    input2 = pd.DataFrame(input1.reshape(2, 3), columns=["a", "b", "c"])
     input3 = input2.values
     input4 = np.array([1, 2, 3, 4])
 
