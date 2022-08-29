@@ -71,9 +71,9 @@ class CUSUM(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-            X (numpy.ndarray): The value of the new sample.
-            y_true (numpy.ndarray): True label of new sample - not used in CUSUM.
-            y_pred (numpy.ndarray): Predicted label of new sample - not used in CUSUM.
+            X (numpy.ndarray): one row of features from input data.
+            y_true (numpy.ndarray): one true label from input data. Not used in CUSUM.
+            y_pred (numpy.ndarray): one predicted label from input data. Not used in CUSUM.
         """
         # if the last run resulted in drift, reset everything and use last 30
         # obs to estimate stats

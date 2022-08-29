@@ -97,9 +97,9 @@ class ADWIN(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-          y_true: actual class of next sample - not used for change detectors
-          y_pred: predicted class of next sample - not used for change detectors
-          X: next sample in the stream of data
+            X: one row of features from input data.
+            y_true: one true label from input data. Not used by ADWIN.
+            y_pred: one predicted label from input data. Not used by ADWIN.
         """
 
         if self.drift_state is not None:

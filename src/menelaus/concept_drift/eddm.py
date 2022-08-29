@@ -75,8 +75,9 @@ class EDDM(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-          y_pred: predicted class
-          y_true: actual class
+            X: one row of features from input data. Not used in EDDM.
+            y_true: one true label from input data.
+            y_pred: one predicted label from input data.
         """
         if self.drift_state == "drift":
             self.reset()

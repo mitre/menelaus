@@ -75,10 +75,9 @@ class PageHinkley(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-          X (numpy.ndarray): The value of the new sample.
-          y_true (numpy.ndarray): True label of new sample - not used in PageHinkley
-          y_pred (numpy.ndarray): Predicted label of new sample - not used in PageHinkley
-          obs_id (numpy.ndarray): Index of new sample to store in dataframe. Defaults to ``None``.
+            X: one row of features from input data.
+            y_true: one true label from input data. Not used by Page-Hinkley.
+            y_pred: one predicted label from input data. Not used by Page-Hinkley.
         """
         if self.drift_state == "drift":
             self.reset()

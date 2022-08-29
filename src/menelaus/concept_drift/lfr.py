@@ -138,9 +138,9 @@ class LinearFourRates(StreamingDetector):
            ``"warning"`` or ``"drift"``
 
         Args:
-            y_true: actual class
-            y_pred: predicted class
-            X: new sample - not used in LFR
+            X: one row of features from input data. Not used in LFR.
+            y_true: one true label from input data.
+            y_pred: one predicted label from input data.
         """
 
         if self.drift_state == "drift":
