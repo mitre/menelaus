@@ -66,9 +66,9 @@ class DDM(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-            X: one row of features from input data. Not used in DDM.
             y_true: one true label from input data.
             y_pred: one predicted label from input data.
+            X: one row of features from input data. Not used in DDM.
         """
 
         if self.drift_state == "drift":
