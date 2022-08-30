@@ -148,7 +148,7 @@ class Ensemble:
     from this.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = None):
+    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
         # XXX - Since rigid type-checking is sort of discouraged in Python
         #       it makes the most sense to just treat evaluator as (always)
         #       a function operating on detectors.
@@ -159,6 +159,7 @@ class Ensemble:
             return lambda data: data
 
         self.column_selectors = defaultdict(default_column_selector)
+        assert column_selectors is not None
         self.column_selectors.update(column_selectors)
         
     def update(self, X, y_true=None, y_pred=None):
@@ -204,7 +205,7 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = None):
+    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
@@ -254,7 +255,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
     ensemble's own attributes, but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = None):
+    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
