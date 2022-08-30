@@ -1,5 +1,6 @@
 """All methods for testing correctness of CUSUM implementation."""
 import numpy as np
+import pytest
 from menelaus.change_detection.cusum import CUSUM
 
 
@@ -98,3 +99,10 @@ def test_negative_drift():
             assert cusum.drift_state is None
         else:
             pass
+
+
+def test_univariate_validation():
+    det = CUSUM()
+    input = np.array([[1, 2]])
+    with pytest.raises(ValueError) as _:
+        det.update(input)

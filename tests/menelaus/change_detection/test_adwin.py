@@ -1,5 +1,6 @@
 """Methods for checking simple behaviors of ADWIN."""
 import pytest
+import numpy as np
 from menelaus.change_detection.adwin import ADWIN, _BucketRow, _BucketRowList
 
 
@@ -23,11 +24,16 @@ def test_compression():
     assert overflow is False
 
 
-def test_validation():
+def test_delta_validation():
     """Validation on delta parameter should raise ValueError"""
     with pytest.raises(ValueError) as _:
         _ = ADWIN(delta=25)
 
+def test_univariate_validation():
+    det = ADWIN()
+    input = np.array([[1, 2]])
+    with pytest.raises(ValueError) as _:
+        det.update(input)
 
 def test_mean():
     """Check that ADWIN.mean returns sane values"""

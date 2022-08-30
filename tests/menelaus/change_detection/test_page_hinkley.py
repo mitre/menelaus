@@ -1,4 +1,6 @@
 """All methods for testing correctness of Page Hinkley implementation."""
+import pytest
+import numpy as np
 from menelaus.change_detection.page_hinkley import PageHinkley
 
 
@@ -54,3 +56,10 @@ def test_build_neg_drift():
             assert (
                 len(monitor.to_dataframe()) == stream_size
             )  # hack to test all reset() behavior
+
+
+def test_univariate_validation():
+    det = PageHinkley()
+    input = np.array([[1, 2]])
+    with pytest.raises(ValueError) as _:
+        det.update(input)
