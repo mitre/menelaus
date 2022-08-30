@@ -9,7 +9,7 @@ class CUSUM(StreamingDetector):
     single model performance metric, or could be applied to the mean of a
     feature variable of interest.
 
-    Ref. :cite:t:`hinkley1971inference`
+    Ref. :cite:t:`page1954continuous`
     """
 
     input_type = "stream"

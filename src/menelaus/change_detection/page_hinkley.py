@@ -21,7 +21,7 @@ class PageHinkley(StreamingDetector):
     If the threshold is too small, PH may result in many false alarms. If too
     large, the PH test will be more robust, but may miss true drift.
 
-    Ref. :cite:t:`page1954continuous`
+    Ref. :cite:t:`hinkley1971inference`
     """
 
     input_type = "stream"
