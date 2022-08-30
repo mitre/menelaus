@@ -75,15 +75,18 @@ class ADWINOutcome(ADWIN):
         """Update the detector with a new sample.
 
         Args:
-          y_true: actual class of next sample
-          y_pred: predicted class of next sample
-          X: next sample in the stream of data. Not used for this
-            accuracy-based ADWIN. See ``change_detection.ADWIN`` for that
-            application.
+            y_true: one true label from input data.
+            y_pred: one predicted label from input data.
+            X: next sample in the stream of data. Not used for this
+                accuracy-based ADWIN. See ``change_detection.ADWIN`` for that
+                application.
         """
 
         new_value = int(y_true == y_pred)
 
         # This class is here to avoid asking the user to provide such a direct
         # function of (y_true, y_pred) in the X argument, which is unintuitive.
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        # the arrays should have a single element after validation.
+        y_true, y_pred = y_true[0], y_pred[0]
         super().update(new_value, y_true=None, y_pred=None)

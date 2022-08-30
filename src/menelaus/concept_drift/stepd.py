@@ -71,14 +71,17 @@ class STEPD(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-          X (numpy.ndarray): new sample - not used in STEPD
-          y_pred (numpy.ndarray): predicted class
-          y_true (numpy.ndarray): actual class
+            y_true: one true label from input data
+            y_pred: one predicted label from input data
+            X: one row of features from input data. Not used by STEPD.
         """
         if self.drift_state == "drift":
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
+        # the arrays should have a single element after validation.
+        y_true, y_pred = y_true[0], y_pred[0]
         classifier_result = int(y_pred == y_true)
         self._s += classifier_result
 
