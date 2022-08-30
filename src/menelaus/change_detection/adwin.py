@@ -107,6 +107,8 @@ class ADWIN(StreamingDetector):
             self.reset()
 
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        if len(X.shape) > 1 and X.shape[1] != 1:
+            raise ValueError("ADWIN should only be used to monitor 1 variable.")
         super().update(X, y_true, y_pred)
 
         # the array should have a single element after validation.
