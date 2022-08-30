@@ -66,15 +66,18 @@ class DDM(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-          y_true: actual class
-          y_pred: predicted class
-          X: new sample - not used in DDM
+            y_true: one true label from input data.
+            y_pred: one predicted label from input data.
+            X: one row of features from input data. Not used in DDM.
         """
 
         if self.drift_state == "drift":
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
+        # the arrays should have a single element after validation.
+        y_true, y_pred = y_true[0], y_pred[0]
         classifier_result = int(y_pred != y_true)
 
         # with each sample, update estimate of error and its std, along with minimums

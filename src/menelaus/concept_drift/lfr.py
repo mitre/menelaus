@@ -138,15 +138,19 @@ class LinearFourRates(StreamingDetector):
            ``"warning"`` or ``"drift"``
 
         Args:
-            y_true: actual class
-            y_pred: predicted class
-            X: new sample - not used in LFR
+            y_true: one true label from input data.
+            y_pred: one predicted label from input data.
+            X: one row of features from input data. Not used in LFR.
         """
 
         if self.drift_state == "drift":
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
+        # the arrays should have a single element after validation.
+        y_true, y_pred = y_true[0], y_pred[0]
+
         y_p = 1 * y_pred
         y_t = 1 * y_true
 

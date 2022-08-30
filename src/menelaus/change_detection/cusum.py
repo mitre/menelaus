@@ -9,7 +9,7 @@ class CUSUM(StreamingDetector):
     single model performance metric, or could be applied to the mean of a
     feature variable of interest.
 
-    Ref. :cite:t:`hinkley1971inference`
+    Ref. :cite:t:`page1954continuous`
     """
 
     input_type = "stream"
@@ -71,9 +71,9 @@ class CUSUM(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-            X (numpy.ndarray): The value of the new sample.
-            y_true (numpy.ndarray): True label of new sample - not used in CUSUM.
-            y_pred (numpy.ndarray): Predicted label of new sample - not used in CUSUM.
+            X (numpy.ndarray): one row of features from input data.
+            y_true (numpy.ndarray): one true label from input data. Not used in CUSUM.
+            y_pred (numpy.ndarray): one predicted label from input data. Not used in CUSUM.
         """
         # if the last run resulted in drift, reset everything and use last 30
         # obs to estimate stats
@@ -82,6 +82,9 @@ class CUSUM(StreamingDetector):
             self.sd_hat = np.std(self._stream[-self.burn_in :])
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        if len(X.shape) > 1 and X.shape[1] != 1:
+            raise ValueError("CUSUM should only be used to monitor 1 variable.")
         super().update(X, y_true, y_pred)
         self._stream.append(X)
 

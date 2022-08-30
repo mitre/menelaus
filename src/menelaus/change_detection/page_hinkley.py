@@ -21,7 +21,7 @@ class PageHinkley(StreamingDetector):
     If the threshold is too small, PH may result in many false alarms. If too
     large, the PH test will be more robust, but may miss true drift.
 
-    Ref. :cite:t:`page1954continuous`
+    Ref. :cite:t:`hinkley1971inference`
     """
 
     input_type = "stream"
@@ -75,13 +75,16 @@ class PageHinkley(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-          X (numpy.ndarray): The value of the new sample.
-          y_true (numpy.ndarray): True label of new sample - not used in PageHinkley
-          y_pred (numpy.ndarray): Predicted label of new sample - not used in PageHinkley
-          obs_id (numpy.ndarray): Index of new sample to store in dataframe. Defaults to ``None``.
+            X: one row of features from input data.
+            y_true: one true label from input data. Not used by Page-Hinkley.
+            y_pred: one predicted label from input data. Not used by Page-Hinkley.
         """
         if self.drift_state == "drift":
             self.reset()
+
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        if len(X.shape) > 1 and X.shape[1] != 1:
+            raise ValueError("Page-Hinkley should only be used to monitor 1 variable.")
         super().update(X, y_true, y_pred)
 
         self._mean = self._mean + (X - self._mean) / self.samples_since_reset

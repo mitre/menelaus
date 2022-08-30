@@ -113,10 +113,11 @@ class PCACD(StreamingDetector):
         """Update the detector with a new observation.
 
         Args:
-            X (numpy.ndarray): next observation, as a ``pandas`` ``Series``
+            X (numpy.ndarray): next observation
             y_true (numpy.ndarray): true label of observation - not used in PCACD
             y_pred (numpy.ndarray): predicted label of observation - not used in PCACD
         """
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
         super().update(X, y_true, y_pred)
 
         if self._build_reference_and_test:

@@ -97,16 +97,23 @@ class ADWIN(StreamingDetector):
         """Update the detector with a new sample.
 
         Args:
-          y_true: actual class of next sample - not used for change detectors
-          y_pred: predicted class of next sample - not used for change detectors
-          X: next sample in the stream of data
+            X: one row of features from input data.
+            y_true: one true label from input data. Not used by ADWIN.
+            y_pred: one predicted label from input data. Not used by ADWIN.
         """
 
         if self.drift_state is not None:
             # note that the other attributes should *not* be initialized after drift
             self.reset()
 
+        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        if len(X.shape) > 1 and X.shape[1] != 1:
+            raise ValueError("ADWIN should only be used to monitor 1 variable.")
         super().update(X, y_true, y_pred)
+
+        # the array should have a single element after validation.
+        X = X[0][0]
+
         # add new sample to the head of the window
         self._window_size += 1
         self._add_sample(X)
