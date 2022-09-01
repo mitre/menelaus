@@ -30,12 +30,19 @@ def test_stream_ensemble_2():
     step1 = STEPD(window_size=2)
     step2 = STEPD(window_size=2)
     step3 = STEPD(window_size=2)
+
+    column_selectors = {
+        "s1": lambda X: X[["a"]],
+        "s2": lambda X: X[["b", "c"]]
+    }
+
     se = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2, "s3": step3},
         evaluator=EVALUATORS["simple-majority"],
-        columns={"s1": ["a"], "s2": ["b", "c"]},
+        column_selectors=column_selectors
     )
-    df = pd.DataFrame({"a": [0, 0], "b": [0, 0], "c": [0, 0]})
+
+    df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
     assert se.drift_state == None
 
@@ -45,12 +52,20 @@ def test_stream_ensemble_3():
     adwin1 = ADWIN()
     adwin2 = ADWIN()
     adwin3 = ADWIN()
+
+    column_selectors = {
+        "a1": lambda X: X[["a"]],
+        "a2": lambda X: X[["b"]],
+        "a3": lambda X: X[["c"]]
+    }
+
     se = StreamingEnsemble(
         detectors={"a1": adwin1, "a2": adwin2, "a3": adwin3},
         evaluator=EVALUATORS["simple-majority"],
-        columns={"a1": ["a"], "a2": ["b"], "a3": ["c"]},
+        column_selectors=column_selectors
     )
-    df = pd.DataFrame({"a": [0, 0], "b": [0, 0], "c": [0, 0]})
+
+    df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
     assert se.drift_state == None
 
@@ -59,10 +74,14 @@ def test_stream_ensemble_reset_1():
     """Ensure reset works in stream ensemble and its detectors"""
     step1 = STEPD(window_size=2)
     step2 = STEPD(window_size=2)
+    column_selectors = {
+        "s1": lambda X: X[["a"]],
+        "s2": lambda X: X[["b", "c"]]
+    }
     be = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2},
         evaluator=EVALUATORS["simple-majority"],
-        columns={"s1": ["a"], "s2": ["b", "c"]},
+        column_selectors=column_selectors
     )
     df = pd.DataFrame({"a": [0, 10.0], "b": [0, 11.0], "c": [0, 12.0]})
     be.update(df.loc[1:], 0, 0)
@@ -104,11 +123,15 @@ def test_batch_ensemble_2():
     """Ensure batch ensemble executes when columns specified"""
     kdq1 = KdqTreeBatch(bootstrap_samples=1)
     kdq2 = KdqTreeBatch(bootstrap_samples=1)
+    column_selectors = {
+        "k1": lambda X: X[["a", "b"]],
+        "k2": lambda X: X[["b", "c"]]
+    }
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
         evaluator=EVALUATORS["simple-majority"],
         # XXX - forcing >1 columns to satisfy KdqTree Batch
-        columns={"k1": ["a", "b"], "k2": ["b", "c"]},
+        column_selectors=column_selectors,
     )
     df = pd.DataFrame(
         {
@@ -127,10 +150,14 @@ def test_batch_ensemble_reset_1():
     """Ensure reset works in batch ensemble and its detectors"""
     kdq1 = KdqTreeBatch(bootstrap_samples=1)
     kdq2 = KdqTreeBatch(bootstrap_samples=1)
+    column_selectors = {
+        "k1": lambda X: X[["a", "b"]],
+        "k2": lambda X: X[["b", "c"]]
+    }
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
         evaluator=EVALUATORS["simple-majority"],
-        columns={"k1": ["a", "b"], "k2": ["b", "c"]},
+        column_selectors=column_selectors,
     )
     df = pd.DataFrame(
         {
