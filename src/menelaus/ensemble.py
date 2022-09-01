@@ -1,70 +1,80 @@
+from abc import ABC, abstractmethod
 from collections import defaultdict
+from this import d
+
 from menelaus.drift_detector import BatchDetector, StreamingDetector
 
 
-def eval_simple_majority(detectors):
+#######################
+# Ensemble Evaluators
+#######################
+
+class Evaluator(ABC):
+    def __init__(self, detectors: dict):
+        self.detectors = detectors
+
+    @abstractmethod
+    def __call__(self):
+        raise NotImplemented
+
+
+class SimpleMajorityEvaluator(Evaluator):
     """
     Evaluator function that determines drift for an ensemble,
     based on whether a simple majority of the ensemble's
     detectors have voted for drift.
-
-    TODO - determine if this correctly calculates simple majority
-
-    Args:
-        detectors (list): list of detector objects to examine
-
-    Returns
-        str: 'drift' if drift is determined, or ``None``
     """
-    simple_majority_threshold = len(detectors) // 2
-    num_drift = len([det for det in detectors if det.drift_state == "drift"])
-    if num_drift > simple_majority_threshold:
-        return "drift"
-    else:
-        return None
+    def __init__(self, detectors: dict):
+        """
+        Args:
+            detectors (dict): keyed detector objects to examine
+        """
+        super().__init__(detectors)
+
+    def __call__(self):
+        """
+        Returns
+            str: ``'drift'`` if drift is determined, or ``None``
+        """
+        simple_majority_threshold = len(self.detectors) // 2
+        alarms = [self.detectors[d] for d in self.detectors if self.detectors[d].drift_state == "drift"]
+        num_drift = len(alarms)
+        if num_drift > simple_majority_threshold:
+            return "drift"
+        else:
+            return None
 
 
-def eval_minimum_approval(approvals_needed=1):
+class MinimumApprovalEvaluator(Evaluator):
     """
     Evaluator function that determines drift based on whether
     a minimum number of provided detectors have alarmed. This
     threshold can be 1 to the maximum number of detectors.
-
-    Note that this function is a closure, and so is called a
-    little differently:
-
-    Args:
-        approvals_needed (int): Minimum number of detectors that
-            must alarm for the ensemble to alarm.
-
-    Returns:
-        function (list -> str): Function that takes a list
-            of detectors and returns drift state.
     """
-
-    def f(detectors):
+    def __init__(self, detectors: dict, approvals_needed: int = 1):
         """
-        Function that actually operates according to the minimum
-        approval scheme.
-
         Args:
-            detectors (list): Detectors to use for alarming.
+            detectors (dict): keyed detector objects to examine
+            approvals_needed (int): minimum approvals to alarm
+        """
+        super().__init__(detectors)
+        self.approvals_needed = approvals_needed
 
+    def __call__(self):
+        """  
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
         num_approvals = 0
-        for det in detectors:
-            if det.drift_state == "drift":
+        for d in self.detectors:
+            if self.detectors[d].drift_state == "drift":
                 num_approvals += 1
-            if num_approvals >= approvals_needed:
+            if num_approvals >= self.approvals_needed:
                 return "drift"
         return None
 
-    return f
 
-
-def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
+class ConfirmedApprovalEvaluator(Evaluator):
     """
     Evaluator that determines drift based on whether:
         1) An initial ``a`` count of detectors alarmed for drift.
@@ -77,65 +87,50 @@ def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
     the user-defined list, and uses the first ``approvals_needed``
     amount for initial detection, and the next ``confirmations_needed``
     amount for confirmation of drift.
-
-    Note that this function is a closure, and so is called a
-    little differently:
-
-    Args:
-        approvals_needed (int): Minimum number of detectors that
-            must alarm for the ensemble to alarm.
-        confirmations_needed (int): Minimum number of confirmations
-            needed to alarm, after `approvals_needed` alarms have been
-            observed.
-
-    Returns:
-        function (list -> str): Function that takes a list of detectors
-            and returns drift state.
     """
-
-    def f(detectors):
+    def __init__(self, detectors: dict, approvals_needed: int = 1, confirmations_needed: int = 1):
         """
-        Function that actually evaluates by confirmed approval scheme.
-
         Args:
-            detectors (list): Detectors to user for alarming.
+            detectors (dict): Keyed detector objects to examine
+            approvals_needed (int): Minimum number of detectors that
+                must alarm for the ensemble to alarm.
+            confirmations_needed (int): Minimum number of confirmations
+                needed to alarm, after `approvals_needed` alarms have been
+                observed.
+        """
+        super().__init__(detectors)
+        self.approvals_needed = approvals_needed
+        self.confirmations_needed = confirmations_needed
 
+    def __call__(self):
+        """
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
-
         num_approvals = 0
         num_confirmations = 0
 
-        for det in detectors:
-            if det.drift_state == "drift":
+        for d in self.detectors:
+            if self.detectors[d].drift_state == "drift":
 
-                if num_approvals < approvals_needed:
+                if num_approvals < self.approvals_needed:
                     num_approvals += 1
                 else:
                     num_confirmations += 1
 
                 if (
-                    num_approvals >= approvals_needed
-                    and num_confirmations >= confirmations_needed
+                    num_approvals >= self.approvals_needed
+                    and num_confirmations >= self.confirmations_needed
                 ):
                     return "drift"
 
         return None
 
-    return f
 
 
-# TODO - How to put n-min-approvals version of evaluator
-#        in table, since the user may change n? Same with others.
-# TODO - Isn't confirmed approval just a version of minimum
-#        approval, with a non-guaranteed order characteristic?
-EVALUATORS = {
-    "simple-majority": eval_simple_majority,
-    "single-approval": eval_minimum_approval(1),
-    "single-confirmed-approval": eval_confirmed_approval(1, 1),
-}
-
+#############
+# Ensembles
+#############
 
 class Ensemble:
     """
