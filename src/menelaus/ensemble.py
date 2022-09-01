@@ -161,7 +161,7 @@ class Ensemble:
         self.column_selectors = defaultdict(default_column_selector)
         assert column_selectors is not None
         self.column_selectors.update(column_selectors)
-        
+
     def update(self, X, y_true=None, y_pred=None):
         """
         Update each detector in ensemble with new batch of data.

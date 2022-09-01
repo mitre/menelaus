@@ -75,8 +75,8 @@ def test_stream_ensemble_reset_1():
     step1 = STEPD(window_size=2)
     step2 = STEPD(window_size=2)
     column_selectors = {
-        "s1": lambda X: X["a"],
-        "s2": lambda X: X["b", "c"]
+        "s1": lambda X: X[["a"]],
+        "s2": lambda X: X[["b", "c"]]
     }
     be = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2},
@@ -123,11 +123,15 @@ def test_batch_ensemble_2():
     """Ensure batch ensemble executes when columns specified"""
     kdq1 = KdqTreeBatch(bootstrap_samples=1)
     kdq2 = KdqTreeBatch(bootstrap_samples=1)
+    column_selectors = {
+        "k1": lambda X: X[["a", "b"]],
+        "k2": lambda X: X[["b", "c"]]
+    }
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
         evaluator=EVALUATORS["simple-majority"],
         # XXX - forcing >1 columns to satisfy KdqTree Batch
-        columns={"k1": ["a", "b"], "k2": ["b", "c"]},
+        column_selectors=column_selectors,
     )
     df = pd.DataFrame(
         {
@@ -146,10 +150,14 @@ def test_batch_ensemble_reset_1():
     """Ensure reset works in batch ensemble and its detectors"""
     kdq1 = KdqTreeBatch(bootstrap_samples=1)
     kdq2 = KdqTreeBatch(bootstrap_samples=1)
+    column_selectors = {
+        "k1": lambda X: X[["a", "b"]],
+        "k2": lambda X: X[["b", "c"]]
+    }
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
         evaluator=EVALUATORS["simple-majority"],
-        columns={"k1": ["a", "b"], "k2": ["b", "c"]},
+        column_selectors=column_selectors,
     )
     df = pd.DataFrame(
         {
