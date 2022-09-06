@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from this import d
 
 from menelaus.drift_detector import BatchDetector, StreamingDetector
 
@@ -10,7 +9,7 @@ from menelaus.drift_detector import BatchDetector, StreamingDetector
 #######################
 
 class Evaluator(ABC):
-    def __init__(self, detectors: dict):
+    def __init__(self, detectors: list):
         self.detectors = detectors
 
     @abstractmethod
@@ -27,7 +26,7 @@ class SimpleMajorityEvaluator(Evaluator):
     def __init__(self, detectors: dict):
         """
         Args:
-            detectors (dict): keyed detector objects to examine
+            detectors (list): detector objects to examine
         """
         super().__init__(detectors)
 
@@ -37,7 +36,7 @@ class SimpleMajorityEvaluator(Evaluator):
             str: ``'drift'`` if drift is determined, or ``None``
         """
         simple_majority_threshold = len(self.detectors) // 2
-        alarms = [self.detectors[d] for d in self.detectors if self.detectors[d].drift_state == "drift"]
+        alarms = [d for d in self.detectors if d.drift_state == "drift"]
         num_drift = len(alarms)
         if num_drift > simple_majority_threshold:
             return "drift"
@@ -54,7 +53,7 @@ class MinimumApprovalEvaluator(Evaluator):
     def __init__(self, detectors: dict, approvals_needed: int = 1):
         """
         Args:
-            detectors (dict): keyed detector objects to examine
+            detectors (list): detector objects to examine
             approvals_needed (int): minimum approvals to alarm
         """
         super().__init__(detectors)
@@ -67,7 +66,7 @@ class MinimumApprovalEvaluator(Evaluator):
         """
         num_approvals = 0
         for d in self.detectors:
-            if self.detectors[d].drift_state == "drift":
+            if d.drift_state == "drift":
                 num_approvals += 1
             if num_approvals >= self.approvals_needed:
                 return "drift"
@@ -91,7 +90,7 @@ class ConfirmedApprovalEvaluator(Evaluator):
     def __init__(self, detectors: dict, approvals_needed: int = 1, confirmations_needed: int = 1):
         """
         Args:
-            detectors (dict): Keyed detector objects to examine
+            detectors (list): detector objects to examine
             approvals_needed (int): Minimum number of detectors that
                 must alarm for the ensemble to alarm.
             confirmations_needed (int): Minimum number of confirmations
@@ -111,7 +110,7 @@ class ConfirmedApprovalEvaluator(Evaluator):
         num_confirmations = 0
 
         for d in self.detectors:
-            if self.detectors[d].drift_state == "drift":
+            if d.drift_state == "drift":
 
                 if num_approvals < self.approvals_needed:
                     num_approvals += 1
@@ -179,7 +178,7 @@ class Ensemble:
         voting result of all detectors. Sets ensemble's own drift
         state accordingly.
         """
-        self.drift_state = self.evaluator(self.detectors.values())
+        self.drift_state = self.evaluator()
 
     def reset(self):
         """
