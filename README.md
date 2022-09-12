@@ -47,7 +47,7 @@ Menelaus implements the following drift detectors.
 |------------------|---------------------------------------------------------------|--------------|-----------|-------|
 | Change detection | Cumulative Sum Test                                           | CUSUM        | x         |       |
 | Change detection | Page-Hinkley                                                  | PH           | x         |       |
-| Concept drift    | ADaptive WINdowing                                            | ADWIN        | x         |       |
+| Change detection    | ADaptive WINdowing                                            | ADWIN        | x         |       |
 | Concept drift    | Drift Detection Method                                        | DDM          | x         |       |
 | Concept drift    | Early Drift Detection Method                                  | EDDM         | x         |       |
 | Concept drift    | Linear Four Rates                                             | LFR          | x         |       |
@@ -68,7 +68,8 @@ documentation on [ReadTheDocs](https://menelaus.readthedocs.io/en/latest/).
     pre-defined range.
 -   Concept drift detectors monitor the performance characteristics of a
     given model, trying to identify shifts in the joint distribution of
-    the data\'s feature values and their labels.
+    the data\'s feature values and their labels. Note that change detectors 
+    can also be applied in this context.
 -   Data drift detectors monitor the distribution of the features; in
     that sense, they are model-agnostic. Such changes in distribution
     might be to single variables or to the joint distribution of all the
@@ -114,7 +115,7 @@ Generally, the workflow for using a detector, given some data, is as
 follows:
 
 ```python
-from menelaus.concept_drift import ADWINOutcome
+from menelaus.concept_drift import ADWINAccuracy
 from menelaus.data_drift import KdqTreeStreaming
 from menelaus.datasets import fetch_rainfall_data
 from menelaus.ensemble import StreamingEnsemble, eval_simple_majority
@@ -125,7 +126,7 @@ df = fetch_rainfall_data()
 
 
 # use a concept drift detector (response-only)
-detector = ADWINOutcome()
+detector = ADWINAccuracy()
 for i, row in df.iterrows():
     detector.update(X=None, y_true=row['rain'], y_pred=0)
     assert detector.drift_state != "drift", f"Drift detected in row {i}"
@@ -141,7 +142,7 @@ for i, row in df.iterrows():
 # use ensemble detector (detectors + voting function)
 ensemble = StreamingEnsemble(
   {
-    'a': ADWINOutcome(),
+    'a': ADWINAccuracy(),
     'k': KdqTreeStreaming(window_size=5)
   },
   eval_simple_majority

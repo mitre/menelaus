@@ -1,10 +1,10 @@
 from menelaus.change_detection.adwin import ADWIN
 
 
-class ADWINOutcome(ADWIN):
+class ADWINAccuracy(ADWIN):
     """ADWIN (ADaptive WINdowing) is a drift detection algorithm which uses a
     sliding window to estimate the running mean and variance of a given
-    real-valued number. ADWINOutcome specifically expects ``y_true``,
+    real-valued number. ADWINAccuracy specifically expects ``y_true``,
     ``y_pred``, and uses that input to monitor the running accuracy of a
     classifier. To use ADWIN to monitor other values, see
     ``change_detection.ADWIN``.
