@@ -13,7 +13,7 @@ from menelaus.drift_detector import StreamingDetector
 
 
 class ADWIN(StreamingDetector):
-    """ADWIN (ADaptive WINdowing) is a drift detection algorithm which uses a
+    """ADWIN (ADaptive WINdowing) is a change detection algorithm which uses a
     sliding window to estimate the running mean and variance of a given
     real-valued number.
 
