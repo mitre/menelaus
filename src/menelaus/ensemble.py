@@ -126,6 +126,34 @@ class ConfirmedApprovalEvaluator(Evaluator):
         return None
 
 
+class SyncedEvaluator(Evaluator):
+    """
+    Prototype evaluator for handling detectors (typically in
+    streaming setting) which have different "burn-in" periods.
+    """
+    def __init__(self, detectors: list):
+        """
+        Args:
+            detectors (list): detector objects to examine
+        """
+        super().__init__(detectors)
+
+    def __call__(self):
+        """
+        """
+        for det in self.detectors:
+            if hasattr(det, "burn_in"):
+                pass # do something, maybe update a stored det state, idk
+                # count updates?
+                continue # if self.total_updates since start else actuall vote?
+            elif hasattr(det, "some_other_burn_in"):
+                pass # similarly do something
+            else:
+                pass # do nothing, or do something
+
+        for det in self.detectors:
+            pass # actual voting/alarm step
+
 
 #############
 # Ensembles
