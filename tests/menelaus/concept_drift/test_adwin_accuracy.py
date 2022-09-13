@@ -1,9 +1,9 @@
 import pytest
-from menelaus.concept_drift.adwin_outcome import ADWINOutcome
+from menelaus.concept_drift.adwin_accuracy import ADWINAccuracy
 
 
 def test_aliased_input():
-    det = ADWINOutcome()
+    det = ADWINAccuracy()
 
     det.update(y_true=1, y_pred=0)
     assert det.total_samples == 1

@@ -43,12 +43,6 @@ example_data = make_example_batch_data()
 circle_data = fetch_circle_data()
 
 
-# In[ ]:
-
-
-circle_data.shape
-
-
 # ## Confidence Distribution Batch Detection (CDBD)
 
 # This section details how to setup, run, and produce plots for CDBD. This script

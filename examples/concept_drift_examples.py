@@ -40,7 +40,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
 from sklearn.base import clone
-from menelaus.concept_drift import LinearFourRates, ADWINOutcome, DDM, EDDM, STEPD, MD3
+from menelaus.concept_drift import LinearFourRates, ADWINAccuracy, DDM, EDDM, STEPD, MD3
 from menelaus.datasets import fetch_circle_data, fetch_rainfall_data
 
 
@@ -214,7 +214,7 @@ plt.show()
 
 # ADWIN is a change detection algorithm that can be used to monitor a real-valued number. ADWIN maintains a window of the data stream, which grows to the right as new elements are received. When the mean of the feature in one of the subwindows is different enough, ADWIN drops older elements in its window until this ceases to be the case.
 # 
-# It can be used to monitor the accuracy of a classifier by checking `y_true == y_pred` at each time step. So, for convenience, `concept_drift.ADWINOutcome`, takes `y_true` and `y_pred` as arugments, as shown below. `change_detection.ADWIN` can be used more generally, as shown in the change detection examples.
+# It can be used to monitor the accuracy of a classifier by checking `y_true == y_pred` at each time step. So, for convenience, `concept_drift.ADWINAccuracy`, takes `y_true` and `y_pred` as arugments, as shown below. `change_detection.ADWIN` can be used more generally, as shown in the change detection examples.
 
 # In[ ]:
 
@@ -235,7 +235,7 @@ clf.fit(X_train, y_train)
 acc_orig = np.cumsum(clf.predict(X_test) == y_true)
 acc_orig = acc_orig / np.arange(1, 1 + len(acc_orig))
 
-adwin = ADWINOutcome()
+adwin = ADWINAccuracy()
 
 # Set up DF to record results.
 status = pd.DataFrame(
@@ -326,7 +326,7 @@ plt.hlines(
 
 plt.legend(loc='lower right')
 plt.show()
-# plt.savefig("example_ADWINOutcome.png")
+# plt.savefig("example_ADWINAccuracy.png")
 
 
 # 
