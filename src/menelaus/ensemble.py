@@ -9,11 +9,12 @@ from menelaus.drift_detector import BatchDetector, StreamingDetector
 #######################
 
 class Election(ABC):
-    def __init__(self, detectors: list):
-        self.detectors = detectors
+    """
+    TODO - docstrings
+    """
 
     @abstractmethod
-    def __call__(self):
+    def __call__(self, detectors: list):
         raise NotImplemented
 
 
@@ -23,20 +24,17 @@ class SimpleMajorityElection(Election):
     based on whether a simple majority of the ensemble's
     detectors have voted for drift.
     """
-    def __init__(self, detectors: dict):
+
+    def __call__(self, detectors: list):
         """
         Args:
             detectors (list): detector objects to examine
-        """
-        super().__init__(detectors)
-
-    def __call__(self):
-        """
+        
         Returns
             str: ``'drift'`` if drift is determined, or ``None``
         """
-        simple_majority_threshold = len(self.detectors) // 2
-        alarms = [d for d in self.detectors if d.drift_state == "drift"]
+        simple_majority_threshold = len(detectors) // 2
+        alarms = [d for d in detectors if d.drift_state == "drift"]
         num_drift = len(alarms)
         if num_drift > simple_majority_threshold:
             return "drift"
@@ -50,22 +48,23 @@ class MinimumApprovalElection(Election):
     a minimum number of provided detectors have alarmed. This
     threshold can be 1 to the maximum number of detectors.
     """
-    def __init__(self, detectors: dict, approvals_needed: int = 1):
+    def __init__(self, approvals_needed: int = 1):
         """
         Args:
-            detectors (list): detector objects to examine
             approvals_needed (int): minimum approvals to alarm
         """
-        super().__init__(detectors)
         self.approvals_needed = approvals_needed
 
-    def __call__(self):
+    def __call__(self, detectors: list):
         """  
+        Args:
+            detectors (list): detector objects to examine
+
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
         num_approvals = 0
-        for d in self.detectors:
+        for d in detectors:
             if d.drift_state == "drift":
                 num_approvals += 1
             if num_approvals >= self.approvals_needed:
@@ -87,31 +86,31 @@ class ConfirmedApprovalElection(Election):
     amount for initial detection, and the next ``confirmations_needed``
     amount for confirmation of drift.
     """
-    def __init__(self, detectors: dict, approvals_needed: int = 1, confirmations_needed: int = 1):
+    def __init__(self, approvals_needed: int = 1, confirmations_needed: int = 1):
         """
         Args:
-            detectors (list): detector objects to examine
             approvals_needed (int): Minimum number of detectors that
                 must alarm for the ensemble to alarm.
             confirmations_needed (int): Minimum number of confirmations
                 needed to alarm, after `approvals_needed` alarms have been
                 observed.
         """
-        super().__init__(detectors)
         self.approvals_needed = approvals_needed
         self.confirmations_needed = confirmations_needed
 
-    def __call__(self):
+    def __call__(self, detectors: list):
         """
+        Args:
+            detectors (list): detector objects to examine
+
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
         num_approvals = 0
         num_confirmations = 0
 
-        for d in self.detectors:
+        for d in detectors:
             if d.drift_state == "drift":
-
                 if num_approvals < self.approvals_needed:
                     num_approvals += 1
                 else:
@@ -131,27 +130,35 @@ class MacielElection(Election):
     Prototype election for handling detectors (typically in
     streaming setting) with some sort of waiting logic.
     """
-    def __init__(self, detectors: list, sensitivity: int, wait_time: int):
+    def __init__(self, sensitivity: int, wait_time: int):
         """
         Args:
-            detectors (list): detector objects to examine
             sensitivity (int): ?
             wait_time (int): ?
         """
-        super().__init__(detectors)
         self.sensitivity = sensitivity
         self.wait_time = wait_time
-        self.wait_period_counters = [0 for _ in detectors]
+        self.wait_period_counters = None
 
-    def __call__(self):
+    def __call__(self, detectors: list):
         """
+        Args:
+            detectors (list): detector objects to examine
+
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
+        # XXX - AS thinks it is ok for this to be defined here rather
+        #       than init. At first evaluation (i.e. first update),
+        #       the list of 0s is made. Afterwards, it can be updated.
+        #       The detectors are passed-by-ref, so they should be
+        #       up-to-date upon each call. 
+        if self.wait_period_counters is None:
+            self.wait_period_counters = [0 for _ in detectors]
+
         num_drift = 0
         num_warning = 0
 
-        # up-to-date, because the object in init was pass-by-ref
         states = [d.drift_state for d in self.detectors]
         for i, state in enumerate(states):
             if state == "drift" and self.wait_period_counters[i] == 0:
@@ -218,16 +225,10 @@ class Ensemble:
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
             X_selected = self.column_selectors[det_key](X)
             self.detectors[det_key].update(X=X_selected, y_true=y_true, y_pred=y_pred)
-        self.evaluate()
+        
         # TODO - reset ensemble itself and its detectors, right now never reset 
-
-    def evaluate(self):
-        """
-        Uses evaluator function specified to ensemble, to determine
-        voting result of all detectors. Sets ensemble's own drift
-        state accordingly.
-        """
-        self.drift_state = self.evaluator()
+        det_list = list(self.detectors.values())
+        self.drift_state = self.evaluator(det_list)
 
     def reset(self):
         """
