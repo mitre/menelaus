@@ -2,9 +2,9 @@ import pandas as pd
 
 from menelaus.ensemble import StreamingEnsemble, BatchEnsemble
 from menelaus.ensemble import (
-    SimpleMajorityEvaluator,
-    MinimumApprovalEvaluator,
-    ConfirmedApprovalEvaluator,
+    SimpleMajorityElection,
+    MinimumApprovalElection,
+    ConfirmedApprovalElection,
 )
 from menelaus.data_drift import KdqTreeBatch
 from menelaus.concept_drift import STEPD
@@ -18,7 +18,7 @@ def test_stream_ensemble_1():
     step3 = STEPD(window_size=2)
     se = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2, "s3": step3},
-        evaluator=SimpleMajorityEvaluator([step1, step2, step3]),
+        evaluator=SimpleMajorityElection([step1, step2, step3]),
     )
     df = pd.DataFrame({"a": [0, 0], "b": [0, 0], "c": [0, 0]})
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
@@ -38,7 +38,7 @@ def test_stream_ensemble_2():
 
     se = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2, "s3": step3},
-        evaluator=SimpleMajorityEvaluator([step1, step2, step3]),
+        evaluator=SimpleMajorityElection([step1, step2, step3]),
         column_selectors=column_selectors
     )
 
@@ -61,7 +61,7 @@ def test_stream_ensemble_3():
 
     se = StreamingEnsemble(
         detectors={"a1": adwin1, "a2": adwin2, "a3": adwin3},
-        evaluator=SimpleMajorityEvaluator([adwin1, adwin2, adwin3]),
+        evaluator=SimpleMajorityElection([adwin1, adwin2, adwin3]),
         column_selectors=column_selectors
     )
 
@@ -80,7 +80,7 @@ def test_stream_ensemble_reset_1():
     }
     be = StreamingEnsemble(
         detectors={"s1": step1, "s2": step2},
-        evaluator=SimpleMajorityEvaluator([step1, step2]),
+        evaluator=SimpleMajorityElection([step1, step2]),
         column_selectors=column_selectors
     )
     df = pd.DataFrame({"a": [0, 10.0], "b": [0, 11.0], "c": [0, 12.0]})
@@ -105,7 +105,7 @@ def test_batch_ensemble_1():
     kdq3 = KdqTreeBatch(bootstrap_samples=1)
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2, "k3": kdq3},
-        evaluator=SimpleMajorityEvaluator([kdq1, kdq2, kdq3]),
+        evaluator=SimpleMajorityElection([kdq1, kdq2, kdq3]),
     )
     df = pd.DataFrame(
         {
@@ -129,7 +129,7 @@ def test_batch_ensemble_2():
     }
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
-        evaluator=SimpleMajorityEvaluator([kdq1, kdq2]),
+        evaluator=SimpleMajorityElection([kdq1, kdq2]),
         # XXX - forcing >1 columns to satisfy KdqTree Batch
         column_selectors=column_selectors,
     )
@@ -156,7 +156,7 @@ def test_batch_ensemble_reset_1():
     }
     be = BatchEnsemble(
         detectors={"k1": kdq1, "k2": kdq2},
-        evaluator=SimpleMajorityEvaluator([kdq1, kdq2]),
+        evaluator=SimpleMajorityElection([kdq1, kdq2]),
         column_selectors=column_selectors,
     )
     df = pd.DataFrame(
@@ -187,7 +187,7 @@ def test_eval_simple_majority_1():
     det1.drift_state = det2.drift_state = "drift"
     det3 = KdqTreeBatch()
     det3.drift_state = None
-    evaluator = SimpleMajorityEvaluator([det1, det2, det3])
+    evaluator = SimpleMajorityElection([det1, det2, det3])
     assert evaluator() == "drift"
 
 
@@ -197,7 +197,7 @@ def test_eval_simple_majority_2():
     det1.drift_state = det2.drift_state = None
     det3 = KdqTreeBatch()
     det3.drift_state = "drift"
-    evaluator = SimpleMajorityEvaluator([det1, det2, det3])
+    evaluator = SimpleMajorityElection([det1, det2, det3])
     assert evaluator() == None
 
 
@@ -207,7 +207,7 @@ def test_eval_min_approval_1():
     s1.drift_state = s2.drift_state = "drift"
     s3 = STEPD()
     s3.drift_state = None
-    evaluator = MinimumApprovalEvaluator([s1, s2, s3], approvals_needed=2)
+    evaluator = MinimumApprovalElection([s1, s2, s3], approvals_needed=2)
     assert evaluator() == "drift"
 
 
@@ -217,7 +217,7 @@ def test_eval_min_approval_2():
     s1.drift_state = s2.drift_state = None
     s3 = STEPD()
     s3.drift_state = "drift"
-    evaluator = MinimumApprovalEvaluator([s1, s2, s3], approvals_needed=2)
+    evaluator = MinimumApprovalElection([s1, s2, s3], approvals_needed=2)
     assert evaluator() == None
 
 
@@ -227,7 +227,7 @@ def test_eval_confirmed_approval_1():
     s1.drift_state = s2.drift_state = "drift"
     s3 = STEPD()
     s3.drift_state = None
-    evaluator = ConfirmedApprovalEvaluator(
+    evaluator = ConfirmedApprovalElection(
         [s1, s2, s3],
         approvals_needed=1,
         confirmations_needed=1
@@ -241,7 +241,7 @@ def test_eval_confirmed_approval_2():
     s1.drift_state = "drift"
     s3 = STEPD()
     s2.drift_state = s3.drift_state = None
-    evaluator = ConfirmedApprovalEvaluator(
+    evaluator = ConfirmedApprovalElection(
         [s1, s2, s3],
         approvals_needed=2,
         confirmations_needed=1

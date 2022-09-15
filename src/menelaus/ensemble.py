@@ -8,7 +8,7 @@ from menelaus.drift_detector import BatchDetector, StreamingDetector
 # Ensemble Evaluators
 #######################
 
-class Evaluator(ABC):
+class Election(ABC):
     def __init__(self, detectors: list):
         self.detectors = detectors
 
@@ -17,9 +17,9 @@ class Evaluator(ABC):
         raise NotImplemented
 
 
-class SimpleMajorityEvaluator(Evaluator):
+class SimpleMajorityElection(Election):
     """
-    Evaluator function that determines drift for an ensemble,
+    Election that determines drift for an ensemble,
     based on whether a simple majority of the ensemble's
     detectors have voted for drift.
     """
@@ -44,9 +44,9 @@ class SimpleMajorityEvaluator(Evaluator):
             return None
 
 
-class MinimumApprovalEvaluator(Evaluator):
+class MinimumApprovalElection(Election):
     """
-    Evaluator function that determines drift based on whether
+    Election that determines drift based on whether
     a minimum number of provided detectors have alarmed. This
     threshold can be 1 to the maximum number of detectors.
     """
@@ -73,9 +73,9 @@ class MinimumApprovalEvaluator(Evaluator):
         return None
 
 
-class ConfirmedApprovalEvaluator(Evaluator):
+class ConfirmedApprovalElection(Election):
     """
-    Evaluator that determines drift based on whether:
+    Election that determines drift based on whether:
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
 
@@ -126,33 +126,53 @@ class ConfirmedApprovalEvaluator(Evaluator):
         return None
 
 
-class SyncedEvaluator(Evaluator):
+class MacielElection(Election):
     """
-    Prototype evaluator for handling detectors (typically in
-    streaming setting) which have different "burn-in" periods.
+    Prototype election for handling detectors (typically in
+    streaming setting) with some sort of waiting logic.
     """
-    def __init__(self, detectors: list):
+    def __init__(self, detectors: list, sensitivity: int, wait_time: int):
         """
         Args:
             detectors (list): detector objects to examine
+            sensitivity (int): ?
+            wait_time (int): ?
         """
         super().__init__(detectors)
+        self.sensitivity = sensitivity
+        self.wait_time = wait_time
+        self.wait_period_counters = [0 for _ in detectors]
 
     def __call__(self):
         """
+        Returns:
+            str: ``"drift_state"`` if drift is determined, or ``None``
         """
-        for det in self.detectors:
-            if hasattr(det, "burn_in"):
-                pass # do something, maybe update a stored det state, idk
-                # count updates?
-                continue # if self.total_updates since start else actuall vote?
-            elif hasattr(det, "some_other_burn_in"):
-                pass # similarly do something
-            else:
-                pass # do nothing, or do something
+        num_drift = 0
+        num_warning = 0
 
-        for det in self.detectors:
-            pass # actual voting/alarm step
+        # up-to-date, because the object in init was pass-by-ref
+        states = [d.drift_state for d in self.detectors]
+        for i, state in enumerate(states):
+            if state == "drift" and self.wait_period_counters[i] == 0:
+                num_drift += 1
+                self.wait_period_counters[i] += 1
+            elif state == "warning":
+                num_warning += 1
+            elif self.wait_period_counters[i] != 0:
+                # XXX - So the same detector waiting will increment num_drift? - AS
+                self.num_drift += 1
+                self.wait_period_counters[i] += 1
+
+        if num_drift >= self.sensitivity:                   ret = "drift"
+        elif num_warning + num_drift >= self.sensitivity:   ret = "warning"
+        else:                                               ret = None
+
+        for i, count in enumerate(self.wait_period_counters):
+            if count > self.wait_time:
+                self.wait_period_counters[i] = 0
+
+        return ret
 
 
 #############
@@ -199,6 +219,7 @@ class Ensemble:
             X_selected = self.column_selectors[det_key](X)
             self.detectors[det_key].update(X=X_selected, y_true=y_true, y_pred=y_pred)
         self.evaluate()
+        # TODO - reset ensemble itself and its detectors, right now never reset 
 
     def evaluate(self):
         """
