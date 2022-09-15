@@ -160,7 +160,7 @@ class MacielElection(Election):
         #       The detectors are passed-by-ref, so they should be
         #       up-to-date upon each call.
         if self.wait_period_counters is None:
-            self.wait_period_counters = [0 for _ in detectors]
+            self.wait_period_counters = [0] * len(detectors)
 
         num_drift = 0
         num_warning = 0
