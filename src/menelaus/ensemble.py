@@ -127,14 +127,16 @@ class ConfirmedApprovalElection(Election):
 
 class MacielElection(Election):
     """
-    Prototype election for handling detectors (typically in
-    streaming setting) with some sort of waiting logic.
+    Maciel election for handling detectors (typically in
+    streaming setting) with waiting logic.
     """
     def __init__(self, sensitivity: int, wait_time: int):
         """
         Args:
-            sensitivity (int): ?
-            wait_time (int): ?
+            sensitivity (int): how many combined waiting/new drift alarms
+                should result in ensemble alarm
+            wait_time (int): after how many steps of waiting, should each
+                detector reset its time spent waiting post-drift-alarm
         """
         self.sensitivity = sensitivity
         self.wait_time = wait_time
@@ -159,7 +161,7 @@ class MacielElection(Election):
         num_drift = 0
         num_warning = 0
 
-        states = [d.drift_state for d in self.detectors]
+        states = [d.drift_state for d in detectors]
         for i, state in enumerate(states):
             if state == "drift" and self.wait_period_counters[i] == 0:
                 num_drift += 1
@@ -168,7 +170,7 @@ class MacielElection(Election):
                 num_warning += 1
             elif self.wait_period_counters[i] != 0:
                 # XXX - So the same detector waiting will increment num_drift? - AS
-                self.num_drift += 1
+                num_drift += 1
                 self.wait_period_counters[i] += 1
 
         if num_drift >= self.sensitivity:                   ret = "drift"
@@ -197,12 +199,12 @@ class Ensemble:
     from this.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
+    def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         # XXX - Since rigid type-checking is sort of discouraged in Python
-        #       it makes the most sense to just treat evaluator as (always)
+        #       it makes the most sense to just treat election as (always)
         #       a function operating on detectors.
         self.detectors = detectors.copy()
-        self.evaluator = evaluator
+        self.election = election
 
         def default_column_selector():
             return lambda data: data
@@ -228,7 +230,7 @@ class Ensemble:
         
         # TODO - reset ensemble itself and its detectors, right now never reset 
         det_list = list(self.detectors.values())
-        self.drift_state = self.evaluator(det_list)
+        self.drift_state = self.election(det_list)
 
     def reset(self):
         """
@@ -248,23 +250,23 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
+    def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
                 unique strings for convenient lookup, and valued by initialized
                 detector objects.
-            evaluator (str): String identifier for voting scheme by which to
+            election (str): String identifier for voting scheme by which to
                 determine if drift is present. E.g., 'simple-majority' uses
                 a function to determine if a simple majority of detectors
-                found drift. See options in ``menelaus.ensemble.evaluators``.
+                found drift. See options in ``menelaus.ensemble.elections``.
             columns (dict, optional): Optional table of column lists to use
                 for each detector. Should be keyed to match the format of
                 ``detectors``. Will be used to filter the data columns passed
                 to ensemble in ``update`` according to each detector.
         """
         StreamingDetector.__init__(self)
-        Ensemble.__init__(self, detectors, evaluator, column_selectors)
+        Ensemble.__init__(self, detectors, election, column_selectors)
 
     def update(self, X, y_true, y_pred):
         """
@@ -298,16 +300,16 @@ class BatchEnsemble(BatchDetector, Ensemble):
     ensemble's own attributes, but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
+    def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
                 unique strings for convenient lookup, and valued by initialized
                 detector objects.
-            evaluator (str): String identifier for voting scheme by which to
+            election (str): String identifier for voting scheme by which to
                 determine if drift is present. E.g., 'simple-majority' uses
                 a function to determine if a simple majority of detectors
-                found drift. See options in ``menelaus.ensemble.evaluators``.
+                found drift. See options in ``menelaus.ensemble.elections``.
             columns (dict, optional): Optional table of column lists to use
                 for each detector. Should be keyed to match the format of
                 ``detectors``. Will be used to filter the data columns passed
@@ -315,7 +317,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
                 each detector.
         """
         BatchDetector.__init__(self)
-        Ensemble.__init__(self, detectors, evaluator, column_selectors)
+        Ensemble.__init__(self, detectors, election, column_selectors)
 
     def update(self, X, y_true=None, y_pred=None):
         """
