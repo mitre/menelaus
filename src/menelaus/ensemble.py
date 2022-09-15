@@ -8,13 +8,14 @@ from menelaus.drift_detector import BatchDetector, StreamingDetector
 # Ensemble Evaluators
 #######################
 
+
 class Election(ABC):
     """
     TODO - docstrings
     """
 
     @abstractmethod
-    def __call__(self, detectors: list):
+    def __call__(self, detectors: list):  # pragma: no cover
         raise NotImplemented
 
 
@@ -29,7 +30,7 @@ class SimpleMajorityElection(Election):
         """
         Args:
             detectors (list): detector objects to examine
-        
+
         Returns
             str: ``'drift'`` if drift is determined, or ``None``
         """
@@ -48,6 +49,7 @@ class MinimumApprovalElection(Election):
     a minimum number of provided detectors have alarmed. This
     threshold can be 1 to the maximum number of detectors.
     """
+
     def __init__(self, approvals_needed: int = 1):
         """
         Args:
@@ -56,7 +58,7 @@ class MinimumApprovalElection(Election):
         self.approvals_needed = approvals_needed
 
     def __call__(self, detectors: list):
-        """  
+        """
         Args:
             detectors (list): detector objects to examine
 
@@ -86,6 +88,7 @@ class ConfirmedApprovalElection(Election):
     amount for initial detection, and the next ``confirmations_needed``
     amount for confirmation of drift.
     """
+
     def __init__(self, approvals_needed: int = 1, confirmations_needed: int = 1):
         """
         Args:
@@ -130,6 +133,7 @@ class MacielElection(Election):
     Maciel election for handling detectors (typically in
     streaming setting) with waiting logic.
     """
+
     def __init__(self, sensitivity: int, wait_time: int):
         """
         Args:
@@ -154,7 +158,7 @@ class MacielElection(Election):
         #       than init. At first evaluation (i.e. first update),
         #       the list of 0s is made. Afterwards, it can be updated.
         #       The detectors are passed-by-ref, so they should be
-        #       up-to-date upon each call. 
+        #       up-to-date upon each call.
         if self.wait_period_counters is None:
             self.wait_period_counters = [0 for _ in detectors]
 
@@ -173,9 +177,12 @@ class MacielElection(Election):
                 num_drift += 1
                 self.wait_period_counters[i] += 1
 
-        if num_drift >= self.sensitivity:                   ret = "drift"
-        elif num_warning + num_drift >= self.sensitivity:   ret = "warning"
-        else:                                               ret = None
+        if num_drift >= self.sensitivity:
+            ret = "drift"
+        elif num_warning + num_drift >= self.sensitivity:
+            ret = "warning"
+        else:
+            ret = None
 
         for i, count in enumerate(self.wait_period_counters):
             if count > self.wait_time:
@@ -187,6 +194,7 @@ class MacielElection(Election):
 #############
 # Ensembles
 #############
+
 
 class Ensemble:
     """
@@ -227,8 +235,8 @@ class Ensemble:
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
             X_selected = self.column_selectors[det_key](X)
             self.detectors[det_key].update(X=X_selected, y_true=y_true, y_pred=y_pred)
-        
-        # TODO - reset ensemble itself and its detectors, right now never reset 
+
+        # TODO - reset ensemble itself and its detectors, right now never reset
         det_list = list(self.detectors.values())
         self.drift_state = self.election(det_list)
 

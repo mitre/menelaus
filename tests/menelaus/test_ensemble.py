@@ -1,6 +1,6 @@
 import pandas as pd
 
-from menelaus.ensemble import StreamingEnsemble, BatchEnsemble
+from menelaus.ensemble import Ensemble, StreamingEnsemble, BatchEnsemble
 from menelaus.ensemble import (
     SimpleMajorityElection,
     MinimumApprovalElection,
