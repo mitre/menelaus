@@ -1,140 +1,205 @@
+from abc import ABC, abstractmethod
 from collections import defaultdict
+
 from menelaus.drift_detector import BatchDetector, StreamingDetector
 
 
-def eval_simple_majority(detectors):
+#######################
+# Ensemble Evaluators
+#######################
+
+
+class Election(ABC):
     """
-    Evaluator function that determines drift for an ensemble,
+    Abstract base class for implementations of election schemes
+    used to evaluate drift state of ensemble, by operating on
+    drift states of constituent detectors.
+
+    Constructors for sub-classes may differs, but all Election
+    classes are callable classes, where the call takes exactly
+    one argument: a detector list.
+    """
+
+    @abstractmethod
+    def __call__(self, detectors: list):  # pragma: no cover
+        raise NotImplemented
+
+
+class SimpleMajorityElection(Election):
+    """
+    Election that determines drift for an ensemble,
     based on whether a simple majority of the ensemble's
     detectors have voted for drift.
 
-    TODO - determine if this correctly calculates simple majority
-
-    Args:
-        detectors (list): list of detector objects to examine
-
-    Returns
-        str: 'drift' if drift is determined, or ``None``
+    Ref :cite:t:`duelectionreference`
     """
-    simple_majority_threshold = len(detectors) // 2
-    num_drift = len([det for det in detectors if det.drift_state == "drift"])
-    if num_drift > simple_majority_threshold:
-        return "drift"
-    else:
-        return None
+
+    def __call__(self, detectors: list):
+        """
+        Args:
+            detectors (list): detector objects to examine
+
+        Returns
+            str: ``'drift'`` if drift is determined, or ``None``
+        """
+        simple_majority_threshold = len(detectors) // 2
+        alarms = [d for d in detectors if d.drift_state == "drift"]
+        num_drift = len(alarms)
+        if num_drift > simple_majority_threshold:
+            return "drift"
+        else:
+            return None
 
 
-def eval_minimum_approval(approvals_needed=1):
+class MinimumApprovalElection(Election):
     """
-    Evaluator function that determines drift based on whether
+    Election that determines drift based on whether
     a minimum number of provided detectors have alarmed. This
     threshold can be 1 to the maximum number of detectors.
-
-    Note that this function is a closure, and so is called a
-    little differently:
-
-    Args:
-        approvals_needed (int): Minimum number of detectors that
-            must alarm for the ensemble to alarm.
-
-    Returns:
-        function (list -> str): Function that takes a list
-            of detectors and returns drift state.
     """
 
-    def f(detectors):
+    def __init__(self, approvals_needed: int = 1):
         """
-        Function that actually operates according to the minimum
-        approval scheme.
-
         Args:
-            detectors (list): Detectors to use for alarming.
+            approvals_needed (int): minimum approvals to alarm
+        """
+        self.approvals_needed = approvals_needed
+
+    def __call__(self, detectors: list):
+        """
+        Args:
+            detectors (list): detector objects to examine
 
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
         num_approvals = 0
-        for det in detectors:
-            if det.drift_state == "drift":
+        for d in detectors:
+            if d.drift_state == "drift":
                 num_approvals += 1
-            if num_approvals >= approvals_needed:
+            if num_approvals >= self.approvals_needed:
                 return "drift"
         return None
 
-    return f
 
-
-def eval_confirmed_approval(approvals_needed=1, confirmations_needed=1):
+class OrderedApprovalElection(Election):
     """
-    Evaluator that determines drift based on whether:
+    Election that determines drift based on whether:
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
 
     Hypothethically, the distinction between this and
-    `eval_minimum_approval(a+c)`, is if the detectors were added to
+    ``MinimumApprovalElection(a+c)``, is if the detectors were added to
     a collection in a meaningful order. As such this voting
     scheme iterates over detectors in preserved order of insertion into
     the user-defined list, and uses the first ``approvals_needed``
     amount for initial detection, and the next ``confirmations_needed``
     amount for confirmation of drift.
-
-    Note that this function is a closure, and so is called a
-    little differently:
-
-    Args:
-        approvals_needed (int): Minimum number of detectors that
-            must alarm for the ensemble to alarm.
-        confirmations_needed (int): Minimum number of confirmations
-            needed to alarm, after `approvals_needed` alarms have been
-            observed.
-
-    Returns:
-        function (list -> str): Function that takes a list of detectors
-            and returns drift state.
     """
 
-    def f(detectors):
+    def __init__(self, approvals_needed: int = 1, confirmations_needed: int = 1):
         """
-        Function that actually evaluates by confirmed approval scheme.
-
         Args:
-            detectors (list): Detectors to user for alarming.
+            approvals_needed (int): Minimum number of detectors that
+                must alarm for the ensemble to alarm.
+            confirmations_needed (int): Minimum number of confirmations
+                needed to alarm, after `approvals_needed` alarms have been
+                observed.
+        """
+        self.approvals_needed = approvals_needed
+        self.confirmations_needed = confirmations_needed
+
+    def __call__(self, detectors: list):
+        """
+        Args:
+            detectors (list): detector objects to examine
 
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
-
         num_approvals = 0
         num_confirmations = 0
 
-        for det in detectors:
-            if det.drift_state == "drift":
-
-                if num_approvals < approvals_needed:
+        for d in detectors:
+            if d.drift_state == "drift":
+                if num_approvals < self.approvals_needed:
                     num_approvals += 1
                 else:
                     num_confirmations += 1
 
                 if (
-                    num_approvals >= approvals_needed
-                    and num_confirmations >= confirmations_needed
+                    num_approvals >= self.approvals_needed
+                    and num_confirmations >= self.confirmations_needed
                 ):
                     return "drift"
 
         return None
 
-    return f
+
+class ConfirmedElection(Election):
+    """
+    Election for handling detectors (typically in
+    streaming setting) with waiting logic.
+
+    Derived from the Maciel ensemble evaluation scheme.
+
+    Ref. :cite:t:`macielelectionreference`
+    """
+
+    def __init__(self, sensitivity: int, wait_time: int):
+        """
+        Args:
+            sensitivity (int): how many combined waiting/new drift alarms
+                should result in ensemble alarm
+            wait_time (int): after how many steps of waiting, should each
+                detector reset its time spent waiting post-drift-alarm
+        """
+        self.sensitivity = sensitivity
+        self.wait_time = wait_time
+        self.wait_period_counters = None
+
+    def __call__(self, detectors: list):
+        """
+        Args:
+            detectors (list): detector objects to examine
+
+        Returns:
+            str: ``"drift_state"`` if drift is determined, or ``None``
+        """
+        if self.wait_period_counters is None:
+            self.wait_period_counters = [0] * len(detectors)
+
+        num_drift = 0
+        num_warning = 0
+
+        states = [d.drift_state for d in detectors]
+        for i, state in enumerate(states):
+            if state == "drift" and self.wait_period_counters[i] == 0:
+                num_drift += 1
+                self.wait_period_counters[i] += 1
+            elif state == "warning":
+                num_warning += 1
+            elif self.wait_period_counters[i] != 0:
+                num_drift += 1
+                self.wait_period_counters[i] += 1
+
+        if num_drift >= self.sensitivity:
+            ret = "drift"
+        elif num_warning + num_drift >= self.sensitivity:
+            ret = "warning"
+        else:
+            ret = None
+
+        for i, count in enumerate(self.wait_period_counters):
+            if count > self.wait_time:
+                self.wait_period_counters[i] = 0
+
+        return ret
 
 
-# TODO - How to put n-min-approvals version of evaluator
-#        in table, since the user may change n? Same with others.
-# TODO - Isn't confirmed approval just a version of minimum
-#        approval, with a non-guaranteed order characteristic?
-EVALUATORS = {
-    "simple-majority": eval_simple_majority,
-    "single-approval": eval_minimum_approval(1),
-    "single-confirmed-approval": eval_confirmed_approval(1, 1),
-}
+#############
+# Ensembles
+#############
 
 
 class Ensemble:
@@ -148,12 +213,12 @@ class Ensemble:
     from this.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
+    def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         # XXX - Since rigid type-checking is sort of discouraged in Python
-        #       it makes the most sense to just treat evaluator as (always)
+        #       it makes the most sense to just treat election as (always)
         #       a function operating on detectors.
         self.detectors = detectors.copy()
-        self.evaluator = evaluator
+        self.election = election
 
         def default_column_selector():
             return lambda data: data
@@ -176,15 +241,9 @@ class Ensemble:
             #       Need to see why this is happening and where to put e.g. a copy() stmt.
             X_selected = self.column_selectors[det_key](X)
             self.detectors[det_key].update(X=X_selected, y_true=y_true, y_pred=y_pred)
-        self.evaluate()
 
-    def evaluate(self):
-        """
-        Uses evaluator function specified to ensemble, to determine
-        voting result of all detectors. Sets ensemble's own drift
-        state accordingly.
-        """
-        self.drift_state = self.evaluator(self.detectors.values())
+        det_list = list(self.detectors.values())
+        self.drift_state = self.election(det_list)
 
     def reset(self):
         """
@@ -204,23 +263,23 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
+    def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
                 unique strings for convenient lookup, and valued by initialized
                 detector objects.
-            evaluator (str): String identifier for voting scheme by which to
+            election (str): String identifier for voting scheme by which to
                 determine if drift is present. E.g., 'simple-majority' uses
                 a function to determine if a simple majority of detectors
-                found drift. See options in ``menelaus.ensemble.evaluators``.
+                found drift. See options in ``menelaus.ensemble.elections``.
             columns (dict, optional): Optional table of column lists to use
                 for each detector. Should be keyed to match the format of
                 ``detectors``. Will be used to filter the data columns passed
                 to ensemble in ``update`` according to each detector.
         """
         StreamingDetector.__init__(self)
-        Ensemble.__init__(self, detectors, evaluator, column_selectors)
+        Ensemble.__init__(self, detectors, election, column_selectors)
 
     def update(self, X, y_true, y_pred):
         """
@@ -254,16 +313,16 @@ class BatchEnsemble(BatchDetector, Ensemble):
     ensemble's own attributes, but on the set of detectors given to it.
     """
 
-    def __init__(self, detectors: dict, evaluator, column_selectors: dict = {}):
+    def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         """
         Args:
             detectors (dict): Set of detectors in ensemble. Should be keyed by
                 unique strings for convenient lookup, and valued by initialized
                 detector objects.
-            evaluator (str): String identifier for voting scheme by which to
+            election (str): String identifier for voting scheme by which to
                 determine if drift is present. E.g., 'simple-majority' uses
                 a function to determine if a simple majority of detectors
-                found drift. See options in ``menelaus.ensemble.evaluators``.
+                found drift. See options in ``menelaus.ensemble.elections``.
             columns (dict, optional): Optional table of column lists to use
                 for each detector. Should be keyed to match the format of
                 ``detectors``. Will be used to filter the data columns passed
@@ -271,7 +330,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
                 each detector.
         """
         BatchDetector.__init__(self)
-        Ensemble.__init__(self, detectors, evaluator, column_selectors)
+        Ensemble.__init__(self, detectors, election, column_selectors)
 
     def update(self, X, y_true=None, y_pred=None):
         """
