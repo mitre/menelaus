@@ -58,7 +58,7 @@ Menelaus implements the following drift detectors.
 | Data drift       | kdq-Tree Detection Method                                     | kdq-Tree     | x         | x     |
 | Data drift       | PCA-Based Change Detection                                    | PCA-CD       | x         |       |
 | Ensemble         | StreamingEnsemble      | - | x |
-| Ensemble         | BatchEnsemble          | - |   | x |
+| Ensemble         | Batch Ensemble          | - |   | x |
 
 
 The three main types of detector are described below. More details, including
