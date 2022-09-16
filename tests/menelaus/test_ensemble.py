@@ -212,7 +212,7 @@ def test_eval_min_approval_1():
     assert election([s1, s2, s3]) == "drift"
 
 
-def test_eval_min_approval_2():
+def test_eval_min_election_2():
     """Ensure minimimum approval scheme does not false alarm"""
     s1 = s2 = STEPD()
     s1.drift_state = s2.drift_state = None
