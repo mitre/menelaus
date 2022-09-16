@@ -222,7 +222,7 @@ def test_eval_min_approval_2():
     assert election([s1, s2, s3]) == None
 
 
-def test_eval_confirmed_approval_1():
+def test_eval_ordered_election_1():
     """Ensure confirmed approval scheme can identify drift"""
     s1 = s2 = STEPD()
     s1.drift_state = s2.drift_state = "drift"
