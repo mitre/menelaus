@@ -283,7 +283,7 @@ def test_confirmed_election_3():
     assert election([d1, d2, d3]) == None # no more drift, so call 2 : None
 
 
-def test_maciel_election_4():
+def test_confirmed_election_4():
     """Ensure resetting of wait period counters"""
     d1 = ADWIN()
     d1.drift_state = "drift"
