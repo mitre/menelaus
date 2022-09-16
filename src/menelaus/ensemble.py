@@ -162,11 +162,6 @@ class ConfirmedElection(Election):
         Returns:
             str: ``"drift_state"`` if drift is determined, or ``None``
         """
-        # XXX - AS thinks it is ok for this to be defined here rather
-        #       than init. At first evaluation (i.e. first update),
-        #       the list of 0s is made. Afterwards, it can be updated.
-        #       The detectors are passed-by-ref, so they should be
-        #       up-to-date upon each call.
         if self.wait_period_counters is None:
             self.wait_period_counters = [0] * len(detectors)
 
@@ -181,7 +176,6 @@ class ConfirmedElection(Election):
             elif state == "warning":
                 num_warning += 1
             elif self.wait_period_counters[i] != 0:
-                # XXX - So the same detector waiting will increment num_drift? - AS
                 num_drift += 1
                 self.wait_period_counters[i] += 1
 
