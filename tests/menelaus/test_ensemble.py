@@ -248,7 +248,7 @@ def test_eval_ordered_election_2():
     assert election([s1, s2, s3]) == None
 
 
-def test_maciel_election_1():
+def test_confirmed_election_1():
     """Ensure ConfirmedElection can detect drift"""
     d1 = ADWIN()
     d2 = ADWIN()
