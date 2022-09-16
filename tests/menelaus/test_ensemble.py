@@ -260,7 +260,7 @@ def test_confirmed_election_1():
     assert election([d1, d2, d3]) == "drift" # by call #2, drift
 
 
-def test_maciel_election_2():
+def test_confirmed_election_2():
     """Ensure ConfirmedElection can detect warnings"""
     d1 = ADWIN()
     d2 = ADWIN()
