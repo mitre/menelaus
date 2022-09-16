@@ -11,7 +11,13 @@ from menelaus.drift_detector import BatchDetector, StreamingDetector
 
 class Election(ABC):
     """
-    TODO - docstrings
+    Abstract base class for implementations of election schemes
+    used to evaluate drift state of ensemble, by operating on
+    drift states of constituent detectors.
+
+    Constructors for sub-classes may differs, but all Election
+    classes are callable classes, where the call takes exactly
+    one argument: a detector list.
     """
 
     @abstractmethod
@@ -74,14 +80,14 @@ class MinimumApprovalElection(Election):
         return None
 
 
-class ConfirmedApprovalElection(Election):
+class OrderedApprovalElection(Election):
     """
     Election that determines drift based on whether:
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
 
     Hypothethically, the distinction between this and
-    `eval_minimum_approval(a+c)`, is if the detectors were added to
+    ``MinimumApprovalElection(a+c)``, is if the detectors were added to
     a collection in a meaningful order. As such this voting
     scheme iterates over detectors in preserved order of insertion into
     the user-defined list, and uses the first ``approvals_needed``
@@ -128,10 +134,12 @@ class ConfirmedApprovalElection(Election):
         return None
 
 
-class MacielElection(Election):
+class ConfirmedElection(Election):
     """
-    Maciel election for handling detectors (typically in
+    Election for handling detectors (typically in
     streaming setting) with waiting logic.
+
+    Derived from the Maciel ensemble evaluation scheme.
     """
 
     def __init__(self, sensitivity: int, wait_time: int):
@@ -236,7 +244,6 @@ class Ensemble:
             X_selected = self.column_selectors[det_key](X)
             self.detectors[det_key].update(X=X_selected, y_true=y_true, y_pred=y_pred)
 
-        # TODO - reset ensemble itself and its detectors, right now never reset
         det_list = list(self.detectors.values())
         self.drift_state = self.election(det_list)
 

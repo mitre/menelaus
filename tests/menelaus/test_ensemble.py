@@ -4,8 +4,8 @@ from menelaus.ensemble import Ensemble, StreamingEnsemble, BatchEnsemble
 from menelaus.ensemble import (
     SimpleMajorityElection,
     MinimumApprovalElection,
-    ConfirmedApprovalElection,
-    MacielElection
+    OrderedApprovalElection,
+    ConfirmedElection
 )
 from menelaus.data_drift import KdqTreeBatch
 from menelaus.concept_drift import STEPD
@@ -228,7 +228,7 @@ def test_eval_confirmed_approval_1():
     s1.drift_state = s2.drift_state = "drift"
     s3 = STEPD()
     s3.drift_state = None
-    election = ConfirmedApprovalElection(
+    election = OrderedApprovalElection(
         approvals_needed=1,
         confirmations_needed=1
     )
@@ -241,7 +241,7 @@ def test_eval_confirmed_approval_2():
     s1.drift_state = "drift"
     s3 = STEPD()
     s2.drift_state = s3.drift_state = None
-    election = ConfirmedApprovalElection(
+    election = OrderedApprovalElection(
         approvals_needed=2,
         confirmations_needed=1
     )
@@ -249,36 +249,36 @@ def test_eval_confirmed_approval_2():
 
 
 def test_maciel_election_1():
-    """Ensure MacielElection can detect drift"""
+    """Ensure ConfirmedElection can detect drift"""
     d1 = ADWIN()
     d2 = ADWIN()
     d3 = STEPD()
     d1.drift_state = "drift"
-    election = MacielElection(sensitivity=2, wait_time=10)
+    election = ConfirmedElection(sensitivity=2, wait_time=10)
     election([d1,d2,d3]) # call #1
     d2.drift_state = "drift"
     assert election([d1, d2, d3]) == "drift" # by call #2, drift
 
 
 def test_maciel_election_2():
-    """Ensure MacielElection can detect warnings"""
+    """Ensure ConfirmedElection can detect warnings"""
     d1 = ADWIN()
     d2 = ADWIN()
     d3 = STEPD()
     d1.drift_state = "drift"
-    election = MacielElection(sensitivity=2, wait_time=10)
+    election = ConfirmedElection(sensitivity=2, wait_time=10)
     election([d1,d2,d3]) # call #1
     d2.drift_state = "warning"
     assert election([d1, d2, d3]) == "warning" # by call #2, warning
 
 
 def test_maciel_election_3():
-    """Ensure MacielElection does not false alarm"""
+    """Ensure ConfirmedElection does not false alarm"""
     d1 = ADWIN()
     d2 = ADWIN()
     d3 = STEPD()
     d1.drift_state = "drift"
-    election = MacielElection(sensitivity=2, wait_time=10)
+    election = ConfirmedElection(sensitivity=2, wait_time=10)
     election([d1, d2, d3]) # call 1
     assert election([d1, d2, d3]) == None # no more drift, so call 2 : None
 
@@ -287,7 +287,7 @@ def test_maciel_election_4():
     """Ensure resetting of wait period counters"""
     d1 = ADWIN()
     d1.drift_state = "drift"
-    election = MacielElection(sensitivity=1, wait_time=1)
+    election = ConfirmedElection(sensitivity=1, wait_time=1)
     election([d1])
     assert election.wait_period_counters[0] == 1
     election([d1]) # wait period counter for d1 would be 2, so rest to 0

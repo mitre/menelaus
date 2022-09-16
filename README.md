@@ -57,6 +57,8 @@ Menelaus implements the following drift detectors.
 | Data drift       | Hellinger Distance Drift Detection Method                     | HDDDM        |           | x     |
 | Data drift       | kdq-Tree Detection Method                                     | kdq-Tree     | x         | x     |
 | Data drift       | PCA-Based Change Detection                                    | PCA-CD       | x         |       |
+| Ensemble         | StreamingEnsemble      | - | x |
+| Ensemble         | BatchEnsemble          | - |   | x |
 
 
 The three main types of detector are described below. More details, including
@@ -117,7 +119,7 @@ follows:
 from menelaus.concept_drift import ADWINOutcome
 from menelaus.data_drift import KdqTreeStreaming
 from menelaus.datasets import fetch_rainfall_data
-from menelaus.ensemble import StreamingEnsemble, eval_simple_majority
+from menelaus.ensemble import StreamingEnsemble, SimpleMajorityElection
 
 
 # has feature columns, and a binary response 'rain'
@@ -144,7 +146,7 @@ ensemble = StreamingEnsemble(
     'a': ADWINOutcome(),
     'k': KdqTreeStreaming(window_size=5)
   },
-  eval_simple_majority
+  SimpleMajorityElection()
 )
 
 for i, row in df.iterrows():
