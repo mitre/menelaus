@@ -75,6 +75,9 @@ documentation on [ReadTheDocs](https://menelaus.readthedocs.io/en/latest/).
     that sense, they are model-agnostic. Such changes in distribution
     might be to single variables or to the joint distribution of all the
     features.
+-   Ensembles are groups of detectors, where each watches the same data, and 
+    drift is determined by combining their output. Menelaus implements a 
+    framework for wrapping detectors this way.
 
 The detectors may be applied in two settings, as described in the Background
 section:
