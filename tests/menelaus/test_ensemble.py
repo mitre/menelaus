@@ -235,7 +235,7 @@ def test_eval_ordered_election_1():
     assert election([s1, s2, s3]) == "drift"
 
 
-def test_eval_confirmed_approval_2():
+def test_eval_ordered_election_2():
     """Ensure confirmed approval scheme does not false alarm"""
     s1 = s2 = STEPD()
     s1.drift_state = "drift"
