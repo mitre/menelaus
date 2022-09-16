@@ -30,6 +30,8 @@ class SimpleMajorityElection(Election):
     Election that determines drift for an ensemble,
     based on whether a simple majority of the ensemble's
     detectors have voted for drift.
+
+    Ref :cite:t:`duelectionreference`
     """
 
     def __call__(self, detectors: list):
@@ -140,6 +142,8 @@ class ConfirmedElection(Election):
     streaming setting) with waiting logic.
 
     Derived from the Maciel ensemble evaluation scheme.
+
+    Ref. :cite:t:`macielelectionreference`
     """
 
     def __init__(self, sensitivity: int, wait_time: int):
