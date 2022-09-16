@@ -272,7 +272,7 @@ def test_maciel_election_2():
     assert election([d1, d2, d3]) == "warning" # by call #2, warning
 
 
-def test_maciel_election_3():
+def test_confirmed_election_3():
     """Ensure ConfirmedElection does not false alarm"""
     d1 = ADWIN()
     d2 = ADWIN()
