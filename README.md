@@ -57,7 +57,7 @@ Menelaus implements the following drift detectors.
 | Data drift       | Hellinger Distance Drift Detection Method                     | HDDDM        |           | x     |
 | Data drift       | kdq-Tree Detection Method                                     | kdq-Tree     | x         | x     |
 | Data drift       | PCA-Based Change Detection                                    | PCA-CD       | x         |       |
-| Ensemble         | StreamingEnsemble      | - | x |
+| Ensemble         | Streaming Ensemble      | - | x |
 | Ensemble         | Batch Ensemble          | - |   | x |
 
 
