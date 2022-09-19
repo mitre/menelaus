@@ -33,11 +33,7 @@ algorithms are typically used when it is more important to process large volumes
 of information simultaneously, where the speed of results after receiving data
 is of less concern.
 
-In The Odyssey, Menelaus seeks a prophecy known by the shapeshifter
-Proteus. Menelaus holds Proteus down as he takes the form of a lion, a
-serpent, water, and so on. Eventually, Proteus relents, and Menelaus
-gains the answers he sought. Accordingly, this library provides tools
-for \"holding\" data as it shifts.
+Menelaus is named for the Odyssean hero that defeated the shapeshifting Proteus.
 
 # Detector List
 
