@@ -1,13 +1,14 @@
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
+
 class NNSpacePartitioner:
     """
     This class encodes the Nearest Neighbors Space Partitioning
     scheme (NNPS) for use in the Nearest Neigbors Density Variation
     Identification (NN-DVI) drift detection algorithm, both of which
     are introduced in Liu et al. (2018).
-    
+
     Broadly, NNSP combines two input data samples, finds the adjacency
     matrix using Nearest Neighbor search, and transforms the data points
     into a set of shared subspaces for estimating density and changes in
@@ -22,6 +23,7 @@ class NNSpacePartitioner:
             and its adjacency matrix
         adjacency_matrix (numpy.array): result of k-NN search on ``D``
     """
+
     def __init__(self, k: int):
         """
         Args:
@@ -64,15 +66,17 @@ class NNSpacePartitioner:
         weight_array = np.sum(P_nnps, axis=1).astype(int)
         Q = np.lcm.reduce(weight_array)
         m = Q / weight_array
-        M_nnps = P_nnps / m[:, np.newaxis]
-        self.nnps_matrix = M_nnps
+        # M_nnps = P_nnps / m[:, np.newaxis]
+        # self.nnps_matrix = M_nnps
+        m = m * np.identity(len(m))
+        self.nnps_matrix = np.matmul(m, P_nnps)
 
     @staticmethod
     def compute_nnps_distance(nnps_matrix, v1, v2):
         """
         Breaks NNSP reprsentation matrix into NNPS matrices
         for two samples using indices, computes difference in
-        densities of shared subspaces, between samples.  
+        densities of shared subspaces, between samples.
 
         TODO Update docs to indicate v1/v2 need to be in OHE format.
 
@@ -85,10 +89,19 @@ class NNSpacePartitioner:
             float: distance value between samples, representing difference
                 in shared subspace densities
         """
-        d_nnps = 0
+        # d_nnps = 0
         M_s1 = np.dot(v1, nnps_matrix)
         M_s2 = np.dot(v2, nnps_matrix)
-        d_nnps += np.sum(np.absolute(M_s1 - M_s2))
+
+        # TODO: likely there exists a more efficient approach for this union op
+        membership = np.sum(np.array([v1, v2]), axis=0)
+        membership = membership >= 1  # in case of overlap
+        denom = sum(membership)
+
+        d_nnps = np.sum(np.abs(M_s1 - M_s2) / (M_s1 + M_s2))
+        d_nnps /= denom
+
+        # d_nnps += np.sum(np.absolute(M_s1 - M_s2))
         # XXX - verify output, order - Anmol
-        d_nnps /= nnps_matrix.shape[0]
+        # d_nnps /= nnps_matrix.shape[0]
         return d_nnps
