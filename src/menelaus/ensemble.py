@@ -12,12 +12,16 @@ from menelaus.drift_detector import BatchDetector, StreamingDetector
 class Election(ABC):
     """
     Abstract base class for implementations of election schemes
-    used to evaluate drift state of ensemble, by operating on
-    drift states of constituent detectors.
+    used to evaluate drift state of ensembles, by operating on
+    the drift states of constituent detectors.
 
-    Constructors for sub-classes may differs, but all Election
-    classes are callable classes, where the call takes exactly
-    one argument: a detector list.
+    Constructors for sub-classes may differ, but all ``Election``
+    classes are callable classes, where the call takes only the
+    list of detectors to evaluate.
+
+    The surrounding ``Ensemble`` class will update its drift state
+    within its ``update`` function, by calling the ``Election``
+    it is given at initialization-time, upon its detectors.
     """
 
     @abstractmethod
@@ -27,7 +31,7 @@ class Election(ABC):
 
 class SimpleMajorityElection(Election):
     """
-    Election that determines drift for an ensemble,
+    ``Election`` that determines drift for an ensemble,
     based on whether a simple majority of the ensemble's
     detectors have voted for drift.
 
@@ -40,7 +44,7 @@ class SimpleMajorityElection(Election):
             detectors (list): detector objects to examine
 
         Returns
-            str: ``'drift'`` if drift is determined, or ``None``
+            str: ``"drift"`` if drift is determined, or ``None``
         """
         simple_majority_threshold = len(detectors) // 2
         alarms = [d for d in detectors if d.drift_state == "drift"]
@@ -53,7 +57,7 @@ class SimpleMajorityElection(Election):
 
 class MinimumApprovalElection(Election):
     """
-    Election that determines drift based on whether
+    ``Election`` that determines drift based on whether
     a minimum number of provided detectors have alarmed. This
     threshold can be 1 to the maximum number of detectors.
     """
@@ -84,7 +88,7 @@ class MinimumApprovalElection(Election):
 
 class OrderedApprovalElection(Election):
     """
-    Election that determines drift based on whether:
+    ``Election`` that determines drift based on whether:
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
 
@@ -103,7 +107,7 @@ class OrderedApprovalElection(Election):
             approvals_needed (int): Minimum number of detectors that
                 must alarm for the ensemble to alarm.
             confirmations_needed (int): Minimum number of confirmations
-                needed to alarm, after `approvals_needed` alarms have been
+                needed to alarm, after ``approvals_needed`` alarms have been
                 observed.
         """
         self.approvals_needed = approvals_needed
@@ -138,8 +142,9 @@ class OrderedApprovalElection(Election):
 
 class ConfirmedElection(Election):
     """
-    Election for handling detectors (typically in
-    streaming setting) with waiting logic.
+    ``Election`` for handling detectors (typically in
+    streaming setting) with waiting logic. In this scheme,
+    ...
 
     Derived from the Maciel ensemble evaluation scheme.
 
