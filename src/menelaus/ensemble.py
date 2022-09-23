@@ -266,7 +266,7 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     Implements Ensemble class for streaming drift detectors. Inherits
     from ``Ensemble`` and ``StreamingDetector`` (i.e., ``StreamingEnsemble``
     IS-A ``StreamingDetector``). As such it has the functions of a regular
-    detector: ``update``, ``reset``, etc. Internally, these operate not only 
+    detector: ``update``, ``reset``, etc. Internally, these operate not only
     on the ensemble's own attributes, but on the set of detectors given to it.
     """
 
