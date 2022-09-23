@@ -144,7 +144,9 @@ class ConfirmedElection(Election):
     """
     ``Election`` for handling detectors (typically in
     streaming setting) with waiting logic. In this scheme,
-    ...
+    a detector that has alarmed will increment 'waiting' counters
+    until enough other detectors confirm the drift or warning
+    alarm.
 
     Derived from the Maciel ensemble evaluation scheme.
 
@@ -210,9 +212,9 @@ class ConfirmedElection(Election):
 class Ensemble:
     """
     Parent class for Ensemble detectors. Does not inherit from any
-    detector parent class, but has similar functions to set reference,
-    update, reset, filter data columns over each internal detector. Can
-    also evaluate the results from all detectors per some voting scheme.
+    detector parent class, but has similar functions ``set_reference``,
+    ``update``, ``reset``. Can also evaluate the results from all
+    detectors per some voting scheme.
 
     Any class hoping to implement ensemble functionality should implement
     from this.
@@ -262,10 +264,10 @@ class Ensemble:
 class StreamingEnsemble(StreamingDetector, Ensemble):
     """
     Implements Ensemble class for streaming drift detectors. Inherits
-    from Ensemble and StreamingDetector (i.e., StreamingEnsemble IS-A StreamingDetector).
-    As such it has the functions of a regular detector: update, and reset.
-    Internally, these operate not only on the ensemble's own attributes,
-    but on the set of detectors given to it.
+    from ``Ensemble`` and ``StreamingDetector`` (i.e., ``StreamingEnsemble``
+    IS-A ``StreamingDetector``). As such it has the functions of a regular
+    detector: ``update``, ``reset``, etc. Internally, these operate not only 
+    on the ensemble's own attributes, but on the set of detectors given to it.
     """
 
     def __init__(self, detectors: dict, election, column_selectors: dict = {}):
@@ -274,14 +276,14 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
             detectors (dict): Set of detectors in ensemble. Should be keyed by
                 unique strings for convenient lookup, and valued by initialized
                 detector objects.
-            election (str): String identifier for voting scheme by which to
-                determine if drift is present. E.g., 'simple-majority' uses
-                a function to determine if a simple majority of detectors
-                found drift. See options in ``menelaus.ensemble.elections``.
-            columns (dict, optional): Optional table of column lists to use
+            election (str): Initialized ``Election`` object for ensemble to evaluate
+                drift among constituent detectors. See implemented election schemes
+                in ``menelaus.ensemble``.
+            columns_selectors (dict, optional): Table of functions to use
                 for each detector. Should be keyed to match the format of
-                ``detectors``. Will be used to filter the data columns passed
-                to ensemble in ``update`` according to each detector.
+                ``detectors``. Each function should take a data instance X,
+                and return the columns of X that the corresponding detector
+                should operate on.
         """
         StreamingDetector.__init__(self)
         Ensemble.__init__(self, detectors, election, column_selectors)
@@ -311,10 +313,10 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
 
 class BatchEnsemble(BatchDetector, Ensemble):
     """
-    Implements Ensemble class for batch-based drift detectors. Inherits
-    from Ensemble and BatchDetector (i.e., BatchEnsemble IS-A BatchDetector).
-    As such it has the functions of a regular detector, to set reference,
-    update, and reset. Only internally, these operate not only on the
+    Implements ``Ensemble`` class for batch-based drift detectors. Inherits
+    from ``Ensemble`` and ``BatchDetector`` (i.e., ``BatchEnsemble`` IS-A ``BatchDetector``).
+    As such it has the functions of a regular detector, ``set_reference``,
+    ``update``, and ``reset``. Only internally, these operate not only on the
     ensemble's own attributes, but on the set of detectors given to it.
     """
 
@@ -324,15 +326,14 @@ class BatchEnsemble(BatchDetector, Ensemble):
             detectors (dict): Set of detectors in ensemble. Should be keyed by
                 unique strings for convenient lookup, and valued by initialized
                 detector objects.
-            election (str): String identifier for voting scheme by which to
-                determine if drift is present. E.g., 'simple-majority' uses
-                a function to determine if a simple majority of detectors
-                found drift. See options in ``menelaus.ensemble.elections``.
-            columns (dict, optional): Optional table of column lists to use
+            election (str): Initialized ``Election`` object for ensemble to evaluate
+                drift among constituent detectors. See implemented election schemes
+                in ``menelaus.ensemble``.
+            columns_selectors (dict, optional): Table of functions to use
                 for each detector. Should be keyed to match the format of
-                ``detectors``. Will be used to filter the data columns passed
-                to ensemble in ``update`` or ``set_reference`` according to
-                each detector.
+                ``detectors``. Each function should take a data instance X,
+                and return the columns of X that the corresponding detector
+                should operate on.
         """
         BatchDetector.__init__(self)
         Ensemble.__init__(self, detectors, election, column_selectors)
