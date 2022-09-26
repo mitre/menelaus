@@ -89,6 +89,7 @@ class MinimumApprovalElection(Election):
 class OrderedApprovalElection(Election):
     """
     ``Election`` that determines drift based on whether:
+    
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
 
