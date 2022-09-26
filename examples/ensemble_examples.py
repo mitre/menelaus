@@ -64,7 +64,7 @@ for i, batch in enumerate(df_into_batches[1:]):
 # %% [markdown]
 # ## Streaming Ensemble
 # 
-# Using an ensemble of streaming detectors can involve additional features. This example uses both data and concept drift detectors (`KdqTreeStreaming`, `STEPD`), custom subsets of data for different detectors, as well as a different election scheme that can mitigate internal differences in how different detectors 'wait' before alarming for drift.
+# Using an ensemble of streaming detectors can involve additional features. This example uses both data and concept drift detectors (`KdqTreeStreaming`, `STEPD`), custom subsets of data for different detectors, as well as a different election scheme that will alarm if a customizable, minimum number of detectors "approve" or alarm for drift.
 
 # %%
 # initialize set of detectors with desired parameterizations

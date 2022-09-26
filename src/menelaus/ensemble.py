@@ -142,15 +142,14 @@ class OrderedApprovalElection(Election):
 
 class ConfirmedElection(Election):
     """
-    ``Election`` for handling detectors (typically in
-    streaming setting) with waiting logic. In this scheme,
-    a detector that has alarmed will increment 'waiting' counters
-    until enough other detectors confirm the drift or warning
-    alarm.
+    ``Election`` for handling detectors, typically in
+    streaming setting. In this scheme, when a single
+    detector alarms, the ``Election`` will wait for a
+    certain number of samples, until one or more other
+    detectors also alarm, confirming the drift.
 
-    Derived from the Maciel ensemble evaluation scheme.
-
-    Ref. :cite:t:`macielelectionreference`
+    Derived from the ensemble scheme described in
+    :cite:t:`macielelectionreference`.
     """
 
     def __init__(self, sensitivity: int, wait_time: int):
