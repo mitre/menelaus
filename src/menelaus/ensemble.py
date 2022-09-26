@@ -89,6 +89,7 @@ class MinimumApprovalElection(Election):
 class OrderedApprovalElection(Election):
     """
     ``Election`` that determines drift based on whether:
+    
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
 
@@ -315,7 +316,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
     Implements ``Ensemble`` class for batch-based drift detectors. Inherits
     from ``Ensemble`` and ``BatchDetector`` (i.e., ``BatchEnsemble`` IS-A ``BatchDetector``).
     As such it has the functions of a regular detector, ``set_reference``,
-    ``update``, and ``reset``. Only internally, these operate not only on the
+    ``update``, and ``reset``. These functions will operate not only on the
     ensemble's own attributes, but on the set of detectors given to it.
     """
 
