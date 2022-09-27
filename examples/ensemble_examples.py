@@ -9,7 +9,7 @@
 # 
 # ## Imports
 
-# In[ ]:
+# In[1]:
 
 
 import numpy as np
@@ -23,7 +23,7 @@ from menelaus.ensemble import SimpleMajorityElection, MinimumApprovalElection
 
 # ## Import Data
 
-# In[ ]:
+# In[2]:
 
 
 example_data = make_example_batch_data()
@@ -34,7 +34,7 @@ rainfall_data = fetch_rainfall_data()
 # 
 # The simplest use of an ensemble is to combine three data-drift-only detectors with few additional settings. In this case we can combine three instances of batch detectors (`KdqTreeBatch`, `HDDDM`), all operating on the same data columns, with a very basic evaluation scheme (*i.e.* a simple majority of detectors alarming, causes the ensemble to alarm).
 
-# In[ ]:
+# In[3]:
 
 
 # initialize set of detectors with desired parameterizations
@@ -45,17 +45,15 @@ detectors = {
 }
 
 # choose an election scheme
-# SimpleMajorityElection will alarm when more than half of the detectors are in 
-# the "drift" state.
 election = SimpleMajorityElection()
 
 # initialize an ensemble object
 ensemble = BatchEnsemble(detectors, election)
 
 
-# Note that `BatchEnsemble` and `StreamingEnsemble` are instances of `BatchDetector` and `StreamingDetector` themselves (respectively). As such, they are used in the same way syntactically and possess similar properties.
+# Note that `BatchEnsemble` and `StreamingEnsemble` are instances of `BatchDetector` and `StreamingDetector` themselves (respectively). As such, they are used in the same syntactic way and possess similar properties.
 
-# In[ ]:
+# In[4]:
 
 
 # make dataset smaller
@@ -76,9 +74,9 @@ for i, batch in enumerate(df_into_batches[1:]):
 
 # ## Streaming Ensemble
 # 
-# Using an ensemble of streaming detectors can involve additional features. This example uses both data and concept drift detectors (`KdqTreeStreaming`, `STEPD`), custom subsets of data for different detectors, as well as a different election scheme that will alarm if a customizable, minimum number of detectors "approve" or alarm for drift.
+# Using an ensemble of streaming detectors can involve additional features. This example uses both data and concept drift detectors (`KdqTreeStreaming`, `STEPD`), custom subsets of data for different detectors, as well as a different election scheme that will alarm if a custom, minimum number of detectors "approve" or alarm for drift.
 
-# In[ ]:
+# In[5]:
 
 
 # initialize set of detectors with desired parameterizations
@@ -95,8 +93,6 @@ column_selectors = {
 }
 
 # choose an election scheme
-# MinimumApprovalElection will alarm when at least `approvals_needed` detectors
-# are in the "drift" state.
 election = MinimumApprovalElection(approvals_needed=1)
 
 # initialize an ensemble object
@@ -105,7 +101,7 @@ stream_ensemble = StreamingEnsemble(detectors, election, column_selectors)
 
 # When mixing concept and data drift detectors, it's especially important to pass data explicitly.
 
-# In[ ]:
+# In[6]:
 
 
 # make data smaller
@@ -123,10 +119,4 @@ for i, row in df_stream.iterrows():
     )
     if stream_ensemble.drift_state is not None:
         print(f"Example #{i} | Ensemble drift state: {stream_ensemble.drift_state}")
-
-
-# In[ ]:
-
-
-
 
