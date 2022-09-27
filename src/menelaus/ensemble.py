@@ -89,7 +89,7 @@ class MinimumApprovalElection(Election):
 class OrderedApprovalElection(Election):
     """
     ``Election`` that determines drift based on whether:
-    
+
         1) An initial ``a`` count of detectors alarmed for drift.
         2) A subsequent ``c`` count of detectors confirmed drift.
 
@@ -273,17 +273,20 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         """
         Args:
-            detectors (dict): Set of detectors in ensemble. Should be keyed by
-                unique strings for convenient lookup, and valued by initialized
-                detector objects.
+            detectors (dict): Dictionary of detectors in ensemble, where the key
+                is some unique identifier for a detector, and the value is the
+                initialized detector object. For instance, ``{'a': ADWIN()}``.
             election (str): Initialized ``Election`` object for ensemble to evaluate
                 drift among constituent detectors. See implemented election schemes
                 in ``menelaus.ensemble``.
-            columns_selectors (dict, optional): Table of functions to use
-                for each detector. Should be keyed to match the format of
-                ``detectors``. Each function should take a data instance X,
+            columns_selectors (dict, optional): Functions to use
+                for each detector. Functions should take data instance X
                 and return the columns of X that the corresponding detector
-                should operate on.
+                should operate on. Should match format of ``detectors`` i.e.
+                ``{'a': ADWIN()}`` would need an entry ``{'a': function}`` to
+                use this feature. By default, each no column selection
+                function is applied to any detector, and they will all use
+                the entirely of the attributes in X.
         """
         StreamingDetector.__init__(self)
         Ensemble.__init__(self, detectors, election, column_selectors)
@@ -323,17 +326,20 @@ class BatchEnsemble(BatchDetector, Ensemble):
     def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         """
         Args:
-            detectors (dict): Set of detectors in ensemble. Should be keyed by
-                unique strings for convenient lookup, and valued by initialized
-                detector objects.
+            detectors (dict): Dictionary of detectors in ensemble, where the key
+                is some unique identifier for a detector, and the value is the
+                initialized detector object. For instance, ``{'p': PCA_CD()}``.
             election (str): Initialized ``Election`` object for ensemble to evaluate
                 drift among constituent detectors. See implemented election schemes
                 in ``menelaus.ensemble``.
             columns_selectors (dict, optional): Table of functions to use
-                for each detector. Should be keyed to match the format of
-                ``detectors``. Each function should take a data instance X,
+                for each detector. Functions should take data instance X
                 and return the columns of X that the corresponding detector
-                should operate on.
+                should operate on. Should match format of ``detectors`` i.e.
+                ``{'p': PCA_CD()}`` would need an entry ``{'a': function}`` to
+                use this feature. By default, each no column selection
+                function is applied to any detector, and they will all use
+                the entirely of the attributes in X.
         """
         BatchDetector.__init__(self)
         Ensemble.__init__(self, detectors, election, column_selectors)
