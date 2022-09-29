@@ -4,7 +4,6 @@ import os
 import pytest  # until such time as we kill the current fetch_circle_data
 import pandas as pd
 import numpy as np
-from menelaus.utils._locate import find_git_root
 
 
 def make_example_batch_data():
@@ -123,9 +122,7 @@ def fetch_circle_data():
     Returns:
         pd.DataFrame: A dataframe containing the Circle dataset.
     """
-    data_path = os.path.join(
-        find_git_root(), "src", "menelaus", "datasets", "dataCircleGSev3Sp3Train.csv"
-    )
+    data_path = os.path.join(os.path.dirname(__file__), "dataCircleGSev3Sp3Train.csv")
     return pd.read_csv(data_path, usecols=[0, 1, 2], names=["var1", "var2", "y"])
 
 
@@ -145,9 +142,7 @@ def fetch_rainfall_data():
         pd.DataFrame: A dataframe containing the Rainfall dataset.
 
     """
-    data_path = os.path.join(
-        find_git_root(), "src", "menelaus", "datasets", "rainfall_data.csv"
-    )
+    data_path = os.path.join(os.path.dirname(__file__), "rainfall_data.csv")
     df = pd.read_csv(
         data_path,
         usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9],
