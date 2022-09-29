@@ -219,7 +219,7 @@ class BatchDetector(ABC):
         self.drift_state = None
 
     def _validate_X(self, X):
-        """Validate that the input only contains one observation, and that its
+        """Validate that the input contains more than one observation, and that its
         dimensions/column names match earlier input. If there is no
         earlier input, store the dimension/column names.
 
@@ -278,10 +278,10 @@ class BatchDetector(ABC):
         """
         ary = np.array(y)
         if len(ary.shape) <= 1:
-            ary = ary.reshape(1, -1)
+            ary = ary.reshape(-1, 1)
         if ary.shape[0] == 1:
             raise ValueError(
-                "Input for batch detectors should contain more than one obsevation."
+                "Input for batch detectors should contain more than one observation."
             )
         if ary.shape[1] != 1:
             raise ValueError("y input for detectors should contain only one column.")
