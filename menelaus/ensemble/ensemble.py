@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from menelaus.drift_detector import BatchDetector, StreamingDetector
+from menelaus.detector import BatchDetector, StreamingDetector
 
 
 #############

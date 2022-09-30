@@ -2,7 +2,7 @@ import copy
 import numpy as np
 import pandas as pd
 import scipy.stats
-from menelaus.drift_detector import BatchDetector
+from menelaus.detector import BatchDetector
 from scipy.spatial.distance import jensenshannon
 
 
