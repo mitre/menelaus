@@ -100,7 +100,7 @@ pip install menelaus
 
 # to allow editing, running tests, generating docs, etc.
 # First, clone the git repo, then:
-cd ./menelaus/
+cd ./menelaus_clone_folder/
 pip install -e .[dev] 
 ```
 
