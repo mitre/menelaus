@@ -196,8 +196,8 @@ Install the library using the `[dev]` option, as above.
   following from the root directory:
   ```python
   flake8                 # linting
-  bandit -r ./src        # security checks
-  black ./src/menelaus   # formatting
+  bandit -r ./menelaus        # security checks
+  black ./menelaus   # formatting
   ```  
 
 # Copyright
