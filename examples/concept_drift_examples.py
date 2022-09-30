@@ -667,7 +667,6 @@ acc_orig = acc_orig.reset_index()['y']
 # In[ ]:
 
 
-
 #reset the classifier for loop with detection
 np.random.seed(123)
 clf.fit(X_train, y_train)
