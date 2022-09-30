@@ -83,7 +83,7 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
                 and return the columns of X that the corresponding detector
                 should operate on. Should match format of ``detectors`` i.e.
                 ``{'a': ADWIN()}`` would need an entry ``{'a': function}`` to
-                use this feature. By default, each no column selection
+                use this feature. By default, no column selection
                 function is applied to any detector, and they will all use
                 the entirely of the attributes in X.
         """
