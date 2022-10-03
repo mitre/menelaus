@@ -24,7 +24,7 @@ Package structure
    examples/data_drift/data_drift_examples.ipynb
    examples/ensembles/ensemble_examples.ipynb
    examples/partitioners/partitioner_plots_example.ipynb
-
+   references
 
 
 Indices and tables

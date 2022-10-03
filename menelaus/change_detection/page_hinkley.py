@@ -1,5 +1,5 @@
 import pandas as pd
-from menelaus.drift_detector import StreamingDetector
+from menelaus.detector import StreamingDetector
 
 
 class PageHinkley(StreamingDetector):

@@ -1,7 +1,6 @@
 """ Functions to generate example data according to a fixed scheme. """
 
 import os
-import pytest  # until such time as we kill the current fetch_circle_data
 import pandas as pd
 import numpy as np
 

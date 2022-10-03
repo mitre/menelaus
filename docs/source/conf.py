@@ -14,7 +14,7 @@ import os
 import sys
 from inspect import getsourcefile
 
-sys.path.insert(0, os.path.abspath("../src/menelaus"))
+sys.path.insert(0, os.path.abspath("../menelaus"))
 
 
 # -- Project information -----------------------------------------------------
@@ -109,7 +109,7 @@ def run_apidoc(_):
     os.chdir("..")
     print("cwd", os.getcwd(), "\n")
     print("contents", os.listdir())
-    src_dir = os.path.join("../src/menelaus")
+    src_dir = os.path.join("../menelaus")
     template_dir = os.path.join("source", "templates")
     main(["-M", "--templatedir", template_dir, "-f", "-o", "source", src_dir])
 

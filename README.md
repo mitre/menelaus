@@ -100,7 +100,7 @@ pip install menelaus
 
 # to allow editing, running tests, generating docs, etc.
 # First, clone the git repo, then:
-cd ./menelaus/
+cd ./menelaus_clone_folder/
 pip install -e .[dev] 
 ```
 
@@ -108,7 +108,7 @@ Menelaus should work with Python 3.8 or higher.
 
 # Getting Started
 
-Each detector implements the API defined by `menelaus.drift_detector`:
+Each detector implements the API defined by `menelaus.detector`:
 notably, they have an `update` method which allows new data to be passed, and a `drift_state` attribute which tells the user whether drift has been
 detected, along with (usually) other attributes specific to the detector class.
 
@@ -196,8 +196,8 @@ Install the library using the `[dev]` option, as above.
   following from the root directory:
   ```python
   flake8                 # linting
-  bandit -r ./src        # security checks
-  black ./src/menelaus   # formatting
+  bandit -r ./menelaus        # security checks
+  black ./menelaus   # formatting
   ```  
 
 # Copyright

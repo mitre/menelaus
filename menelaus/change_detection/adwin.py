@@ -9,7 +9,7 @@ from numpy import (
     zeros,
 )
 
-from menelaus.drift_detector import StreamingDetector
+from menelaus.detector import StreamingDetector
 
 
 class ADWIN(StreamingDetector):

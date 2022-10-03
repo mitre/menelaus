@@ -5,7 +5,7 @@ import pandas as pd
 from pandas import DataFrame
 import scipy.stats
 
-from menelaus.drift_detector import StreamingDetector, BatchDetector
+from menelaus.detector import StreamingDetector, BatchDetector
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
 

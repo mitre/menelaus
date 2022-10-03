@@ -1,5 +1,5 @@
 """Module for checking behavior of DriftDetector."""
-from menelaus.drift_detector import DriftDetector, StreamingDetector, BatchDetector
+from menelaus.detector import DriftDetector, StreamingDetector, BatchDetector
 from menelaus.data_drift import KdqTreeStreaming, KdqTreeBatch
 import pytest
 import numpy as np

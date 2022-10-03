@@ -41,10 +41,10 @@ jobs:
       uses: psf/black@stable
       with: 
         options: "--check --verbose"
-        src: "./src/menelaus"
+        src: "./menelaus"
         version: "22.3.0"
 
     - name: Security check with bandit
       run: |
         # exits with code 0 if there are no errors, otherwise complains
-        bandit -q -r ./src/
+        bandit -q -r ./menelaus/

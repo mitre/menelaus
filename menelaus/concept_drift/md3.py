@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
 from sklearn.base import clone
-from menelaus.drift_detector import DriftDetector
+from menelaus.detector import DriftDetector
 
 
 class MD3(DriftDetector):

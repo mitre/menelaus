@@ -4,7 +4,7 @@ from scipy.spatial.distance import jensenshannon
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KernelDensity
-from menelaus.drift_detector import StreamingDetector
+from menelaus.detector import StreamingDetector
 from menelaus.change_detection.page_hinkley import PageHinkley
 
 

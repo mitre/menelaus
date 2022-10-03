@@ -1,5 +1,5 @@
 import numpy as np
-from menelaus.drift_detector import StreamingDetector
+from menelaus.detector import StreamingDetector
 
 
 class CUSUM(StreamingDetector):
