@@ -12,17 +12,19 @@ class DetectA(BatchDetector):
     Initialize by setting reference 
     Update with 
 
-
-    Args:
-        BatchDetector (_type_): _description_
-
-    Returns:
-        _type_: _description_
     """
 
     input_type = "batch"
 
-    def __init__(self, alpha):
+    def __init__(
+        self, 
+        alpha = 0.95
+    ):
+        """
+        Args:
+            alpha (float): statistical significance used to identify
+                threshold for f and X2 distributions. Defaults to 0.95.
+        """
 
         super().__init__() #total batches = 0, batches since reset = 0
 
@@ -30,47 +32,49 @@ class DetectA(BatchDetector):
         self._alpha = alpha 
 
 
-    def set_reference(self, X, y_true, y_pred = None):
-        """
-        only use when you have labels 
+    def set_reference(self, X, y_true, k = None, y_pred = None):
+        """Initialize detector with a reference batch. User should pass in true labels to be used as initial centroids when clustering. 
+        If labels are unavailable, user must specify y_true = None and k (the number of labels) so clustering can be performed.
 
-        # super set reference 
-
-        # validate 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred) #ensures columns match, saves self._input_col_dim, saves feature names 
-
-        # self._k = # of classes in y 
-
-        # self._k_types = unique y 
-
-        # self._ref_n
-
-        # call reset (X, y_true)
+        The unique types and number of labels passed to set_reference must be maintained if labels are passed to proceeding update calls. 
+        If user wishes to change the types and number of labels, must specify new reference batch using this method and restart run.
 
         Args:
-            X (_type_): _description_
-            y_true (_type_): _description_
-            y_pred (_type_, optional): _description_. Defaults to None.
+            X (pandas.DataFrame): initial baseline dataset
+            y_true (numpy.array): true labels for dataset. Defaults to None. 
+            y_pred (numpy.array): predicted labels for dataset, not used by DetectA. Defaults to None.  
         """
 
-        # super set reference 
         super().set_reference(X, y_true, y_pred)
-
-        # validate 
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred) #ensures columns match, saves self._input_col_dim, saves feature names 
 
         # Set attributes
-        self._labels = np.unique(y_true)
-        self._k = self._labels.shape[0]
+        if y_true != None:
+            self._labels = np.unique(y_true)
+            self._k = self._labels.shape[0]
+        else:
+            if k == None:
+                raise ValueError(
+                        "If y_true is none, k must be passed in."
+                    )
+            else: 
+                self._k = k
         self._ref_n = X.shape[0]
-
         self.reset(X, y_true)
 
 
     def reset(self, X, y_true = None):
+        """Cluster reference data and initialize reference mean and covariance statistics. Intended for use
+        after ``drift_state == 'drift'``.
 
-        # cluster and initialize reference attributes
+        Args:
+            X (pandas.DataFrame): initial baseline dataset.
+            y_true (numpy.array): true labels for dataset. Defaults to None. 
+        """
+
+        # cluster and initialize reference statistics attributes
         self._ref_data = self._cluster(X, y_true)
+        self._pred_labels = np.unique(self._ref_data[:,[0]])
         self._ref_means = self._mean_vector(self._ref_data)
         self._ref_cov = self._cov_matrix(self._ref_data)
 
@@ -78,71 +82,55 @@ class DetectA(BatchDetector):
             super().reset()
 
     def update(self, X, y_true = None, y_pred = None):
-        """_summary_
-
-        save test_n
-        validate data
-        if no drift and y_true is passed in, verify that labels match reference labels
-        if drift: reset data using reference data and ref_y?? what about new y 
-
-        reset mean and cov dictionaries to store drift 
-
-        if this is the second test batch passed in, set ref statistics to store last test batch stats 
-
-        cluster test data
-        compute conditional means and cov matrix for test data
-        find t2 and c test statistics
-        compare to appropriate distributions to detect drift 
-        
-        if labels are passed in, save as reference y
-        save testn as new refn 
-        save test data as new reference data 
+        """Update the detector with a new test batch. On next update call, this test batch becomes the new reference batch. 
+        If user wants to use labels to cluster data, whether drift is detected or not, labels must be passed in with test batch. New
+        labels passed in must match unique types initial labels. 
+        If drift is detected and labels were not passed on prior update call, clustering is performed without initial centroids.  
+        If drift is not detected on prior update call and labels are not passed in, reference conditional mean vector used as initial centroids in clustering.
 
         Args:
-            X (_type_): _description_
-            y_true (_type_, optional): _description_. Defaults to None.
-            y_pred (_type_, optional): _description_. Defaults to None.
+            X (pandas.DataFrame): initial baseline dataset
+            y_true (numpy.array): true labels for dataset. Defaults to None. 
+            y_pred (numpy.array): predicted labels for dataset, not used by DetectA. Defaults to None.  
         """
 
         X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
 
-        self._test_n = X.shape[0]
-
-        if self.drift_state == None and y_true != None:
-            #TODO implement verify labels match ref_y 
+        if y_true != None:
+            if np.array_equal(self._labels,y_true) is False:
+                raise ValueError(
+                        "Y_true labels must match initial y_true labels passed to set_reference method."
+                    )
 
         if self.drift_state: 
-            self.reset(self._ref_data, self._ref_y) # TODO how does this work if y_true not passed in 
+            self.reset(self._ref_data, self._prior_y) 
 
-        super.update() #total_batches += 1, b_since reset +=1 
-
-        # reset to store drift for each class 
-        mean_drift = {}
-        cov_drift = {}
-
+        super.update() 
+        
+        # Update attribtues
+        self._ref_n = self._test_n 
+        self._ref_data = self._test_data 
+        self._test_n = X.shape[0]
         if self.batches_since_reset > 1:
             self._ref_means = self._test_means 
             self._ref_cov = self._test_cov 
 
-        data = self._cluster(X, y_true)
+        # Statistics to be monitored
+        self._test_data = self._cluster(X, y_true)
+        self._test_means = self._mean_vector(self._test_data)
+        self._test_cov = self._cov_matrix(self._test_data)
 
-        self._test_means = self._mean_vector(data)
-        self._test_cov = self._cov_matrix(data)
-
-        # T2 statistic
+        # Statistics for detecting drift 
         T2 = self._T2stat(self._ref_means, self._test_means, self._ref_cov, self._test_cov)
-
-        # f threshold for conditional mean drift 
         f_threshold = f.ppf(self._alpha, self.input_col_dim, ((self._ref_n+self._test_n)- self.input_col_dim -1)) #TODO self.alpha or 1-alpha
-
-        # C statistic #TODO getting inf and nans
-        C = self._C_stat(self._ref_cov, self._test_cov)
-
-        # chi squared threshold for covariance matrix drift 
+        C = self._C_stat(self._ref_cov, self._test_cov) #TODO getting inf and nans
         df = 0.5*self.input_col_dim*(self.input_col_dim + 1)
         chi_threshold = chi2.ppf(self._alpha, df) #TODO same thing with alpha here 
 
-        for k in self._labels:
+        # Detect drift
+        mean_drift = {}
+        cov_drift = {}
+        for k in self._pred_labels:
 
             if T2[k] > f_threshold: 
                 mean_drift[k] = True 
@@ -156,35 +144,25 @@ class DetectA(BatchDetector):
             else: 
                 cov_drift[k] = False 
         
+        # Save labels for next update call
         if y_true != None:
-            self._ref_y = y_true 
-        self._ref_n = self._test_n 
-        self._ref_data = data #TODO data or X? 
+            self._prior_y = y_true 
+        else:
+            self._prior_y = None
 
         
 
     def _mean_vector(self, data):
-        """
-        Computes conditional mean vector.
+        """Computes conditional mean vector.
 
         Args:
-            X (numpy.ndarray): input data, wiht first column (index 0) being labels
-            y (numpy.ndarray): label from input data
+            data (numpy.ndarray): input data, with column at index 0 containing assigned labels from clustering 
 
         Returns:
-            Dictionary containing mean vector for each class, indexed by class
-        
-        both X and y are input as arrays, X is multidimensional, y is one dimensional 
-        concantenated togehter with Y (label) becoming first column 
-        
-        Returns:
-            conditional mean vector as a dictionary, each key is a class, value is a list of conditional means
-        
+            dict: dictionary containing mean vector for each class: key is class, value is array of conditional means
         """
         cond_mean_vec = {}
-
-        # grouping by unique labels
-        for k in self._labels:
+        for k in self._pred_labels: 
             k_array = data[data[:,0] == k][:,1:]
             cond_mean_vec[k] = [np.mean(k_array[:,j]) for j in range(self._input_col_dim)]
             
@@ -192,21 +170,17 @@ class DetectA(BatchDetector):
 
 
     def _cov_matrix(self, data):
-        """
-                # grouping by unique labels
-                        # select data assigned label k, excluding label column 
-                        compute covariance matrix
+        """Computes conditional covariance matrix.
 
         Args:
-            data (_type_): _description_
+            data (numpy.ndarray): input data, with column at index 0 containing assigned labels from clustering 
 
         Returns:
-            _type_: _description_
+            dict: dictionary containing covariance matrix: key is class, value is covariance matrix for features.
         """
 
         cov_matrix = {}
-
-        for k in self._labels:
+        for k in self._pred_labels:
             k_array = data[data[:,0] == k][:,1:]
             cov_matrix[k] = np.cov(k_array, rowvar = False) #TODO double check correct use of rowvar
             
@@ -214,33 +188,36 @@ class DetectA(BatchDetector):
 
 
     def _cluster(self, X, y_true = None):
-        """
+        """Clusters data using kmeans. 
+
+        If labels are passed to update call, uses conditional mean vectors of labels as initial centroids to speed up convergence.
+        If labels are not passed in and drift was detected on prior batch, performs kmeans without initial centroids. 
+        If labels are not passed in and drift was not detected, uses reference mean vector as initial centroids. 
         
-        if labels are passed in, find conditional mean vectors of labels and use as initial centroids 
-
-        if no labels, use reference conditional mean vector 
-
-        if drift but no labels are passed in, perform unsupervised clustering 
-
-        combine assigned labels from kmeans with data and return dataset, labels will be added as 0 column in numpy matrix
-
         Args:
-            X (_type_): _description_
-            y_true (_type_, optional): _description_. Defaults to None.
+            X (pandas.DataFrame): initial baseline dataset
+            y_true (numpy.array): true labels for dataset. Defaults to None. 
+
+        Returns:
+            numpy.ndarray: input data, with column at index 0 containing assigned labels from clustering 
         """
 
-        if y_true != None:
-            # TODO verify that y_true matches self._labels
-            data = np.concatenate((y_true, X), axis = 1)
-            centroids = self._mean_vector(data)
-
-        # TODO figure out condition and how to do unsupervised clustering w no initial centroids
+        # unsupervised clustering when no labels passed in 
+        if y_true == None and self.drift_state == True:
+            kmeans = KMeans(n_clusters = self._k).fit(X)
 
         else: 
-            centroids = self._ref_means
 
-        init_centroids = list(centroids.values())
-        kmeans = KMeans(n_clusters = self._k, init = init_centroids).fit(X)  #TODO convert to mahalanobis
+            if y_true != None:
+                data = np.concatenate((y_true, X), axis = 1)
+                centroids = self._mean_vector(data)
+
+            else: 
+                centroids = self._ref_means
+
+            init_centroids = list(centroids.values())
+            kmeans = KMeans(n_clusters = self._k, init = init_centroids).fit(X)  #TODO convert to mahalanobis
+        
         new_labels = kmeans.predict(X)
         new_labels = super()._validate_y(new_labels)
         data = np.concatenate((new_labels, X), axis = 1)
@@ -248,10 +225,21 @@ class DetectA(BatchDetector):
         return data
 
     def _T2stat(self, ref_means, test_means, ref_cov,  test_cov):
+        """Computes T2 statistic, used to monitor drift in conditional mean vector.
+
+        Args:
+            ref_means (dict): Dictionary containing conditional mean vector, indexed by class, for reference data
+            test_means (dict): Dictionary containing conditional mean vector, indexed by class, for test data
+            ref_cov (dict): Dictionary containing conditional covariance matrix, indexed by class, for reference data
+            test_cov (dict): Dictionary containing conditional covariance matrix, indexed by class, for test data
+
+        Returns:
+            dict: dictionary containing T2 statistic for each class.
+        """
 
         t2_dict = {}
 
-        for k in self._labels:
+        for k in self._pred_labels:
 
             # compute test statistic
             mean_vec_diff = np.subtract(ref_means[k],test_means[k])
@@ -266,10 +254,19 @@ class DetectA(BatchDetector):
         return t2_dict 
 
     def _C_stat(self,ref_cov, test_cov):
+        """Computes C statistic, used to monitor drift in conditional covariance matrix. 
+
+        Args:
+            ref_cov (dict): Dictionary containing conditional covariance matrix, indexed by class, for reference data
+            test_cov (dict): Dictionary containing conditional covariance matrix, indexed by class, for test data
+
+        Returns:
+            dict: Dictionary containing C statistic for each class.
+        """
     
         C_dict = {}
 
-        for k in self._labels:
+        for k in self._pred_labels:
 
             # pooled covariance matrix
             S_pool = ((self._ref_n - 1)*ref_cov[k] + (self._test_n-1)*test_cov[k]) / (self._ref_n - 1 + self._test_n - 1)
