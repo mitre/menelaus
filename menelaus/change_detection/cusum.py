@@ -82,10 +82,10 @@ class CUSUM(StreamingDetector):
             self.sd_hat = np.std(self._stream[-self.burn_in :])
             self.reset()
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
         if len(X.shape) > 1 and X.shape[1] != 1:
             raise ValueError("CUSUM should only be used to monitor 1 variable.")
-        super().update(X, y_true, y_pred)
+        super().update(X, None, None)
         self._stream.append(X)
 
         # cannot compute s_h/s_l so set to 0

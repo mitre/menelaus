@@ -106,10 +106,10 @@ class ADWIN(StreamingDetector):
             # note that the other attributes should *not* be initialized after drift
             self.reset()
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
         if len(X.shape) > 1 and X.shape[1] != 1:
             raise ValueError("ADWIN should only be used to monitor 1 variable.")
-        super().update(X, y_true, y_pred)
+        super().update(X, None, None)
 
         # the array should have a single element after validation.
         X = X[0][0]
