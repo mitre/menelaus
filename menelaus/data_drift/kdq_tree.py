@@ -371,8 +371,8 @@ class KdqTreeStreaming(KdqTreeDetector, StreamingDetector):
         if self.drift_state == "drift":
             self.reset()
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
-        StreamingDetector.update(self, X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
+        StreamingDetector.update(self, X, None, None)
         ary = copy.deepcopy(X)
         KdqTreeDetector._evaluate_kdqtree(self, ary, "stream")
 
@@ -472,7 +472,7 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             y_true (numpy.array): actual labels of dataset - not used in KdqTree
             y_pred (numpy.array): predicted labels of dataset - not used in KdqTree
         """
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
         ary = copy.deepcopy(X)
         self._inner_set_reference(ary, input_type="batch")
 
@@ -500,8 +500,8 @@ class KdqTreeBatch(KdqTreeDetector, BatchDetector):
             # Note that set_reference resets the detector.
             self.set_reference(self.ref_data)
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
-        BatchDetector.update(self, X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
+        BatchDetector.update(self, X, None, None)
         ary = copy.deepcopy(X)
 
         KdqTreeDetector._evaluate_kdqtree(self, ary, "batch")
