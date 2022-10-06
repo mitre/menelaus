@@ -145,7 +145,7 @@ class LinearFourRates(StreamingDetector):
 
         if self.drift_state == "drift":
             self.reset()
-        
+
         _, y_true, y_pred = super()._validate_input(None, y_true, y_pred)
         super().update(None, y_true, y_pred)
         # the arrays should have a single element after validation.
