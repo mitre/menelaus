@@ -310,8 +310,10 @@ class KDQTreeNode:
             leaf = KDQTreeNode({"build": n}, None, None, None, None)
             leaves.append(leaf)
             return leaf
+        # region would now vary based on whether 'at' categorical column or not
         upper_data = data[data[:, axis] > midpoint_at_axis]
         lower_data = data[data[:, axis] <= midpoint_at_axis]
+        # endregion
         total_points = upper_data.shape[0] + lower_data.shape[0]
         node = KDQTreeNode(
             {"build": total_points},

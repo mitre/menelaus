@@ -8,6 +8,15 @@ import scipy.stats
 from menelaus.detector import StreamingDetector, BatchDetector
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner
 
+# categorical kdqtree brainstorming
+#   1.  input data with mixed columns (normal columns plus encoded columns e.g. 
+#       did_rain (0/1) or rain_0 and rain_1)
+#       if this is the intended interface, should we avoid 'checking' column values
+#       and instead have some parameter passed in which specifies that certain columns
+#       need to be split by the categorical scheme mentioned in #31?
+#
+#   2.  in partitioner, do we need to ensure there is some tracking of whether the column
+#       we are at, indicates we should split by a different-than-normal scheme?
 
 class KdqTreeDetector:
     """
