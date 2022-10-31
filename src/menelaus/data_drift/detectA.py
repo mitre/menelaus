@@ -131,11 +131,11 @@ class DetectA(BatchDetector):
 
         Args:
             X (pandas.DataFrame): initial baseline dataset 
-            y_true (pandas.Series): true labels for dataset. If user cannot 
+            y_true (pandas.DataFrame): true labels for dataset. If user cannot 
             obtain, input as 'None' but must input k parameter 
             k (int): the number of categories of labels. User should provide
             if y_true = 'None' to assist with clustering 
-            y_pred (pandas.Series): predicted labels for dataset, not used 
+            y_pred (pandas.DataFrame): predicted labels for dataset, not used 
             by DetectA. Defaults to None.  
         """
 
@@ -204,8 +204,8 @@ class DetectA(BatchDetector):
 
         Args:
             X (pandas.DataFrame): initial baseline dataset 
-            y_true (pandas.Series): true labels for dataset. Defaults to None. 
-            y_pred (pandas.Series): predicted labels for dataset, not used by 
+            y_true (pandas.DataFrame): true labels for dataset. Defaults to None. 
+            y_pred (pandas.DataFrame): predicted labels for dataset, not used by 
             DetectA. Defaults to None.  
         """
 
