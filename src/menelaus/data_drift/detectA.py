@@ -6,15 +6,20 @@ from sklearn.cluster import KMeans
 from scipy.stats import f, chi2
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+import warnings
+
 
 
 class DetectA(BatchDetector):
     """
     Implements the DetectA drift detection algorithm. Inherits from
-    ``BatchDetector`` (see docs). DetectA assumes the data follows a
-    Multivariate Normal distribution. If this assumption is not verified, then
-    the probability of a false positive or false negative drift detection
-    increases. 
+    ``BatchDetector`` (see docs). Users should note: 
+        #. DetectA assumes the data follows a Multivariate Normal distribution.
+           If this assumption is not verified, then the probability of a false
+           positive or false negative drift detection increases. 
+        #. DetectA operates with a categorical outcome variables but does not
+           work with categorical features. All input data must be numeric. The
+           y_true label must be categorical. 
 
     DetectA is a drift detection algorithm monitoring for abrupt drift in the
     mean vectors and covariance matrices of each class. It operates by:
@@ -76,7 +81,7 @@ class DetectA(BatchDetector):
     distribution.This enables drift in the mean and covariance of each class to
     be detected individually.
 
-    Ref. #TODO 
+    Ref. :cite:t:`escovedo2018detecta` 
 
     Attributes:
         init_labels (list): unique categories of true labels passed to
@@ -180,7 +185,7 @@ class DetectA(BatchDetector):
         self._pca = PCA(n_components = self._input_col_dim, whiten = True).fit(X_scaled)
         X_pca = self._pca.transform(X_scaled)
         if y_true is not None: 
-             centroids = self._mean_vector(pd.DataFrame(X_pca), y_true)
+            centroids = self._mean_vector(pd.DataFrame(X_pca), y_true)
         else:
             centroids = None
         self.y_pred = self._cluster(X_pca, centroids) 
@@ -284,8 +289,19 @@ class DetectA(BatchDetector):
             numpy.ndarray: Multidimensional array containing conditional mean
             vector, indexed by class
         """
+        cond_mean_vec = []
         X['_label_'] = y
-        return np.asarray(X.groupby('_label_').mean())
+        for k in self.init_labels: 
+            k_df = X[X['_label_'] == k].iloc[:,0:-1]
+            mean_vec = []
+            for j in range(k_df.shape[1]):
+                mean = np.mean(k_df.iloc[:,j])
+                if np.isnan(mean):
+                    mean = 0 
+                mean_vec.append(mean)
+            cond_mean_vec.append(mean_vec)
+
+        return cond_mean_vec
 
 
     def _cov_matrix(self, X, y):
@@ -302,7 +318,7 @@ class DetectA(BatchDetector):
         cov = []
         X['_label_'] = y 
 
-        for k in np.unique(y): 
+        for k in self.init_labels: 
             # select data assigned label k, excluding label column 
             k_df = X[X['_label_'] == k].iloc[:,0:-1]
             cov.append(np.cov(k_df, rowvar = False))
@@ -328,7 +344,10 @@ class DetectA(BatchDetector):
         Returns:
             numpy.ndarray: assigned labels from clustering 
         """
-        if centroids is None and self._batches_since_reset == 0: #test for update
+        # Ignore runtime warnings resulting from specifying initial centroids
+        warnings.simplefilter("ignore", RuntimeWarning)
+
+        if centroids is None and self._batches_since_reset == 0: 
             self._kmeans = KMeans(n_clusters = self.k
                 ).fit(X)
         elif centroids is not None:
