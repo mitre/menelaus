@@ -1,0 +1,35 @@
+# This workflow will set up the environment and run all scripts/notebooks found in /examples. 
+
+name: examples
+
+on:
+  push:
+    branches: [ "main" ] 
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[test]
+    - name: Convert example notebooks to scripts
+      run: |
+        cd docs/source/examples
+        python convert_notebooks.py
+        cd ../../..
+    - name: Test example scripts
+      run: |
+        cd tests/examples
+        pytest
