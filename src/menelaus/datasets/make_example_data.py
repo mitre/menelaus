@@ -6,7 +6,45 @@ import pandas as pd
 import numpy as np
 from menelaus.utils._locate import find_git_root
 
+def make_example_normal_data():
+    """
+    This function returns a dataframe containing synthetic batch data for use
+    with the repo's examples. The dataframe's columns are ``"year", "a", "b", "label", and "drift"``.
 
+        * ``year`` covers 2008-2014, with 1,200 observations each.
+
+        * Features ``"a", "b", and "label"`` are normally distributed.
+
+        * ``"label"`` is created by binning a normally distributed numeric vector and assigning labels to bins. 
+
+    Drift occurs as follows:
+
+        * Increase in the mean of columns ``"a" and "b"`` in 2010. New distribution is maintained.
+
+        * Increase in the standard deviation of columns ``"a" and "b"`` in 2013. New distribution is maintained.
+
+    Returns:
+        pd.DataFrame: A dataframe containing a synthetic batch dataset.
+    """
+
+    np.random.seed(0)
+    year_size = 1200
+    df = pd.DataFrame()
+    df["year"] = year_size * list(range(2008,2015))
+    df.sort_values(by="year", inplace=True)
+    df.set_index("year", inplace=True)
+    #sample_size = df.shape[0]
+    df["a"] = [*np.random.normal(3, 2.5, size=year_size*2), *np.random.normal(4, 2.5, size=year_size*3),
+                *np.random.normal(4, 2.5, size=year_size*2)]
+    df["b"] = [*np.random.normal(6,4, size=year_size*2), *np.random.normal(8,4, size=year_size*3),
+                *np.random.normal(8,6, size=year_size*2)]
+    df["label"] = np.random.normal(50, 10, size=year_size*7)                
+    df["drift"] = df.index.isin([2010, 2013])  
+    # convert label to categorical 
+    df['label'] = pd.cut(df['label'], bins=[-20, 40, 100], labels=['Y', 'Z'])
+    
+    return df
+    
 def make_example_batch_data():
     """
     This function returns a dataframe containing synthetic batch data for use
@@ -168,43 +206,6 @@ def fetch_rainfall_data():
     df = df.apply(pd.to_numeric)
     return df
 
-def make_example_normal_data():
-    """
-    This function returns a dataframe containing synthetic batch data for use
-    with the repo's examples. The dataframe's columns are ``"year", "a", "b", "label", and "drift"``.
 
-        * ``year`` covers 2008-2014, with 1,200 observations each.
-
-        * Features ``"a", "b", and "label"`` are normally distributed.
-
-        * ``"label"`` is created by binning a normally distributed numeric vector and assigning labels to bins. 
-
-    Drift occurs as follows:
-
-        * Increase in the mean of columns ``"a" and "b"`` in 2010. New distribution is maintained.
-
-        * Increase in the standard deviation of columns ``"a" and "b"`` in 2013. New distribution is maintained.
-
-    Returns:
-        pd.DataFrame: A dataframe containing a synthetic batch dataset.
-    """
-
-    np.random.seed(0)
-    year_size = 1200
-    df = pd.DataFrame()
-    df["year"] = year_size * list(range(2008,2015))
-    df.sort_values(by="year", inplace=True)
-    df.set_index("year", inplace=True)
-    #sample_size = df.shape[0]
-    df["a"] = [*np.random.normal(3, 2.5, size=year_size*2), *np.random.normal(4, 2.5, size=year_size*3),
-                *np.random.normal(4, 2.5, size=year_size*2)]
-    df["b"] = [*np.random.normal(6,4, size=year_size*2), *np.random.normal(8,4, size=year_size*3),
-                *np.random.normal(8,6, size=year_size*2)]
-    df["label"] = np.random.normal(50, 10, size=year_size*7)                
-    df["drift"] = df.index.isin([2010, 2013])  
-    # convert label to categorical 
-    df['label'] = pd.cut(df['label'], bins=[-20, 40, 100], labels=['Y', 'Z'])
-    
-    return df
 
 
