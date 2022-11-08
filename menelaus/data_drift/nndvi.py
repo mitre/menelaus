@@ -2,11 +2,11 @@ import numpy as np
 from scipy.stats import norm
 import warnings
 
-from menelaus.drift_detector import DriftDetector
+from menelaus.detector import BatchDetector
 from menelaus.partitioners import NNSpacePartitioner
 
 
-class NNDVI(DriftDetector):
+class NNDVI(BatchDetector):
     """
     This class encodes the Nearest Neigbors Density Variation
     Identification (NN-DVI) drift detection algorithm, introduced
@@ -31,9 +31,6 @@ class NNDVI(DriftDetector):
         sampling_times (int): number of times to perform sampling for threshold estimation
         alpha (float): significance level for detecting drift
     """
-
-    input_type = "batch"
-
     def __init__(self, k_nn: int = 30, sampling_times: int = 500, alpha: float = 0.01):
         """
         Attributes:
@@ -47,22 +44,23 @@ class NNDVI(DriftDetector):
         self.sampling_times = sampling_times
         self.alpha = alpha
 
-    def update(self, test_batch: np.array):
+    def update(self, X: np.array, y_true=None, y_pred=None):
         """
         Update the detector with a new test batch. If drift is detected, new
         reference batch becomes most recent test batch.
 
         Args:
-          test_batch (numpy.array): next batch of data to detect drift on.
+          X (numpy.array): next batch of data to detect drift on.
+          y_true (numpy.array): true labels, not used in NNDVI
+          y_pred (numpy.array): predicted labels, not used in NNDVI
         """
         if self._drift_state == "drift":
             self.reset()
 
         super().update()
-        test_batch = np.array(test_batch)
+        test_batch = np.array(X)
         assert test_batch.shape[1] == self.reference_batch.shape[1]
 
-        # XXX - May want to do further checks about preserved order - Anmol
         nnsp = NNSpacePartitioner(self.k_nn)
         nnsp.build(self.reference_batch, test_batch)
         M_nnps = nnsp.nnps_matrix
@@ -76,15 +74,17 @@ class NNDVI(DriftDetector):
             self._drift_state = "drift"
             self.set_reference(test_batch)
 
-    def set_reference(self, new_reference_batch):
+    def set_reference(self, X, y_true=None, y_pred=None):
         """
         Set the detector's reference batch to an updated value; typically
         used in ``update``.
 
         Attributes:
-            new_reference_batch (numpy.array): updated reference batch
+            X (numpy.array): updated reference batch
+            y_true (numpy.array): true labels, not used in NNDVI
+            y_pred (numpy.array): predicted labels, not used in NNDVI
         """
-        self.reference_batch = new_reference_batch
+        self.reference_batch = X
 
     def reset(self):
         """
@@ -116,7 +116,6 @@ class NNDVI(DriftDetector):
         # TODO - Would like to parallelize this - Anmol
         d_shuffle = []
         for _ in range(sampling_times):
-            # XXX - What does this mean? Especially keeping M the same, but shuffling Vs? - Anmol
             v1_shuffle = np.random.permutation(v_ref)
             v2_shuffle = 1 - v1_shuffle
 
