@@ -82,10 +82,10 @@ class PageHinkley(StreamingDetector):
         if self.drift_state == "drift":
             self.reset()
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
         if len(X.shape) > 1 and X.shape[1] != 1:
             raise ValueError("Page-Hinkley should only be used to monitor 1 variable.")
-        super().update(X, y_true, y_pred)
+        super().update(X, None, None)
 
         self._mean = self._mean + (X - self._mean) / self.samples_since_reset
         self._sum = self._sum + X - self._mean - self.delta

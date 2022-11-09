@@ -106,10 +106,10 @@ class ADWIN(StreamingDetector):
             # note that the other attributes should *not* be initialized after drift
             self.reset()
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
         if len(X.shape) > 1 and X.shape[1] != 1:
             raise ValueError("ADWIN should only be used to monitor 1 variable.")
-        super().update(X, y_true, y_pred)
+        super().update(X, None, None)
 
         # the array should have a single element after validation.
         X = X[0][0]
@@ -135,7 +135,7 @@ class ADWIN(StreamingDetector):
         """Recommended indices for retraining. If drift is detected,
         set to ``[beginning of ADWIN's new window, end of ADWIN's new window]``.
         If these are e.g. the 5th and 13th sample that ADWIN has been updated
-        with, the values with be ``[4, 12]``.
+        with, the values will be ``[4, 12]``.
 
         Returns:
             list: the current retraining recommendations
@@ -207,7 +207,7 @@ class ADWIN(StreamingDetector):
                     break
             else:
                 # similarly, if the first bucket isn't full, neither are any others
-                break  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
+                break
             curr_bucket_row = curr_bucket_row.next_bucket
             list_position += 1
 
@@ -379,7 +379,7 @@ class _BucketRowList:
     parameter from Bifet 2006. At each update step, if the ``BucketRows`` are at
     overflow, their oldest buckets will be moved into the next largest ``BucketRow``
     by ``ADWIN._compress_buckets``. So, the tail of the ``bucket_row_list`` will be the
-    oldest elements.
+    estimates corresponding to the oldest elements.
 
     Note that each ``BucketRow`` only stores estimates related to 2^i elements in
     each bucket: so, each position in ``BucketRowList.head``'s arrays corresponds to

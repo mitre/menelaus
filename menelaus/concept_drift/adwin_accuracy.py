@@ -83,11 +83,10 @@ class ADWINAccuracy(ADWIN):
                 application.
         """
 
-        new_value = int(y_true == y_pred)
-
         # This class is here to avoid asking the user to provide such a direct
         # function of (y_true, y_pred) in the X argument, which is unintuitive.
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        _, y_true, y_pred = super()._validate_input(None, y_true, y_pred)
+        new_value = int(y_true == y_pred)
         # the arrays should have a single element after validation.
         y_true, y_pred = y_true[0], y_pred[0]
         super().update(new_value, y_true=None, y_pred=None)

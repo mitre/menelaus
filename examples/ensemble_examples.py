@@ -9,12 +9,13 @@
 # 
 # ## Imports
 
-# In[1]:
+# In[ ]:
 
 
 import numpy as np
 
 from menelaus.concept_drift import STEPD
+from menelaus.change_detection import ADWIN
 from menelaus.datasets import make_example_batch_data, fetch_rainfall_data
 from menelaus.data_drift import HDDDM, KdqTreeBatch, KdqTreeStreaming
 from menelaus.ensemble import BatchEnsemble, StreamingEnsemble
@@ -23,7 +24,7 @@ from menelaus.ensemble import SimpleMajorityElection, MinimumApprovalElection
 
 # ## Import Data
 
-# In[2]:
+# In[ ]:
 
 
 example_data = make_example_batch_data()
@@ -34,7 +35,7 @@ rainfall_data = fetch_rainfall_data()
 # 
 # The simplest use of an ensemble is to combine three data-drift-only detectors with few additional settings. In this case we can combine three instances of batch detectors (`KdqTreeBatch`, `HDDDM`), all operating on the same data columns, with a very basic evaluation scheme (*i.e.* a simple majority of detectors alarming, causes the ensemble to alarm).
 
-# In[3]:
+# In[ ]:
 
 
 # initialize set of detectors with desired parameterizations
@@ -53,7 +54,7 @@ ensemble = BatchEnsemble(detectors, election)
 
 # Note that `BatchEnsemble` and `StreamingEnsemble` are instances of `BatchDetector` and `StreamingDetector` themselves (respectively). As such, they are used in the same syntactic way and possess similar properties.
 
-# In[4]:
+# In[ ]:
 
 
 # make dataset smaller
@@ -76,20 +77,27 @@ for i, batch in enumerate(df_into_batches[1:]):
 # 
 # Using an ensemble of streaming detectors can involve additional features. This example uses both data and concept drift detectors (`KdqTreeStreaming`, `STEPD`), custom subsets of data for different detectors, as well as a different election scheme that will alarm if a custom, minimum number of detectors "approve" or alarm for drift.
 
-# In[5]:
+# In[ ]:
 
 
 # initialize set of detectors with desired parameterizations
 detectors = {
     'k1': KdqTreeStreaming(window_size=200, bootstrap_samples=250),
     'k2': KdqTreeStreaming(window_size=225, bootstrap_samples=200),
-    's1': STEPD(window_size=50)
+    's1': STEPD(window_size=50),
+    'a': ADWIN(delta=.001)
+
 }
 
-# functions that select the part of 'X' each detector needs - keys must match!
+# Functions that select the part of 'X' each detector needs - keys must match!
+# Note that the default behavior, without a selector specified, is to use all columns.
+# For detectors that only operate on y_true and y_pred, like STEPD, specifying
+# a selector isn't necessary. But for detectors like ADWIN, which only monitor 
+# a single variable within X, the selector *must* be specified!
 column_selectors = {
     'k1': lambda x: x[['temperature', 'visibility', 'dew_point']],
-    'k2': lambda x: x[['temperature', 'visibility', 'average_wind_speed']]
+    'k2': lambda x: x[['temperature', 'visibility', 'average_wind_speed']],
+    'a': lambda x: x[['visibility']]
 }
 
 # choose an election scheme
@@ -101,7 +109,7 @@ stream_ensemble = StreamingEnsemble(detectors, election, column_selectors)
 
 # When mixing concept and data drift detectors, it's especially important to pass data explicitly.
 
-# In[6]:
+# In[ ]:
 
 
 # make data smaller
@@ -119,4 +127,10 @@ for i, row in df_stream.iterrows():
     )
     if stream_ensemble.drift_state is not None:
         print(f"Example #{i} | Ensemble drift state: {stream_ensemble.drift_state}")
+
+
+# In[ ]:
+
+
+
 

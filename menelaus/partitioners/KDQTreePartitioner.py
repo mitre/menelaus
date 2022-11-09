@@ -92,7 +92,7 @@ class KDQTreePartitioner:
             KDQTreeNode: root node of KDQ-Tree
         """
         if self.node is None or len(data.shape) <= 1:
-            return None  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
+            return None
         KDQTreeNode.fill(data, self.node, self.count_ubound, tree_id, reset)
         return self.node
 
@@ -125,7 +125,7 @@ class KDQTreePartitioner:
             float: Kullback-Leibler divergence among trees
         """
         if self.leaves == []:
-            return None  # this line will be noted as uncovered due to https://github.com/nedbat/coveragepy/issues/772
+            return None
         counts1 = self.leaf_counts(tree_id1)
         counts2 = self.leaf_counts(tree_id2)
         hist1 = KDQTreePartitioner._distn_from_counts(counts1)

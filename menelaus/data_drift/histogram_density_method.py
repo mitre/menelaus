@@ -232,7 +232,7 @@ class HistogramDensityMethod(BatchDetector):
             y_true (numpy.array): true labels for dataset - not used by HDM
             y_pred (numpy.array): predicted labels for dataset - not used by HDM
         """
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
         X = pd.DataFrame(
             X, columns=self._input_cols
         )  # TODO: subsequent operations expect dataframes, not numpy arrays
@@ -256,12 +256,12 @@ class HistogramDensityMethod(BatchDetector):
         if self._drift_state == "drift":
             self.reset()
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
+        X, _, _ = super()._validate_input(X, None, None)
         X = pd.DataFrame(
             X, columns=self._input_cols
         )  # TODO: subsequent operations expect dataframes, not numpy arrays
 
-        super().update(X, y_true, y_pred)
+        super().update(X, None, None)
         test_n = X.shape[0]
 
         # Estimate reference and test histograms

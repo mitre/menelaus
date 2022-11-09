@@ -82,8 +82,8 @@ class EDDM(StreamingDetector):
         if self.drift_state == "drift":
             self.reset()
 
-        X, y_true, y_pred = super()._validate_input(X, y_true, y_pred)
-        super().update(X, y_true, y_pred)
+        _, y_true, y_pred = super()._validate_input(None, y_true, y_pred)
+        super().update(None, y_true, y_pred)
         # the arrays should have a single element after validation.
         y_true, y_pred = y_true[0], y_pred[0]
         classifier_result = int(y_pred == y_true)
