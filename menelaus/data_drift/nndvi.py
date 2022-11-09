@@ -57,7 +57,7 @@ class NNDVI(BatchDetector):
         """
         if self._drift_state == "drift":
             self.reset()
-
+        
         super().update(X=X, y_true=None, y_pred=None)
         test_batch = np.array(X)
 

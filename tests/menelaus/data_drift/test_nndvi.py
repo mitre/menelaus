@@ -41,7 +41,7 @@ def test_nndvi_update_3():
     ''' Check NNDVI.update behavior after drift alarm '''
     det = NNDVI(k_nn=3)
     det.set_reference(np.random.randint(0,5,(5,5)))
-    det._drift_state == 'drift'
+    det._drift_state = "drift"
     det.update(X=np.random.randint(0,5,(5,5)))
     assert det.drift_state is None
 
