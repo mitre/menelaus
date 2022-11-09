@@ -64,7 +64,7 @@ class NNDVI(BatchDetector):
         if test_batch.shape[1] != self.reference_batch.shape[1]:
             raise ValueError(
                 f"Test Batch: {test_batch.shape} needs same amount ",
-                f"of features as Reference Batch: {self.reference_batch.shape}"
+                f"of features as Reference Batch: {self.reference_batch.shape}",
             )
 
         nnsp = NNSpacePartitioner(self.k_nn)
