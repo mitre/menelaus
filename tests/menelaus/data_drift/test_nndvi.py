@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from menelaus.data_drift import NNDVI
 
@@ -35,6 +36,21 @@ def test_nndvi_update_2():
     det.set_reference(np.random.randint(0,5,(10,10)))
     det.update(X=np.random.randint(10,40,(10,10)))
     assert det.drift_state is not None
+
+def test_nndvi_update_3():
+    ''' Check NNDVI.update behavior after drift alarm '''
+    det = NNDVI(k_nn=3)
+    det.set_reference(np.random.randint(0,5,(5,5)))
+    det.drift_state == 'drift'
+    det.update(X=np.random.randint(0,5,(5,5)))
+    assert det.drift_state is None
+
+def test_nndvi_update_4():
+    ''' Check failure when batch shapes don't match '''
+    det = NNDVI()
+    det.set_reference(np.random.randint(0,5,(5,6)))
+    with pytest.raises(ValueError):
+        det.update(np.random.randint(0,5,(5,5)))
 
 def test_nndvi_reset():
     ''' Check NNDVI.reset works as intended '''
