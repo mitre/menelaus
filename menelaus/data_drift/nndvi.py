@@ -130,7 +130,5 @@ class NNDVI(BatchDetector):
             )
             d_shuffle.append(d_i_shuffle)
         mu, std = norm.fit(d_shuffle)
-        if mu == 0.0 and std == 0.0:
-            warnings.simplefilter("ignore", category=RuntimeWarning)
         drift_threshold = norm.ppf(1 - alpha, mu, std)
         return drift_threshold

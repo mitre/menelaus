@@ -41,7 +41,7 @@ def test_nndvi_update_3():
     ''' Check NNDVI.update behavior after drift alarm '''
     det = NNDVI(k_nn=3)
     det.set_reference(np.random.randint(0,5,(5,5)))
-    det.drift_state == 'drift'
+    det._drift_state == 'drift'
     det.update(X=np.random.randint(0,5,(5,5)))
     assert det.drift_state is None
 
@@ -75,15 +75,3 @@ def test_nndvi_compute_threshold_1():
         alpha=0.01
     )
     assert threshold >= 0.6 and threshold <= 0.7
-
-def test_nndvi_compute_threshold_2():
-    ''' Check NNDVI._compute_threshold executes for 0 case '''
-    det = NNDVI()
-    v = np.random.randint(0,2,5)
-    det._compute_drift_threshold(
-        M_nnps=np.random.randint(0,5,(5,5)),
-        v_ref=v,
-        v_test=v,
-        sampling_times=25,
-        alpha=0.01
-    )

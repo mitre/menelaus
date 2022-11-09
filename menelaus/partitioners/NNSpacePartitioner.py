@@ -104,8 +104,4 @@ class NNSpacePartitioner:
 
         d_nnps = np.sum(np.abs(M_s1 - M_s2) / (M_s1 + M_s2))
         d_nnps /= denom
-
-        # d_nnps += np.sum(np.absolute(M_s1 - M_s2))
-        # XXX - verify output, order - Anmol
-        # d_nnps /= nnps_matrix.shape[0]
         return d_nnps
