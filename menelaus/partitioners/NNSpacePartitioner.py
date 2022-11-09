@@ -78,12 +78,12 @@ class NNSpacePartitioner:
         for two samples using indices, computes difference in
         densities of shared subspaces, between samples.
 
-        TODO Update docs to indicate v1/v2 need to be in OHE format.
-
         Args:
             nnps_matrix (numpy.array): NNSP representation matrix
-            v1 (numpy.array): indices of first sample in ``D``, ``nnps_matrix``
-            v2 (numpy.array): indices of second sample in ``D``, ``nnps_matrix``
+            v1 (numpy.array): indices of first sample in ``D``, ``nnps_matrix``,
+                in one-hot encoding format
+            v2 (numpy.array): indices of second sample in ``D``, ``nnps_matrix``,
+                in one-hot encoding format
 
         Returns:
             float: distance value between samples, representing difference
