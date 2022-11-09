@@ -31,6 +31,7 @@ class NNDVI(BatchDetector):
         sampling_times (int): number of times to perform sampling for threshold estimation
         alpha (float): significance level for detecting drift
     """
+
     def __init__(self, k_nn: int = 30, sampling_times: int = 500, alpha: float = 0.01):
         """
         Attributes:
