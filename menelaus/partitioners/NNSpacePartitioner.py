@@ -58,6 +58,8 @@ class NNSpacePartitioner:
         self.v1 = v1_onehot
         self.v2 = v2_onehot
         nn = NearestNeighbors(n_neighbors=self.k).fit(D)
+        # TODO: maybe we can gain performance by performing operations using the returned
+        # scipy.sparse array, as opposed to converting this way.
         M_adj = nn.kneighbors_graph(D).toarray()
         self.adjacency_matrix = M_adj
         # XXX - NearestNeighbors already adds the self-neighbors
@@ -94,6 +96,8 @@ class NNSpacePartitioner:
         M_s2 = np.dot(v2, nnps_matrix)
 
         # TODO: likely there exists a more efficient approach for this union op
+        # TODO: also, if v1 and v2 are always mutually exclusive and the same
+        # dimension, this could be replaced with len(v1)
         membership = np.sum(np.array([v1, v2]), axis=0)
         membership = membership >= 1  # in case of overlap
         denom = sum(membership)
