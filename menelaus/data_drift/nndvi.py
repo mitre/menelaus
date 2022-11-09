@@ -60,7 +60,12 @@ class NNDVI(BatchDetector):
 
         super().update(X=X, y_true=None, y_pred=None)
         test_batch = np.array(X)
-        assert test_batch.shape[1] == self.reference_batch.shape[1]
+
+        if test_batch.shape[1] != self.reference_batch.shape[1]:
+            raise ValueError(
+                f"Test Batch: {test_batch.shape} needs same amount ",
+                f"of features as Reference Batch: {self.reference_batch.shape}"
+            )
 
         nnsp = NNSpacePartitioner(self.k_nn)
         nnsp.build(self.reference_batch, test_batch)
