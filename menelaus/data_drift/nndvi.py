@@ -10,7 +10,8 @@ class NNDVI(BatchDetector):
     """
     This class encodes the Nearest Neigbors Density Variation
     Identification (NN-DVI) drift detection algorithm, introduced
-    in Liu et al. (2018).
+    in Liu et al. (2018). Note that this implementation is intended
+    for batch datasets, rather than the streaming context.
 
     Broadly, NN-DVI combines a reference and test data batch, creates
     a normalized version of the subsequent adjacency matrix (after a
@@ -58,14 +59,10 @@ class NNDVI(BatchDetector):
         if self._drift_state == "drift":
             self.reset()
 
+        X, _, _ = super()._validate_input(X, None, None)
+
         super().update(X=X, y_true=None, y_pred=None)
         test_batch = np.array(X)
-
-        if test_batch.shape[1] != self.reference_batch.shape[1]:
-            raise ValueError(
-                f"Test Batch: {test_batch.shape} needs same amount ",
-                f"of features as Reference Batch: {self.reference_batch.shape}",
-            )
 
         nnsp = NNSpacePartitioner(self.k_nn)
         nnsp.build(self.reference_batch, test_batch)
@@ -90,6 +87,7 @@ class NNDVI(BatchDetector):
             y_true (numpy.array): true labels, not used in NNDVI
             y_pred (numpy.array): predicted labels, not used in NNDVI
         """
+        X, _, _ = super()._validate_input(X, None, None)
         self.reference_batch = X
 
     def reset(self):
