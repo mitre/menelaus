@@ -68,8 +68,6 @@ class NNSpacePartitioner:
         weight_array = np.sum(P_nnps, axis=1).astype(int)
         Q = np.lcm.reduce(weight_array)
         m = Q / weight_array
-        # M_nnps = P_nnps / m[:, np.newaxis]
-        # self.nnps_matrix = M_nnps
         m = m * np.identity(len(m))
         self.nnps_matrix = np.matmul(m, P_nnps)
 
@@ -91,16 +89,16 @@ class NNSpacePartitioner:
             float: distance value between samples, representing difference
                 in shared subspace densities
         """
-        # d_nnps = 0
         M_s1 = np.dot(v1, nnps_matrix)
         M_s2 = np.dot(v2, nnps_matrix)
 
-        # TODO: likely there exists a more efficient approach for this union op
-        # TODO: also, if v1 and v2 are always mutually exclusive and the same
-        # dimension, this could be replaced with len(v1)
-        membership = np.sum(np.array([v1, v2]), axis=0)
-        membership = membership >= 1  # in case of overlap
-        denom = sum(membership)
+        # These commented lines would only be relevant if there were overlap
+        # between the two vectors, which there never should be for our use case.
+        # Otherwise, this is always going to be the number of elements.
+        # membership = np.sum(np.array([v1, v2]), axis=0)
+        # membership = membership >= 1  # in case of overlap
+        # denom = sum(membership)
+        denom = len(v1)
 
         d_nnps = np.sum(np.abs(M_s1 - M_s2) / (M_s1 + M_s2))
         d_nnps /= denom
