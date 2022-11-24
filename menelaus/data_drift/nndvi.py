@@ -53,8 +53,8 @@ class NNDVI(BatchDetector):
 
         Args:
           X (numpy.array): next batch of data to detect drift on.
-          y_true (numpy.array): true labels, not used in NNDVI
-          y_pred (numpy.array): predicted labels, not used in NNDVI
+          y_true (numpy.array): true labels, not used in NN-DVI
+          y_pred (numpy.array): predicted labels, not used in NN-DVI
         """
         if self._drift_state == "drift":
             self.reset()

@@ -18,7 +18,6 @@
 
 ## Imports ##
 
-import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -28,6 +27,7 @@ from menelaus.data_drift.cdbd import CDBD
 from menelaus.data_drift.hdddm import HDDDM
 from menelaus.data_drift import PCACD
 from menelaus.data_drift import KdqTreeStreaming, KdqTreeBatch
+from menelaus.data_drift import NNDVI
 from menelaus.datasets import make_example_batch_data, fetch_circle_data
 
 
@@ -607,3 +607,53 @@ for year, df_plot in plot_data.items():
 # 
 # - Drift 5: change mean and var just for a year of J in 2021
 # 
+
+# 
+# # Nearest-Neighbor Density Variation Identification (NN-DVI)
+# 
+# This example shows up how to set up, run, and produce output from the NN-DVI
+# detector, which is implemented to run in the batch setting. NN-DVI uses k-nearest 
+# neighbors to partition the data, then uses measures defined with the adjacency 
+# matrix for the reference and test data to determine whether drift has occurred.
+
+# In[ ]:
+
+
+data = make_example_batch_data()
+drift_years = data.groupby("year")["drift"].apply(lambda x: x.unique()[0]).reset_index()
+drift_years.loc[drift_years["year"].isin([2010, 2013, 2016]), "drift"] = True
+
+data_grouped = data.groupby('year')
+
+# Note that a small subsample is used, to decrease the runtime for the purpose
+# of example.
+batches = {year: (group.sample(frac=.1)
+						.drop(['year', 'cat', 'confidence', 'drift'], axis=1)
+						.values)
+		   for year, group in data_grouped}
+
+status = pd.DataFrame(columns=["year", "drift"])
+
+det = NNDVI(k_nn=2, sampling_times=50)
+det.set_reference(batches.pop(2007))
+
+for year, batch in batches.items():
+	det.update(batch)
+	status = pd.concat([status, pd.DataFrame({"year":[year], "drift":[det.drift_state]})], 
+						axis=0, 
+                        ignore_index=True)
+
+
+# Using this small subsample of data runs quickly, but yields inaccurate results 
+# for the test data. A run with the full data takes much longer, but gives the 
+# correct result in 9 of 13 years.
+
+# In[ ]:
+
+
+(
+    status.merge(drift_years, how="left", on="year", suffixes=["_nndvi", "_true"])
+    .replace({True: "drift", False: None})
+    # .to_csv("example_nndvi_drift_comparison.csv", index=False)
+)
+
