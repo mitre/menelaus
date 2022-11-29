@@ -7,3 +7,4 @@ algorithms in order to raise alarms.
 """
 
 from menelaus.partitioners.KDQTreePartitioner import KDQTreePartitioner, KDQTreeNode
+from menelaus.partitioners.NNSpacePartitioner import NNSpacePartitioner
