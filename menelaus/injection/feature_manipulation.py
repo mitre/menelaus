@@ -10,14 +10,14 @@ def feature_swap(data, col_1, col_2, from_index, to_index):
     with column indices.
 
     Args:
-        data (np.array): data to inject with drift
+        data (np.ndarray or pd.DataFrame): data to inject with drift
         col_1 (int or str): column index/label of first column
         col_2 (int or str): column index/label of second column
         from_index (int): row index at which to start column swap
         to_index (int): row index at which to end (non-inclusive) column swap
 
     Returns:
-        np.array or pd.DataFrame: copy of data, with two columns swapped
+        np.ndarray or pd.DataFrame: copy of data, with two columns swapped
             over given indices
     """
     if not isinstance(data, pd.DataFrame) and not isinstance(data, np.ndarray):
@@ -32,5 +32,27 @@ def feature_swap(data, col_1, col_2, from_index, to_index):
         ret[from_index:to_index, [col_1,col_2]] = ret[from_index:to_index, [col_2,col_1]]
     return ret
 
-def reorder_by_feature():
-    raise NotImplemented
+def feature_hide_and_sample(data, col, sample_size):
+    """
+    Hides a feature, then treats it as a shared concept by which to group the data.
+    Afterwards samples are uniformly drawn from each group. One of the basic drift
+    injection methods suggested in [CITE!]. Accepts ``pandas.DataFrame`` with 
+    column names or ``numpy.ndarray`` with column indices. 
+
+    Args:
+        data (np.ndarray or pd.DataFrame): data to inject with drift
+        col (int or str): index/label of column to hide and re-sample (note this
+            should be a categorical feature that can be treated as a concept)
+        sample_size (int): data points to be drawn from each group in new concept
+    """
+    if not isinstance(data, pd.DataFrame) and not isinstance(data, np.ndarray):
+        raise ValueError(f"Data of type {type(data)} not supported")    
+    elif isinstance(data, pd.DataFrame):  
+        df = data.copy()
+    else:               
+        df = np.copy(data)
+        df = pd.DataFrame(df)
+    dfs = [x for _,x in df.groupby(col)]
+    # TODO - sample from dfs and put into ret
+    ret = []
+    return ret
