@@ -32,7 +32,7 @@ def feature_swap(data, col_1, col_2, from_index, to_index):
         ret[from_index:to_index, [col_1,col_2]] = ret[from_index:to_index, [col_2,col_1]]
     return ret
 
-def feature_hide_and_sample(data, col, sample_size):
+def feature_hide_and_sample(data, col, sample_size, random_state=0):
     """
     Hides a feature, then treats it as a shared concept by which to group the data.
     Afterwards samples are uniformly drawn from each group. One of the basic drift
@@ -44,6 +44,7 @@ def feature_hide_and_sample(data, col, sample_size):
         col (int or str): index/label of column to hide and re-sample (note this
             should be a categorical feature that can be treated as a concept)
         sample_size (int): data points to be drawn from each group in new concept
+        random_state (int): optional random seed. Default 0
     """
     if not isinstance(data, pd.DataFrame) and not isinstance(data, np.ndarray):
         raise ValueError(f"Data of type {type(data)} not supported")    
@@ -52,7 +53,7 @@ def feature_hide_and_sample(data, col, sample_size):
     else:               
         df = np.copy(data)
         df = pd.DataFrame(df)
-    dfs = [x for _,x in df.groupby(col)]
-    # TODO - sample from dfs and put into ret
-    ret = []
+    # TODO - I'm pretty sure this is uniformly selected, but may verify
+    ret = df.groupby(col).sample(n=sample_size, random_state=random_state)
+    ret = ret if isinstance(data, pd.DataFrame) else ret.to_numpy()
     return ret
