@@ -5,9 +5,10 @@ import pandas as pd
 def feature_swap(data, col_1, col_2, from_index, to_index):
     """
     Swaps two features/columns of a given dataset with each other.
-    One of the basic drift injection methods suggested in [CITE!].
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
+
+    Ref. :cite:t:`TODO`
 
     Args:
         data (np.ndarray or pd.DataFrame): data to inject with drift
@@ -35,9 +36,10 @@ def feature_swap(data, col_1, col_2, from_index, to_index):
 def feature_hide_and_sample(data, col, sample_size, random_state=0):
     """
     Hides a feature, then treats it as a shared concept by which to group the data.
-    Afterwards samples are uniformly drawn from each group. One of the basic drift
-    injection methods suggested in [CITE!]. Accepts ``pandas.DataFrame`` with 
-    column names or ``numpy.ndarray`` with column indices. 
+    Afterwards samples are uniformly drawn from each group. Accepts
+    ``pandas.DataFrame`` with column names or ``numpy.ndarray`` with column indices. 
+
+    Ref. :cite:t:`TODO`
 
     Args:
         data (np.ndarray or pd.DataFrame): data to inject with drift
@@ -48,7 +50,7 @@ def feature_hide_and_sample(data, col, sample_size, random_state=0):
 
     Returns:
         np.ndarray or pd.DataFrame: copy of data, grouped by indicated column,
-            with each group sampled and column hidden
+            with each group sampled and column removed
     """
     if not isinstance(data, pd.DataFrame) and not isinstance(data, np.ndarray):
         raise ValueError(f"Data of type {type(data)} not supported")    
@@ -57,7 +59,7 @@ def feature_hide_and_sample(data, col, sample_size, random_state=0):
     else:               
         df = np.copy(data)
         df = pd.DataFrame(df)
-    # TODO - I'm pretty sure this is uniformly selected, but may verify
     ret = df.groupby(col).sample(n=sample_size, random_state=random_state)
+    ret = ret.drop(columns=[col]).reset_index(drop=True)
     ret = ret if isinstance(data, pd.DataFrame) else ret.to_numpy()
     return ret
