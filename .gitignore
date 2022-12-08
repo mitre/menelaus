@@ -4,6 +4,7 @@
 *.egg-info
 build/
 .pytest_cache
+.python-version
 .vscode
 docs/build/*
 dist
@@ -13,5 +14,11 @@ _build
 *.coverage
 *.DS_Store
 .idea/
-*.png
+
+# Images
+
+examples/*.png
+menelaus/*.png
+tests/*.png
+
 *.tox*

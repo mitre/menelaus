@@ -33,11 +33,7 @@ algorithms are typically used when it is more important to process large volumes
 of information simultaneously, where the speed of results after receiving data
 is of less concern.
 
-In The Odyssey, Menelaus seeks a prophecy known by the shapeshifter
-Proteus. Menelaus holds Proteus down as he takes the form of a lion, a
-serpent, water, and so on. Eventually, Proteus relents, and Menelaus
-gains the answers he sought. Accordingly, this library provides tools
-for \"holding\" data as it shifts.
+Menelaus is named for the Odyssean hero that defeated the shapeshifting Proteus.
 
 # Detector List
 
@@ -47,15 +43,18 @@ Menelaus implements the following drift detectors.
 |------------------|---------------------------------------------------------------|--------------|-----------|-------|
 | Change detection | Cumulative Sum Test                                           | CUSUM        | x         |       |
 | Change detection | Page-Hinkley                                                  | PH           | x         |       |
-| Concept drift    | ADaptive WINdowing                                            | ADWIN        | x         |       |
+| Change detection    | ADaptive WINdowing                                            | ADWIN        | x         |       |
 | Concept drift    | Drift Detection Method                                        | DDM          | x         |       |
 | Concept drift    | Early Drift Detection Method                                  | EDDM         | x         |       |
 | Concept drift    | Linear Four Rates                                             | LFR          | x         |       |
 | Concept drift    | Statistical Test of Equal Proportions to Detect concept drift | STEPD        | x         |       |
+| Concept drift    | Margin Density Drift Detection Method                         | MD3          | x         |       |
 | Data drift       | Confidence Distribution Batch Detection                       | CDBD         |           | x     |
 | Data drift       | Hellinger Distance Drift Detection Method                     | HDDDM        |           | x     |
 | Data drift       | kdq-Tree Detection Method                                     | kdq-Tree     | x         | x     |
 | Data drift       | PCA-Based Change Detection                                    | PCA-CD       | x         |       |
+| Ensemble         | Streaming Ensemble      | - | x |
+| Ensemble         | Batch Ensemble          | - |   | x |
 
 
 The three main types of detector are described below. More details, including
@@ -67,11 +66,15 @@ documentation on [ReadTheDocs](https://menelaus.readthedocs.io/en/latest/).
     pre-defined range.
 -   Concept drift detectors monitor the performance characteristics of a
     given model, trying to identify shifts in the joint distribution of
-    the data\'s feature values and their labels.
+    the data\'s feature values and their labels. Note that change detectors 
+    can also be applied in this context.
 -   Data drift detectors monitor the distribution of the features; in
     that sense, they are model-agnostic. Such changes in distribution
     might be to single variables or to the joint distribution of all the
     features.
+-   Ensembles are groups of detectors, where each watches the same data, and 
+    drift is determined by combining their output. Menelaus implements a 
+    framework for wrapping detectors this way.
 
 The detectors may be applied in two settings, as described in the Background
 section:
@@ -87,8 +90,6 @@ then maintains a count of the number of samples from the given dataset that fall
 into each section of that partition. More details are given in the respective
 module.
 
-A flowchart breaking down these contexts can be found on the ReadTheDocs page under "Choosing a Detector."
-
 # Installation
 
 Create a virtual environment as desired, then:
@@ -99,7 +100,7 @@ pip install menelaus
 
 # to allow editing, running tests, generating docs, etc.
 # First, clone the git repo, then:
-cd ./menelaus/
+cd ./menelaus_clone_folder/
 pip install -e .[dev] 
 ```
 
@@ -107,34 +108,58 @@ Menelaus should work with Python 3.8 or higher.
 
 # Getting Started
 
-Each detector implements the API defined by `menelaus.drift_detector`:
-they have an `update` method which allows new data to be passed, a
-`drift_state` attribute which tells the user whether drift has been
-detected, and a `reset` method (generally called automatically by
-`update`) which clears the `drift_state` along with (usually) some other
-attributes specific to the detector class.
+Each detector implements the API defined by `menelaus.detector`:
+notably, they have an `update` method which allows new data to be passed, and a `drift_state` attribute which tells the user whether drift has been
+detected, along with (usually) other attributes specific to the detector class.
 
 Generally, the workflow for using a detector, given some data, is as
 follows:
 
 ```python
-import pandas as pd
-from menelaus.concept_drift import ADWIN
-df = pd.read_csv('example.csv')
-detector = ADWIN()
+from menelaus.concept_drift import ADWINAccuracy
+from menelaus.data_drift import KdqTreeStreaming
+from menelaus.datasets import fetch_rainfall_data
+from menelaus.ensemble import StreamingEnsemble, SimpleMajorityElection
+
+
+# has feature columns, and a binary response 'rain'
+df = fetch_rainfall_data()
+
+
+# use a concept drift detector (response-only)
+detector = ADWINAccuracy()
 for i, row in df.iterrows():
-   detector.update(row['y_predicted'], row['y_true'])
-   if detector.drift_state is not None:
-      print("Drift has occurred!")
+    detector.update(X=None, y_true=row['rain'], y_pred=0)
+    assert detector.drift_state != "drift", f"Drift detected in row {i}"
+
+
+# use data drift detector (features-only)
+detector = KdqTreeStreaming(window_size=5)
+for i, row in df.iterrows():
+    detector.update(X=df.loc[[i], df.columns != 'rain'], y_true=None, y_pred=None)
+    assert detector.drift_state != "drift", f"Drift detected in row {i}"
+
+
+# use ensemble detector (detectors + voting function)
+ensemble = StreamingEnsemble(
+  {
+    'a': ADWINAccuracy(),
+    'k': KdqTreeStreaming(window_size=5)
+  },
+  SimpleMajorityElection()
+)
+
+for i, row in df.iterrows():
+    ensemble.update(X=df.loc[[i], df.columns != 'rain'], y_true=row['rain'], y_pred=0)
+    assert ensemble.drift_state != "drift", f"Drift detected in row {i}"
 ```
 
-For this example, because ADWIN is a concept drift detector, it requires
-both a predicted value (`y_predicted`) and a true value (`y_true`), at
-each update step. Note that this requirement is not true for the
-detectors in other modules. More detailed examples, including code for
-visualizating drift locations, may be found in the ``examples`` directory, as
-stand-alone python scripts. The examples along with output can also be viewed on
-the RTD website.
+As a concept drift detector, ADWIN requires both a true value (`y_true`) and a
+predicted value (`y_predicted`) at each update step. The data drift detector
+KdqTreeStreaming only requires the feature values at each step (`X`). More
+detailed examples, including code for visualizating drift locations, may be
+found in the ``examples`` directory, as stand-alone python scripts. The examples
+along with output can also be viewed on the RTD website.
 
 # Contributing
 Install the library using the `[dev]` option, as above.
@@ -154,6 +179,15 @@ Install the library using the `[dev]` option, as above.
   sphinx-build . ../build
   ```
 
+  If the example notebooks for the docs need to be updated, the corresponding 
+  python scripts in the `examples` directory should also be regenerated via:
+  ```python
+  cd docs/source/examples
+  python convert_notebooks.py
+  ```
+  Note that this will require the installation of `jupyter` and `nbconvert`,
+  which can be added to installation via `pip install -e ".[dev, test]"`.
+
 - **Formatting**:
 
   This project uses `black`, `bandit`, and `flake8` for code formatting and
@@ -162,8 +196,8 @@ Install the library using the `[dev]` option, as above.
   following from the root directory:
   ```python
   flake8                 # linting
-  bandit -r ./src        # security checks
-  black ./src/menelaus   # formatting
+  bandit -r ./menelaus        # security checks
+  black ./menelaus   # formatting
   ```  
 
 # Copyright

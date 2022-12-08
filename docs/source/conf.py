@@ -14,15 +14,15 @@ import os
 import sys
 from inspect import getsourcefile
 
-sys.path.insert(0, os.path.abspath("../src/menelaus"))
+sys.path.insert(0, os.path.abspath("../menelaus"))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "menelaus"
 copyright = "©2022 The MITRE Corporation. ALL RIGHTS RESERVED"
-author = "Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Austin Downing"
-release = "0.1.0"
+author = "Leigh Nicholl, Thomas Schill, India Lindsay, Anmol Srivastava, Kodie P McNamara, Shashank Jarmale"
+# release = "0.1.2"
 
 
 # -- General configuration ---------------------------------------------------
@@ -43,6 +43,8 @@ extensions = [
 
 autodoc_default_options = {
     "members": True,
+    "inherited-members": True,
+    "member-order": "groupwise",
     "undoc-members": False,
     "private-members": False,
     "special-members": "__init__",
@@ -107,7 +109,7 @@ def run_apidoc(_):
     os.chdir("..")
     print("cwd", os.getcwd(), "\n")
     print("contents", os.listdir())
-    src_dir = os.path.join("../src/menelaus")
+    src_dir = os.path.join("../menelaus")
     template_dir = os.path.join("source", "templates")
     main(["-M", "--templatedir", template_dir, "-f", "-o", "source", src_dir])
 
