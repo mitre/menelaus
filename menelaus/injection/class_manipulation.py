@@ -5,9 +5,10 @@ import pandas as pd
 def class_swap(data, target_col, class_1, class_2, from_index, to_index):
     """
     Swaps two classes in a target column of a given dataset with each other.
-    One of the basic drift injection methods suggested in [CITE!].
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
+
+    Ref. :cite:t:`TODO`
 
     Args:
         data (np.array): data to inject with drift
@@ -26,22 +27,24 @@ def class_swap(data, target_col, class_1, class_2, from_index, to_index):
     elif isinstance(data, pd.DataFrame):  
         ret = data.copy()
         class_1_idx = ret.loc[
-            (ret.index in range(from_index, to_index)) & 
+            (ret.index < to_index) & 
+            (ret.index >= from_index) &
             (ret[target_col] == class_1)
         ].index
         class_2_idx = ret.loc[
-            (ret.index in range(from_index, to_index)) &
+            (ret.index < to_index) & 
+            (ret.index >= from_index) &
             (ret[target_col] == class_2)
-        ]
+        ].index
         ret.loc[class_1_idx, target_col] = class_2
         ret.loc[class_2_idx, target_col] = class_1
     else:               
         ret = np.copy(data)
         # np.where returns tuples pertaining to dimensions, only need the row
-        class_1_idx, _ = np.where(ret[:, target_col] == class_1)
-        class_1_idx = class_1_idx[class_1_idx in range(from_index, to_index)]
-        class_2_idx, _ = np.where(ret[:, target_col] == class_2)
-        class_2_idx = class_2_idx[class_2_idx in range(from_index, to_index)]
+        class_1_idx = np.where(ret[:, target_col] == class_1)[0]
+        class_1_idx = class_1_idx[(class_1_idx < to_index) & (class_1_idx >= from_index)]
+        class_2_idx = np.where(ret[:, target_col] == class_2)[0]
+        class_2_idx = class_2_idx[(class_2_idx < to_index) & (class_2_idx >= from_index)]
         ret[class_1_idx, target_col] = class_2
         ret[class_2_idx, target_col] = class_1
     return ret
@@ -56,10 +59,11 @@ def class_join(
     to_index
 ):
     """
-    Joins two [TODO or more?] classes in a unique class. One of the basic
-    drift injection methods suggested in (Vreeken et al., 2007).
-    Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
+    Joins two [TODO or more?] classes in a unique class. Accepts 
+    ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
+
+    Ref. :cite:t:`TODO`
 
     Args:
         data (np.array): data to inject with drift
@@ -79,17 +83,18 @@ def class_join(
     elif isinstance(data, pd.DataFrame):  
         ret = data.copy()
         class_idx = ret.loc[
-            (ret.index in range(from_index, to_index)) & 
+            (ret.index < to_index) & 
+            (ret.index >= from_index) &
             ((ret[target_col] == class_1) | (ret[target_col] == class_2))
         ].index
         ret.loc[class_idx, target_col] = new_class
     else:               
         ret = np.copy(data)
         # np.where returns tuples pertaining to dimensions, only need the row
-        class_idx, _ = np.where(
+        class_idx = np.where(
             (ret[:, target_col] == class_1) | 
             (ret[:, target_col] == class_2)
-        )
-        class_idx = class_idx[class_idx in range(from_index, to_index)]
+        )[0]
+        class_idx = class_idx[(class_idx < to_index) & (class_idx >= from_index)]
         ret[class_idx, target_col] = new_class
     return ret
