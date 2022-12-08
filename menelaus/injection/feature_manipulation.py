@@ -45,6 +45,10 @@ def feature_hide_and_sample(data, col, sample_size, random_state=0):
             should be a categorical feature that can be treated as a concept)
         sample_size (int): data points to be drawn from each group in new concept
         random_state (int): optional random seed. Default 0
+
+    Returns:
+        np.ndarray or pd.DataFrame: copy of data, grouped by indicated column,
+            with each group sampled and column hidden
     """
     if not isinstance(data, pd.DataFrame) and not isinstance(data, np.ndarray):
         raise ValueError(f"Data of type {type(data)} not supported")    
