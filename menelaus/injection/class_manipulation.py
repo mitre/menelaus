@@ -8,7 +8,7 @@ def class_swap(data, target_col, class_1, class_2, from_index, to_index):
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
 
-    Ref. :cite:t:`TODO`
+    Ref. :cite:t:`souza2020challenges`
 
     Args:
         data (np.array): data to inject with drift
@@ -60,7 +60,7 @@ def class_join(data, target_col, class_1, class_2, new_class, from_index, to_ind
     ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
 
-    Ref. :cite:t:`TODO`
+    Ref. :cite:t:`souza2020challenges`
 
     Args:
         data (np.array): data to inject with drift

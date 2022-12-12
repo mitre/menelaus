@@ -8,7 +8,7 @@ def brownian_noise(data, feature, x0, from_index, to_index):
     ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices. Calls ``random_walk`` for full computation.
 
-    Ref. :cite:t:`TODO`
+    Ref. :cite:t:`fields2019mitigating`
 
     Args:
         data (np.ndarray or pd.DataFrame): data to inject with drift
@@ -42,7 +42,7 @@ def random_walk(steps, x0):
     """
     Performs Weiner process given a number of steps and initial starting point.
 
-    Ref. :cite:t:`TODO`
+    Ref. :cite:t:`fields2019mitigating`
 
     Args:
         steps (int): number of steps, corresponds to size of output vector

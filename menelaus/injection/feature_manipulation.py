@@ -8,7 +8,7 @@ def feature_swap(data, col_1, col_2, from_index, to_index):
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
 
-    Ref. :cite:t:`TODO`
+    Ref. :cite:t:`souza2020challenges`
 
     Args:
         data (np.ndarray or pd.DataFrame): data to inject with drift
@@ -42,7 +42,7 @@ def feature_hide_and_sample(data, col, sample_size, random_state=0):
     Afterwards samples are uniformly drawn from each group. Accepts
     ``pandas.DataFrame`` with column names or ``numpy.ndarray`` with column indices.
 
-    Ref. :cite:t:`TODO`
+    Ref. :cite:t:`souza2020challenges`
 
     Args:
         data (np.ndarray or pd.DataFrame): data to inject with drift
