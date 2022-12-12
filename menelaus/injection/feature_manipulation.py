@@ -22,22 +22,25 @@ def feature_swap(data, col_1, col_2, from_index, to_index):
             over given indices
     """
     if not isinstance(data, pd.DataFrame) and not isinstance(data, np.ndarray):
-        raise ValueError(f"Data of type {type(data)} not supported")    
-    elif isinstance(data, pd.DataFrame):  
+        raise ValueError(f"Data of type {type(data)} not supported")
+    elif isinstance(data, pd.DataFrame):
         ret = data.copy()
         ret_col_1 = ret.loc[from_index:to_index, col_1].copy()
         ret.loc[from_index:to_index, col_1] = ret.loc[from_index:to_index, col_2]
         ret.loc[from_index:to_index, col_2] = ret_col_1
-    else:               
+    else:
         ret = np.copy(data)
-        ret[from_index:to_index, [col_1,col_2]] = ret[from_index:to_index, [col_2,col_1]]
+        ret[from_index:to_index, [col_1, col_2]] = ret[
+            from_index:to_index, [col_2, col_1]
+        ]
     return ret
+
 
 def feature_hide_and_sample(data, col, sample_size, random_state=0):
     """
     Hides a feature, then treats it as a shared concept by which to group the data.
     Afterwards samples are uniformly drawn from each group. Accepts
-    ``pandas.DataFrame`` with column names or ``numpy.ndarray`` with column indices. 
+    ``pandas.DataFrame`` with column names or ``numpy.ndarray`` with column indices.
 
     Ref. :cite:t:`TODO`
 
@@ -53,10 +56,10 @@ def feature_hide_and_sample(data, col, sample_size, random_state=0):
             with each group sampled and column removed
     """
     if not isinstance(data, pd.DataFrame) and not isinstance(data, np.ndarray):
-        raise ValueError(f"Data of type {type(data)} not supported")    
-    elif isinstance(data, pd.DataFrame):  
+        raise ValueError(f"Data of type {type(data)} not supported")
+    elif isinstance(data, pd.DataFrame):
         df = data.copy()
-    else:               
+    else:
         df = np.copy(data)
         df = pd.DataFrame(df)
     ret = df.groupby(col).sample(n=sample_size, random_state=random_state)
