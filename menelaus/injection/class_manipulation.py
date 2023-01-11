@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 
+from sklearn.model_selection import train_test_split
+
+
+# region - simple class manipulation functions 
 
 def class_swap(data, target_col, class_1, class_2, from_index, to_index):
     """
@@ -94,3 +98,53 @@ def class_join(data, target_col, class_1, class_2, new_class, from_index, to_ind
         class_idx = class_idx[(class_idx < to_index) & (class_idx >= from_index)]
         ret[class_idx, target_col] = new_class
     return ret
+
+# endregion
+
+
+# region - LTF-inspired class manipulation functions
+
+def tweak_one_shift(X, y, shifted_class, shift_p, val_size, test_size):
+    """
+    TODO - Currently only supports ``np.array`` data - fix?
+
+    Description. 
+    
+    but first split into 3 and sample with replacement for all
+    assign p to one class, uniform to rest
+
+    Args:
+        X (np.array): input feature data
+        y (np.array): corresponding targets to inject with drift
+        shifted_class (int): TBD
+        shift_p (float):  TBD 
+        val_size (float): proportion of data to allocate for validation
+        test_size (float): proportion of data to allocate for testing
+    """
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=val_size)
+    
+    for x, targets in (X,y):
+        x = x+0
+        targets = targets+0 
+
+    return X_train, X_val, X_test, y_train, y_val, y_test
+    # pf
+
+
+def minority_class_shift():
+    """
+    split into train/test and sample from each with replacement
+    to create smaller subsets??
+    20/30/40/50% of classes are set to 0.001
+    while ratios of other classes are uniform
+    """
+    pass
+
+
+def dirichlet_shift():
+    """ 
+    """
+    pass
+
+# endregion
