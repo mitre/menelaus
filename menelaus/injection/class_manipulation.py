@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split
-
 
 # region - simple class manipulation functions 
 
@@ -104,32 +102,41 @@ def class_join(data, target_col, class_1, class_2, new_class, from_index, to_ind
 
 # region - LTF-inspired class manipulation functions
 
-def tweak_one_shift(X, y, shifted_class, shift_p, val_size, test_size):
+def tweak_one_shift(data, target_col, shifted_class, shift_p, from_index, to_index):
     """
     TODO - Currently only supports ``np.array`` data - fix?
-
-    Description. 
-    
-    but first split into 3 and sample with replacement for all
-    assign p to one class, uniform to rest
-
     Args:
-        X (np.array): input feature data
-        y (np.array): corresponding targets to inject with drift
-        shifted_class (int): TBD
-        shift_p (float):  TBD 
-        val_size (float): proportion of data to allocate for validation
-        test_size (float): proportion of data to allocate for testing
+        shifted_class (int): label to give non-uniform sample probability
+        shift_p (float):  desired sample probability for shifted label   
     """
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=val_size)
-    
-    for x, targets in (X,y):
-        x = x+0
-        targets = targets+0 
+    ret = np.copy(data)
+    classes = np.unique(ret[:, target_col])
+    p_distribution = np.array([])
+    sample_grouped = np.array([])
 
-    return X_train, X_val, X_test, y_train, y_val, y_test
-    # pf
+    # locate each class in window
+    for cls in classes:
+        cls_idx = np.where(data[:, target_col] == cls)[0]
+        cls_idx = cls_idx[
+            (cls_idx < to_index) &
+            (cls_idx >= from_index)
+        ]
+
+        if cls == shifted_class:
+            # pts from shifted class drawn with 'tweaked' probability
+            p_individual = shift_p / cls_idx.shape[0]
+        else:
+            # pts from non-shifted classes drawn with uniform probability
+            p_individual = ((1 - shift_p) / (classes.shape[0] - 1)) / cls_idx.shape[0]
+
+        # append to grouped array and corresponding distribution
+        sample_grouped = np.concatenate((sample_grouped, data[cls_idx]))
+        p_distribution = np.concatenate(p_distribution, np.ones(cls_idx.shape[0]) * p_individual)
+
+    # shuffled sample over window, with replacement, with weights
+    sample = np.random.choice(sample_grouped, to_index-from_index, True, p_distribution)
+    ret[from_index:to_index] = sample
+    return ret
 
 
 def minority_class_shift():
