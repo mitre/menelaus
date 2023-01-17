@@ -111,6 +111,8 @@ def tweak_one_shift(data, target_col, shifted_class, shift_p, from_index, to_ind
     """
     ret = np.copy(data)
     classes = np.unique(ret[:, target_col])
+    
+    # distribution for each data point, and reordering of each point by class
     p_distribution = np.array([])
     sample_grouped = np.array([])
 
@@ -139,18 +141,50 @@ def tweak_one_shift(data, target_col, shifted_class, shift_p, from_index, to_ind
     return ret
 
 
-def minority_class_shift():
+def class_probability_shift(data, target_col, classes, p_classes, from_index, to_index):
     """
-    split into train/test and sample from each with replacement
-    to create smaller subsets??
+    maybe let user say which will be minority and by how much, compute remaining
     20/30/40/50% of classes are set to 0.001
     while ratios of other classes are uniform
     """
-    pass
+    ret = np.copy(data)
+    classes = np.unique(ret[:, target_col])
+
+    # distribution for each data point, and reordering of each point by class
+    p_distribution = np.array([])
+    sample_grouped = np.array([])
+
+    # locate all classes to shift
+    shifted_classes_idx = np.where(data[:, target_col].isin(classes))[0]
+
+    # locate each class in window
+    for cls in classes:
+        cls_idx = np.where(data[:, target_col] == cls)[0]
+        cls_idx = cls_idx[
+            (cls_idx < to_index) &
+            (cls_idx >= from_index)
+        ]
+
+        if cls in classes:
+            # pts from shifted classes drawn with separate probability
+            p_individual = p_classes / shifted_classes_idx.shape[0]
+        else:
+            # pts from remaining classes drawn with uniform probability
+            p_individual = ((1 - p_classes) / (classes.shape[0] - 1)) / cls_idx.shape[0]
+
+        # append to grouped array and corresponding distribution
+        sample_grouped = np.concatenate((sample_grouped, data[cls_idx]))
+        p_distribution = np.concatenate(p_distribution, np.ones(cls_idx.shape[0]) * p_individual)
+
+    # shuffled sample over window, with replacement, with weights
+    sample = np.random.choice(sample_grouped, to_index-from_index, True, p_distribution)
+    ret[from_index:to_index] = sample
+    return ret
 
 
 def dirichlet_shift():
     """ 
+    numpy has dirichlet shift
     """
     pass
 
