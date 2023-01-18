@@ -4,7 +4,7 @@ import pandas as pd
 
 # region - simple class manipulation functions 
 
-def class_swap(data, target_col, class_1, class_2, from_index, to_index):
+def class_swap(data, target_col, from_index, to_index, class_1, class_2):
     """
     Swaps two classes in a target column of a given dataset with each other.
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
@@ -15,10 +15,10 @@ def class_swap(data, target_col, class_1, class_2, from_index, to_index):
     Args:
         data (np.array): data to inject with drift
         target_col (int or str): column index/label of targets column
-        class_1 (int): value of first label in class swap
-        class_2 (int): value of second label in class swap
         from_index: row index at which to start class swap
         to_index: row index at which to end (non-inclusive) class swap
+        class_1 (int): value of first label in class swap
+        class_2 (int): value of second label in class swap
 
     Returns:
         np.array or pd.DataFrame: copy of data, with two classes swapped
@@ -56,7 +56,7 @@ def class_swap(data, target_col, class_1, class_2, from_index, to_index):
     return ret
 
 
-def class_join(data, target_col, class_1, class_2, new_class, from_index, to_index):
+def class_join(data, target_col, from_index, to_index, class_1, class_2, new_class):
     """
     Joins two [TODO or more?] classes in a unique class. Accepts
     ``pandas.DataFrame`` with column names or ``numpy.ndarray``
@@ -67,11 +67,11 @@ def class_join(data, target_col, class_1, class_2, new_class, from_index, to_ind
     Args:
         data (np.array): data to inject with drift
         target_col (int or str): column index/label of targets column
+        from_index: row index at which to start class join
+        to_index: row index at which to end (non-inclusive) class join
         class_1 (int): value of first label in class join
         class_2 (int): value of second label in class join,
         new_class (int): new label value to assign to old classes
-        from_index: row index at which to start class join
-        to_index: row index at which to end (non-inclusive) class join
 
     Returns:
         np.array or pd.DataFrame: copy of data, with two classes joined
@@ -102,8 +102,26 @@ def class_join(data, target_col, class_1, class_2, new_class, from_index, to_ind
 
 # region - LTF-inspired class manipulation functions
 
-def class_probability_shift(data, target_col, classes, p_classes, from_index, to_index):
+def class_probability_shift(data, target_col, from_index, to_index, classes, p_classes):
     """
+    Resamples the data over a specified window, with altered probability
+    for specified classes (and uniform probability for remaining classes).
+    Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
+    with column indices.
+
+    Ref. :cite:t:`LTFmethods`
+
+    Args:
+        data (np.array): data to inject with drift
+        target_col (int or str): column index/label of targets column
+        from_index: row index at which to start class swap
+        to_index: row index at which to end (non-inclusive) class swap
+        classes (list[int]): list of classes with altered sampling chance
+        p_classes (float): altered sampling chance for members of ``classes``
+
+    Returns:
+        np.array or pd.DataFrame: copy of data, resampled with shifted
+            class probability for 1 or more desired classes
     """
     ret = np.copy(data)
     classes = np.unique(ret[:, target_col])
@@ -140,17 +158,28 @@ def class_probability_shift(data, target_col, classes, p_classes, from_index, to
     return ret
 
 
-def class_dirichlet_shift(data, target_col, alpha, from_index, to_index):
+def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
     """ 
-    numpy has dirichlet shift
-    3.	Dirichlet shift:  (Doesn't appear to be implemented in os code)
-    b.	Sample from each with replacement to create smaller subsets
-    c.	"we draw p(y) from a Dirichlet distribution with concentration parameter α. With uniform p(y), Dirichlet shift is bigger for smaller α."
+    Resamples the data over a specified window, per a generated Dirichlet
+    distribution (with specified alpha) over all labels.
+    Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
+    with column indices.
 
-    alpha = (,,) is relative proportion for each class
-    make alpha a dict
-    sort by value
-    each number / total of numbers is prob for class
+    Ref. :cite:t:`LTFmethods`
+
+    Args:
+        data (np.array): data to inject with drift
+        target_col (int or str): column index/label of targets column
+        from_index: row index at which to start class swap
+        to_index: row index at which to end (non-inclusive) class swap
+        alpha (dict): used to derive alpha parameter for Dirichlet
+            distribution. Keys are all labels, values are the desired
+            average weight (typically ``int``) per label when resampling. 
+        p_classes (float): altered sampling chance for members of ``classes``
+
+    Returns:
+        np.array or pd.DataFrame: copy of data, resampled per Dirichlet
+            distribution over classes with specified alpha
     """
     ret = np.copy(data)
 

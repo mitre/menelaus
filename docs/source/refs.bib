@@ -1,3 +1,19 @@
+@inproceedings{LTFmethods,
+  title = 	 {{LTF}: A Label Transformation Framework for Correcting Label Shift},
+  author =       {Guo, Jiaxian and Gong, Mingming and Liu, Tongliang and Zhang, Kun and Tao, Dacheng},
+  booktitle = 	 {Proceedings of the 37th International Conference on Machine Learning},
+  pages = 	 {3843--3853},
+  year = 	 {2020},
+  editor = 	 {III, Hal Daumé and Singh, Aarti},
+  volume = 	 {119},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {13--18 Jul},
+  publisher =    {PMLR},
+  pdf = 	 {http://proceedings.mlr.press/v119/guo20d/guo20d.pdf},
+  url = 	 {https://proceedings.mlr.press/v119/guo20d.html},
+  abstract = 	 {Distribution shift is a major obstacle to the deployment of current deep learning models on real-world problems. Let $Y$ be the class label and $X$ the features. We focus on one type of distribution shift, \emph{ label shift}, where the label marginal distribution $P_Y$ changes but the conditional distribution $P_{X|Y}$ does not. Most existing methods estimate the density ratio between the source- and target-domain label distributions by density matching. However, these methods are either computationally infeasible for large-scale data or restricted to shift correction for discrete labels. In this paper, we propose an end-to-end Label Transformation Framework (LTF) for correcting label shift, which implicitly models the shift of $P_Y$ and the conditional distribution $P_{X|Y}$ using neural networks. Thanks to the flexibility of deep networks, our framework can handle continuous, discrete, and even multi-dimensional labels in a unified way and is scalable to large data. Moreover, for high dimensional $X$, such as images, we find that the redundant information in $X$ severely degrades the estimation accuracy. To remedy this issue, we propose to match the distribution implied by our generative model and the target-domain distribution in a low-dimensional feature space that discards information irrelevant to $Y$. Both theoretical and empirical studies demonstrate the superiority of our method over previous approaches.}
+}
+
 @inproceedings{fields2019mitigating,
   title={Mitigating drift in time series data with noise augmentation},
   author={Fields, Tonya and Hsieh, George and Chenou, Jules},
