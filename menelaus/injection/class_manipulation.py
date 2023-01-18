@@ -102,50 +102,8 @@ def class_join(data, target_col, class_1, class_2, new_class, from_index, to_ind
 
 # region - LTF-inspired class manipulation functions
 
-def tweak_one_shift(data, target_col, shifted_class, shift_p, from_index, to_index):
-    """
-    TODO - Currently only supports ``np.array`` data - fix?
-    Args:
-        shifted_class (int): label to give non-uniform sample probability
-        shift_p (float):  desired sample probability for shifted label   
-    """
-    ret = np.copy(data)
-    classes = np.unique(ret[:, target_col])
-    
-    # distribution for each data point, and reordering of each point by class
-    p_distribution = np.array([])
-    sample_grouped = np.array([])
-
-    # locate each class in window
-    for cls in classes:
-        cls_idx = np.where(data[:, target_col] == cls)[0]
-        cls_idx = cls_idx[
-            (cls_idx < to_index) &
-            (cls_idx >= from_index)
-        ]
-
-        if cls == shifted_class:
-            # pts from shifted class drawn with 'tweaked' probability
-            p_individual = shift_p / cls_idx.shape[0]
-        else:
-            # pts from non-shifted classes drawn with uniform probability
-            p_individual = ((1 - shift_p) / (classes.shape[0] - 1)) / cls_idx.shape[0]
-
-        # append to grouped array and corresponding distribution
-        sample_grouped = np.concatenate((sample_grouped, data[cls_idx]))
-        p_distribution = np.concatenate(p_distribution, np.ones(cls_idx.shape[0]) * p_individual)
-
-    # shuffled sample over window, with replacement, with weights
-    sample = np.random.choice(sample_grouped, to_index-from_index, True, p_distribution)
-    ret[from_index:to_index] = sample
-    return ret
-
-
 def class_probability_shift(data, target_col, classes, p_classes, from_index, to_index):
     """
-    maybe let user say which will be minority and by how much, compute remaining
-    20/30/40/50% of classes are set to 0.001
-    while ratios of other classes are uniform
     """
     ret = np.copy(data)
     classes = np.unique(ret[:, target_col])
@@ -182,10 +140,46 @@ def class_probability_shift(data, target_col, classes, p_classes, from_index, to
     return ret
 
 
-def dirichlet_shift():
+def class_dirichlet_shift(data, target_col, alpha, from_index, to_index):
     """ 
     numpy has dirichlet shift
+    3.	Dirichlet shift:  (Doesn't appear to be implemented in os code)
+    b.	Sample from each with replacement to create smaller subsets
+    c.	"we draw p(y) from a Dirichlet distribution with concentration parameter α. With uniform p(y), Dirichlet shift is bigger for smaller α."
+
+    alpha = (,,) is relative proportion for each class
+    make alpha a dict
+    sort by value
+    each number / total of numbers is prob for class
     """
-    pass
+    ret = np.copy(data)
+
+    # generate dirichlet distribution by class
+    alpha_list = [alpha[k] for k in alpha]
+    dirichlet_distribution = np.random.dirichlet(alpha_list)
+
+    # distribution for each data point, and reordering of each point by class
+    p_distribution = np.array([])
+    sample_grouped = np.array([])
+
+    # locate each class in window
+    for i, cls in enumerate(alpha.keys()):
+        cls_idx = np.where(data[:, target_col] == cls)[0]
+        cls_idx = cls_idx[
+            (cls_idx < to_index) &
+            (cls_idx >= from_index)
+        ]
+
+        # pts for each class drawn with corresponding probability
+        p_individual = dirichlet_distribution[i] / cls_idx.shape[0]
+        
+        # append to grouped array and corresponding distribution
+        sample_grouped = np.concatenate((sample_grouped, data[cls_idx]))
+        p_distribution = np.concatenate(p_distribution, np.ones(cls_idx.shape[0]) * p_individual)
+
+    # shuffled sample over window, with replacement, with weights
+    sample = np.random.choice(sample_grouped, to_index-from_index, True, p_distribution)
+    ret[from_index:to_index] = sample
+    return ret
 
 # endregion
