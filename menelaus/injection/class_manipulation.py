@@ -109,6 +109,8 @@ def class_probability_shift(data, target_col, from_index, to_index, classes, p_c
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
 
+    Note: this function can perform tweak-one and minority shift.
+
     Ref. :cite:t:`LTFmethods`
 
     Args:
@@ -123,8 +125,16 @@ def class_probability_shift(data, target_col, from_index, to_index, classes, p_c
         np.array or pd.DataFrame: copy of data, resampled with shifted
             class probability for 1 or more desired classes
     """
-    ret = np.copy(data)
-    classes = np.unique(ret[:, target_col])
+    columns = None
+    if isinstance(data, pd.DataFrame):
+        ret = None
+        columns = data.columns
+    elif isinstance(data, np.array):
+        ret = np.copy(data)
+    else:
+        raise ValueError(f"Data of type {type(data)} not supported")
+
+    all_classes = np.unique(ret[:, target_col])
 
     # distribution for each data point, and reordering of each point by class
     p_distribution = np.array([])
@@ -134,7 +144,7 @@ def class_probability_shift(data, target_col, from_index, to_index, classes, p_c
     shifted_classes_idx = np.where(data[:, target_col].isin(classes))[0]
 
     # locate each class in window
-    for cls in classes:
+    for cls in all_classes:
         cls_idx = np.where(data[:, target_col] == cls)[0]
         cls_idx = cls_idx[
             (cls_idx < to_index) &
@@ -146,7 +156,7 @@ def class_probability_shift(data, target_col, from_index, to_index, classes, p_c
             p_individual = p_classes / shifted_classes_idx.shape[0]
         else:
             # pts from remaining classes drawn with uniform probability
-            p_individual = ((1 - p_classes) / (classes.shape[0] - 1)) / cls_idx.shape[0]
+            p_individual = ((1 - p_classes) / (all_classes.shape[0] - len(classes))) / cls_idx.shape[0]
 
         # append to grouped array and corresponding distribution
         sample_grouped = np.concatenate((sample_grouped, data[cls_idx]))
@@ -175,7 +185,8 @@ def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
         alpha (dict): used to derive alpha parameter for Dirichlet
             distribution. Keys are all labels, values are the desired
             average weight (typically ``int``) per label when resampling. 
-        p_classes (float): altered sampling chance for members of ``classes``
+            For example, weights of [4,1] correspond to an expected 80/20
+            percent split between first and second classes.
 
     Returns:
         np.array or pd.DataFrame: copy of data, resampled per Dirichlet

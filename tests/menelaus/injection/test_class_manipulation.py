@@ -50,3 +50,17 @@ def test_swap_3():
             data, target_col=0, class_1=0, class_2=1, 
             from_index=1, to_index=3
         )
+
+def test_probability_shift_1():
+    pass
+
+def test_probability_shift_2():
+    ''' Check ValueError if data neither pandas.DAtaFrame nor numpy.ndarray '''
+    pass
+
+def test_dirichlet_shift_1():
+    pass
+
+def test_dirichlet_shift_2():
+    ''' Check ValueError if data neither pandas.DAtaFrame nor numpy.ndarray '''
+    pass
