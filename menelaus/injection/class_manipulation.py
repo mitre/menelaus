@@ -132,7 +132,7 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
     if isinstance(data, pd.DataFrame):
         ret = data.to_numpy()
         columns = data.columns
-    elif isinstance(data, np.array):
+    elif isinstance(data, np.ndarray):
         ret = np.copy(data)
     else:
         raise ValueError(f"Data of type {type(data)} not supported")
@@ -142,7 +142,7 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
     undefined_classes = [k for k in all_classes if k not in class_probabilities]
 
     # specified class probabilities must sum to 1 or less
-    if sum(class_probabilities.values) > 1.0:
+    if sum(class_probabilities.values()) > 1.0:
         raise ValueError(f"Probabilities in {class_probabilities} exceed 1")
 
     # args should not specify previously unseen classes
@@ -150,7 +150,7 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
         raise ValueError(f"Argument {class_probabilities} has classes not found in data {all_classes}")
 
     # undefined classes are resampled uniformly
-    p_uniform = (1-sum(class_probabilities.values)) / len(undefined_classes)
+    p_uniform = (1-sum(class_probabilities.values())) / len(undefined_classes)
     for uc in undefined_classes:
         class_probabilities[uc] = p_uniform
 

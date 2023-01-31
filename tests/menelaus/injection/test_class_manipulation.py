@@ -2,7 +2,9 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from menelaus.injection import class_join, class_swap
+from collections import defaultdict
+
+from menelaus.injection import class_join, class_swap, class_probability_shift, class_dirichlet_shift
 
 
 def test_join_1():
@@ -55,12 +57,42 @@ def test_probability_shift_1():
     pass
 
 def test_probability_shift_2():
-    ''' Check ValueError if data neither pandas.DAtaFrame nor numpy.ndarray '''
     pass
+
+def test_probability_shift_3():
+    ''' Check ValueError if data neither pandas.DataFrame nor numpy.ndarray '''
+    data = [[0,0], [1,1], [0,2], [1,3]]
+    with pytest.raises(ValueError):
+        class_probability_shift(
+            data, target_col=0, from_index=0, to_index=2, 
+            class_probabilities={0: 0.5}
+        )
+
+def test_probability_shift_4():
+    ''' Check ValueError when probabilities add to >1 '''
+    data = np.random.randint(0,5,(10,3))
+    with pytest.raises(ValueError):
+        class_1 = np.unique(data[:,0])[0]
+        class_2 = np.unique(data[:,0])[1]
+        probs = {class_1: 1.0, class_2: 0.5}
+        class_probability_shift(data, 0, 0, 3, probs)
+
+def test_probability_shift_5():
+    ''' Check ValueError when given probabilities for classes not in data '''
+    data = np.random.randint(0,5,(10,3))
+    with pytest.raises(ValueError):
+        probs = {1000: 0.5}
+        class_probability_shift(data, 0, 0, 3, probs)
 
 def test_dirichlet_shift_1():
-    pass
-
-def test_dirichlet_shift_2():
-    ''' Check ValueError if data neither pandas.DAtaFrame nor numpy.ndarray '''
-    pass
+    ''' Ensure Dirichlet shift causes some drift '''
+    np.random.seed(0)
+    data = np.array([
+        [0,0,0], [1,0,0], [2,0,0], [3,0,0], [4,0,0], [5,0,0],
+        [6,0,0], [7,0,0], [8,0,0], [9,0,0]
+    ])
+    alpha = {k:1 for k in range(0,10)}
+    new_data = class_dirichlet_shift(data, 0, 1, 9, alpha)
+    assert data[0] == new_data[0]
+    assert data[-1] == new_data[-1]
+    assert not np.array_equal(data[1:9], new_data[1:9])
