@@ -102,7 +102,7 @@ def class_join(data, target_col, from_index, to_index, class_1, class_2, new_cla
 
 # region - LTF-inspired class manipulation functions
 
-def class_probability_shift(data, target_col, from_index, to_index, classes, p_classes):
+def class_probability_shift(data, target_col, from_index, to_index, class_probabilities):
     """
     Resamples the data over a specified window, with altered probability
     for specified classes (and uniform probability for remaining classes).
@@ -118,21 +118,26 @@ def class_probability_shift(data, target_col, from_index, to_index, classes, p_c
         target_col (int or str): column index/label of targets column
         from_index: row index at which to start class swap
         to_index: row index at which to end (non-inclusive) class swap
-        classes (list[int]): list of classes with altered sampling chance
+        class_probabilities: 
+        classes (dict): dict, 
         p_classes (float): altered sampling chance for members of ``classes``
 
     Returns:
         np.array or pd.DataFrame: copy of data, resampled with shifted
             class probability for 1 or more desired classes
     """
+    # if pandas.DataFrame, save columns and convert to numpy
     columns = None
     if isinstance(data, pd.DataFrame):
-        ret = None
+        ret = data.to_numpy()
         columns = data.columns
     elif isinstance(data, np.array):
         ret = np.copy(data)
     else:
         raise ValueError(f"Data of type {type(data)} not supported")
+
+    if (p_classes*len(classes)) > 1:
+        raise ValueError(f"Probability of {p_classes} for {len(classes)} classes = {p_classes*len(classes)} > 1.0")
 
     all_classes = np.unique(ret[:, target_col])
 
@@ -165,6 +170,12 @@ def class_probability_shift(data, target_col, from_index, to_index, classes, p_c
     # shuffled sample over window, with replacement, with weights
     sample = np.random.choice(sample_grouped, to_index-from_index, True, p_distribution)
     ret[from_index:to_index] = sample
+
+    # back to DF if needed
+    if isinstance(data, pd.DataFrame):
+        ret = pd.DataFrame(ret)
+        ret.columns = columns
+    
     return ret
 
 
@@ -192,11 +203,24 @@ def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
         np.array or pd.DataFrame: copy of data, resampled per Dirichlet
             distribution over classes with specified alpha
     """
-    ret = np.copy(data)
+    # if pandas.DataFrame, save columns and convert to numpy 
+    columns = None
+    if isinstance(data, pd.DataFrame):
+        ret = data.to_numpy()
+        columns = data.columns
+    elif isinstance(data, np.array):
+        ret = np.copy(data)
+    else:
+        raise ValueError(f"Data of type {type(data)} not supported")
+    
+    alpha_list = [alpha[k] for k in alpha]
+
+    if np.sum(alpha_list) > 1:
+        raise ValueError(f"Alpha values in {alpha} exceed total probability of 1.0")
 
     # generate dirichlet distribution by class
-    alpha_list = [alpha[k] for k in alpha]
     dirichlet_distribution = np.random.dirichlet(alpha_list)
+    ret = np.copy(data)
 
     # distribution for each data point, and reordering of each point by class
     p_distribution = np.array([])
@@ -220,6 +244,12 @@ def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
     # shuffled sample over window, with replacement, with weights
     sample = np.random.choice(sample_grouped, to_index-from_index, True, p_distribution)
     ret[from_index:to_index] = sample
+
+    # back to DF if needed
+    if isinstance(data, pd.DataFrame):
+        ret = pd.DataFrame(ret)
+        ret.columns = columns
+    
     return ret
 
 # endregion
