@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import random
 from scipy.io.arff import loadarff
@@ -125,30 +126,67 @@ class InjectionTesting:
 
     def test_adwin_detector(self, col):
         detector = ADWINAccuracy()
+        drift_state = []
 
         for i, row in self.df.iterrows():
             detector.update(X=None, y_true=row[col], y_pred=0)
-            assert detector.drift_state != 'drift', f'Drift detected in row {i}'
+            drift_state.append(detector.drift_state)
+
+        self.df['drift_state'] = drift_state
 
 
     def test_kdq_tree_streaming_detector(self, cols, window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50):
         detector = KdqTreeStreaming(window_size, alpha, bootstrap_samples, count_ubound)
+        drift_state = []
 
         for i, row in self.df.iterrows():
             detector.update(row[cols])
-            assert detector.drift_state != 'drift', f'Drift detected in row {i}'
+            drift_state.append(detector.drift_state)
+
+        self.df['drift_state'] = drift_state
 
 
     def test_pcacd_detector(self, window_size=50, divergence_metric='intersection'):
         detector = PCACD(window_size=window_size, divergence_metric=divergence_metric)
+        drift_state = []
 
         for i, row in self.df.iterrows():
             detector.update(row)
-            assert detector.drift_state != 'drift', f'Drift detected in row {i}'
+            drift_state.append(detector.drift_state)
+
+        self.df['drift_state'] = drift_state
+
+
+    def plot_drift_scatter(self, cols, output_file='plots/drift_scatter_test.png'):
+        plt.figure(figsize=(20, 6))
+        y_min = None
+        y_max = None
+
+        for col in cols:
+            plt.scatter(self.df.index, self.df[col], label=col)
+            local_min = self.df[col].min()
+            local_max = self.df[col].max()
+
+            if y_min is None or y_min > local_min:
+                y_min = local_min
+            if y_max is None or y_max < local_max:
+                y_max = local_max
+
+        plt.grid(False, axis='x')
+        plt.xticks(fontsize=16)
+        plt.yticks(fontsize=16)
+        plt.title('Scatter Results', fontsize=22)
+        plt.xlabel('Index', fontsize=18)
+        plt.ylabel('Value', fontsize=18)
+        plt.ylim((y_min, y_max))
+        plt.vlines(x=self.df[self.df['drift_state'] == 'drift'].index, ymin=y_min, ymax=y_max, label='Drift Detected', color='red')
+        plt.legend()
+        plt.savefig(output_file)
 
 
 if __name__ == '__main__':
     file = 'souza_data/gassensor.arff'
     tester = InjectionTesting(file)
-    drift_cols = tester.inject_random_brownian_noise(10)
+    drift_cols = tester.inject_random_brownian_noise(1000)
     tester.test_pcacd_detector()
+    tester.plot_drift_scatter(drift_cols)

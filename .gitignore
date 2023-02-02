@@ -15,6 +15,7 @@ _build
 *.DS_Store
 .idea/
 menelaus/injection/souza_data
+menelaus/injection/plots
 
 # Images
 
