@@ -95,6 +95,7 @@ def class_join(data, target_col, from_index, to_index, class_1, class_2, new_cla
             (ret[:, target_col] == class_1) | (ret[:, target_col] == class_2)
         )[0]
         class_idx = class_idx[(class_idx < to_index) & (class_idx >= from_index)]
+
         ret[class_idx, target_col] = new_class
     return ret
 
@@ -116,7 +117,10 @@ def class_probability_shift(
 
     Note:
     * this function can perform tweak-one and minority shift
-    * TODO Warning about no labels in window given
+    * When a class is not present in the window specified,
+    but specified in ``class_probabilities``, the probability
+    value is uniformly divided into the remaining classes in
+    the window.
 
     Ref. :cite:t:`LTFmethods`
 

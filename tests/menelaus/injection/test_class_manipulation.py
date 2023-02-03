@@ -10,14 +10,14 @@ def test_join_1():
     ''' Check correct join in pd.DataFrame '''
     data = pd.DataFrame({'a': [0,0,1,1], 'b': [5,5,5,5]})
     expected_data = pd.DataFrame({'a': [0,2,2,1], 'b':[5,5,5,5]})
-    data = class_join(data, 'a', 0, 1, 2, 1, 3)
+    data = class_join(data, 'a', 1, 3, 0, 1, 2)
     assert data.equals(expected_data)
 
 def test_join_2():
     ''' Check correct join in numpy.ndarray '''
     data = np.array([[0,5], [0,5], [1,5], [1,5]])
     expected_data = np.array([[0,5], [2,5], [2,5], [1,5]])
-    data = class_join(data, 0, 0, 1, 2, 1, 3)
+    data = class_join(data, 0, 1, 3, 0, 1, 2)
     assert np.array_equal(data, expected_data)
 
 def test_join_3():
@@ -33,14 +33,14 @@ def test_swap_1():
     ''' Check correct swap in pd.DataFrame '''
     data = pd.DataFrame({'a': [0,0,1,1], 'b': [5,5,6,6]})
     expected_data = pd.DataFrame({'a': [1,1,0,0], 'b':[5,5,6,6]})
-    data = class_swap(data, 'a', 0, 1, 0, 4)
+    data = class_swap(data, 'a', 0, 4, 0, 1)
     assert data.equals(expected_data)
 
 def test_swap_2():
     ''' Check correct swap in numpy.ndarray'''
     data = np.array([[0,5], [0,5], [1,6], [1,6]])
     expected_data = np.array([[1,5], [1,5], [0,6], [0,6]])
-    data = class_swap(data, 0, 0, 1, 0, 4)
+    data = class_swap(data, 0, 0, 4, 0, 1)
     assert np.array_equal(data, expected_data)
 
 def test_swap_3():
@@ -105,7 +105,17 @@ def test_probability_shift_5():
         class_probability_shift(data, 0, 0, 3, probs)
 
 def test_probability_shift_6():
-    pass # with unspecified columns
+    ''' Check drift injected when not all classes specified '''
+    np.random.seed(0)
+    data = np.array([
+        [0,0,0], [1,0,0], [2,0,0], [3,0,0], [4,0,0], [5,0,0],
+        [6,0,0], [7,0,0], [8,0,0], [9,0,0]
+    ])
+    probs = {k:0.1 for k in range(2,10)}
+    new_data = class_probability_shift(data, 0, 1, 9, probs)
+    assert np.array_equal(data[0], new_data[0])
+    assert np.array_equal(data[-1], new_data[-1])
+    assert not np.array_equal(data[1:9], new_data[1:9])
 
 def test_dirichlet_shift_1():
     ''' Ensure Dirichlet shift causes some drift '''
@@ -116,6 +126,6 @@ def test_dirichlet_shift_1():
     ])
     alpha = {k:1 for k in range(0,10)}
     new_data = class_dirichlet_shift(data, 0, 1, 9, alpha)
-    assert data[0] == new_data[0]
-    assert data[-1] == new_data[-1]
+    assert np.array_equal(data[0], new_data[0])
+    assert np.array_equal(data[-1], new_data[-1])
     assert not np.array_equal(data[1:9], new_data[1:9])
