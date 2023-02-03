@@ -109,7 +109,9 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
 
-    Note: this function can perform tweak-one and minority shift.
+    Note: 
+    * this function can perform tweak-one and minority shift
+    * TODO Warning about no labels in window given
 
     Ref. :cite:t:`LTFmethods`
 
@@ -127,11 +129,12 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
         np.array or pd.DataFrame: copy of data, resampled with shifted
             class probability for 1 or more desired classes
     """
-    # if pandas.DataFrame, save columns and convert to numpy
+    # if pandas.DataFrame, store columns, convert to numpy
     columns = None
     if isinstance(data, pd.DataFrame):
-        ret = data.to_numpy()
         columns = data.columns
+        data = data.to_numpy()
+        ret = data.copy()
     elif isinstance(data, np.ndarray):
         ret = np.copy(data)
     else:
@@ -154,8 +157,8 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
         class_probabilities[uc] = (1-sum(class_probabilities.values())) / len(undefined_classes)
 
     # distribution for each data point, and reordering of each point by class
-    p_distribution = np.array([])
-    sample_grouped = np.array([])
+    p_distribution = []
+    sample_idxs_grouped = []
 
     # locate each class in window
     for cls in all_classes:
@@ -169,15 +172,19 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
         p_individual = (cls_idx.shape[0] and class_probabilities[cls] / cls_idx.shape[0]) or 0
 
         # append to grouped array and corresponding distribution
-        sample_grouped = np.concatenate((sample_grouped, data[cls_idx]))
-        p_distribution = np.concatenate(p_distribution, np.ones(cls_idx.shape[0]) * p_individual)
+        sample_idxs_grouped.extend(cls_idx)
+        p_distribution.extend(np.ones(cls_idx.shape[0]) * p_individual)
 
+    # if classes skipped, ensure probability distribution adds to 1
+    p_leftover = (1-sum(p_distribution)) / len(p_distribution)
+    p_distribution = [p + p_leftover for p in p_distribution]
+    
     # shuffled sample over window, with replacement, with weights
-    sample = np.random.choice(sample_grouped, to_index-from_index, True, p_distribution)
-    ret[from_index:to_index] = sample
+    sample_idxs = np.random.choice(sample_idxs_grouped, to_index-from_index, True, p_distribution)
+    ret[from_index:to_index] = data[sample_idxs]
 
     # back to DF if needed
-    if isinstance(data, pd.DataFrame):
+    if columns is not None:
         ret = pd.DataFrame(ret)
         ret.columns = columns
     

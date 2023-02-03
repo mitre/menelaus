@@ -2,7 +2,6 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from collections import defaultdict
 
 from menelaus.injection import class_join, class_swap, class_probability_shift, class_dirichlet_shift
 
@@ -62,12 +61,23 @@ def test_probability_shift_1():
     ])
     probs = {k:0.1 for k in range(0,10)}
     new_data = class_probability_shift(data, 0, 1, 9, probs)
-    assert data[0] == new_data[0]
-    assert data[-1] == new_data[-1]
+    assert np.array_equal(data[0], new_data[0])
+    assert np.array_equal(data[-1], new_data[-1])
     assert not np.array_equal(data[1:9], new_data[1:9])
 
 def test_probability_shift_2():
-    pass
+    ''' Ensure probability shift causes some drift in pandas.DataFrame '''
+    np.random.seed(0)
+    data = pd.DataFrame({
+        'a': [0,1,2,3,4,5,6,7,8,9],
+        'b': [0,0,0,0,0,0,0,0,0,0]
+    })
+    probs = {k:0.1 for k in range(0,10)}
+    new_data = class_probability_shift(data, 0, 1, 9, probs)
+    assert data.iloc[0].equals(new_data.iloc[0])
+    assert data.iloc[-1].equals(new_data.iloc[-1])
+    assert not np.array_equal(data[1:9], new_data[1:9])
+    assert list(new_data.columns) == ['a', 'b']
 
 def test_probability_shift_3():
     ''' Check ValueError if data neither pandas.DataFrame nor numpy.ndarray '''
