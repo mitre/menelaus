@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import os
 import pandas as pd
 import random
 from scipy.io.arff import loadarff
@@ -124,12 +125,12 @@ class InjectionTesting:
         return rand_col
 
 
-    def test_adwin_detector(self, col):
+    def test_adwin_detector(self, cols):
         detector = ADWINAccuracy()
         drift_state = []
 
         for i, row in self.df.iterrows():
-            detector.update(X=None, y_true=row[col], y_pred=0)
+            detector.update(X=None, y_true=row[cols], y_pred=0)
             drift_state.append(detector.drift_state)
 
         self.df['drift_state'] = drift_state
@@ -181,12 +182,14 @@ class InjectionTesting:
         plt.ylim((y_min, y_max))
         plt.vlines(x=self.df[self.df['drift_state'] == 'drift'].index, ymin=y_min, ymax=y_max, label='Drift Detected', color='red')
         plt.legend()
+
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         plt.savefig(output_file)
 
 
 if __name__ == '__main__':
-    file = 'souza_data/gassensor.arff'
+    file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
-    drift_cols = tester.inject_random_brownian_noise(1000)
-    tester.test_pcacd_detector()
+    drift_cols = tester.inject_random_brownian_noise(10)
+    tester.test_adwin_detector(drift_cols)
     tester.plot_drift_scatter(drift_cols)
