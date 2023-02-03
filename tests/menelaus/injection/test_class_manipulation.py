@@ -54,7 +54,17 @@ def test_swap_3():
         )
 
 def test_probability_shift_1():
-    pass
+    ''' Ensure probability shift causes some drift in numpy.ndarray '''
+    np.random.seed(0)
+    data = np.array([
+        [0,0,0], [1,0,0], [2,0,0], [3,0,0], [4,0,0], [5,0,0],
+        [6,0,0], [7,0,0], [8,0,0], [9,0,0]
+    ])
+    probs = {k:0.1 for k in range(0,10)}
+    new_data = class_probability_shift(data, 0, 1, 9, probs)
+    assert data[0] == new_data[0]
+    assert data[-1] == new_data[-1]
+    assert not np.array_equal(data[1:9], new_data[1:9])
 
 def test_probability_shift_2():
     pass
@@ -83,6 +93,9 @@ def test_probability_shift_5():
     with pytest.raises(ValueError):
         probs = {1000: 0.5}
         class_probability_shift(data, 0, 0, 3, probs)
+
+def test_probability_shift_6():
+    pass # with unspecified columns
 
 def test_dirichlet_shift_1():
     ''' Ensure Dirichlet shift causes some drift '''

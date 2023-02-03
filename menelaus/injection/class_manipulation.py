@@ -150,9 +150,8 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
         raise ValueError(f"Argument {class_probabilities} has classes not found in data {all_classes}")
 
     # undefined classes are resampled uniformly
-    p_uniform = (1-sum(class_probabilities.values())) / len(undefined_classes)
     for uc in undefined_classes:
-        class_probabilities[uc] = p_uniform
+        class_probabilities[uc] = (1-sum(class_probabilities.values())) / len(undefined_classes)
 
     # distribution for each data point, and reordering of each point by class
     p_distribution = np.array([])
@@ -166,9 +165,9 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
             (cls_idx >= from_index)
         ]
 
-        # each member of class has p_class / class_size chance
-        p_individual = class_probabilities[cls] / cls_idx.shape[0]
-        
+        # each member has p_class / class_size chance, represented as bool to avoid div/0
+        p_individual = (cls_idx.shape[0] and class_probabilities[cls] / cls_idx.shape[0]) or 0
+
         # append to grouped array and corresponding distribution
         sample_grouped = np.concatenate((sample_grouped, data[cls_idx]))
         p_distribution = np.concatenate(p_distribution, np.ones(cls_idx.shape[0]) * p_individual)
