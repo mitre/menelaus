@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 
 
-# region - simple class manipulation functions 
+# region - simple class manipulation functions
+
 
 def class_swap(data, target_col, from_index, to_index, class_1, class_2):
     """
@@ -97,19 +98,23 @@ def class_join(data, target_col, from_index, to_index, class_1, class_2, new_cla
         ret[class_idx, target_col] = new_class
     return ret
 
+
 # endregion
 
 
 # region - LTF-inspired class manipulation functions
 
-def class_probability_shift(data, target_col, from_index, to_index, class_probabilities):
+
+def class_probability_shift(
+    data, target_col, from_index, to_index, class_probabilities
+):
     """
     Resamples the data over a specified window, with altered probability
     for specified classes (and uniform probability for remaining classes).
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
 
-    Note: 
+    Note:
     * this function can perform tweak-one and minority shift
     * TODO Warning about no labels in window given
 
@@ -150,11 +155,15 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
 
     # args should not specify previously unseen classes
     if set(all_classes) != set(list(class_probabilities.keys()) + undefined_classes):
-        raise ValueError(f"Argument {class_probabilities} has classes not found in data {all_classes}")
+        raise ValueError(
+            f"Argument {class_probabilities} has classes not found in data {all_classes}"
+        )
 
     # undefined classes are resampled uniformly
     for uc in undefined_classes:
-        class_probabilities[uc] = (1-sum(class_probabilities.values())) / len(undefined_classes)
+        class_probabilities[uc] = (1 - sum(class_probabilities.values())) / len(
+            undefined_classes
+        )
 
     # distribution for each data point, and reordering of each point by class
     p_distribution = []
@@ -163,36 +172,37 @@ def class_probability_shift(data, target_col, from_index, to_index, class_probab
     # locate each class in window
     for cls in all_classes:
         cls_idx = np.where(data[:, target_col] == cls)[0]
-        cls_idx = cls_idx[
-            (cls_idx < to_index) &
-            (cls_idx >= from_index)
-        ]
+        cls_idx = cls_idx[(cls_idx < to_index) & (cls_idx >= from_index)]
 
         # each member has p_class / class_size chance, represented as bool to avoid div/0
-        p_individual = (cls_idx.shape[0] and class_probabilities[cls] / cls_idx.shape[0]) or 0
+        p_individual = (
+            cls_idx.shape[0] and class_probabilities[cls] / cls_idx.shape[0]
+        ) or 0
 
         # append to grouped array and corresponding distribution
         sample_idxs_grouped.extend(cls_idx)
         p_distribution.extend(np.ones(cls_idx.shape[0]) * p_individual)
 
     # if classes skipped, ensure probability distribution adds to 1
-    p_leftover = (1-sum(p_distribution)) / len(p_distribution)
+    p_leftover = (1 - sum(p_distribution)) / len(p_distribution)
     p_distribution = [p + p_leftover for p in p_distribution]
-    
+
     # shuffled sample over window, with replacement, with weights
-    sample_idxs = np.random.choice(sample_idxs_grouped, to_index-from_index, True, p_distribution)
+    sample_idxs = np.random.choice(
+        sample_idxs_grouped, to_index - from_index, True, p_distribution
+    )
     ret[from_index:to_index] = data[sample_idxs]
 
     # back to DF if needed
     if columns is not None:
         ret = pd.DataFrame(ret)
         ret.columns = columns
-    
+
     return ret
 
 
 def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
-    """ 
+    """
     Resamples the data over a specified window, per a generated Dirichlet
     distribution (with specified alpha) over all labels.
     Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
@@ -210,14 +220,14 @@ def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
         to_index: row index at which to end (non-inclusive) class swap
         alpha (dict): used to derive alpha parameter for Dirichlet
             distribution. Keys are ALL labels, values are the desired
-            average weight (typically ``int``) per label when resampling. 
+            average weight (typically ``int``) per label when resampling.
             For example, weights of [4,1] correspond to an expected 80/20
             percent split between first and second classes.
 
     Returns:
         np.array or pd.DataFrame: copy of data, resampled per Dirichlet
             distribution over classes with specified alpha
-    """    
+    """
     alpha_classes = list(alpha.keys())
     alpha_values = [alpha[k] for k in alpha]
 
@@ -225,11 +235,13 @@ def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
     # XXX - minor concern that order of these list-types not always guaranteed
     dirichlet_distribution = np.random.dirichlet(alpha_values)
     dirichlet_probabilities = {
-        alpha_classes[i]:dirichlet_distribution[i] 
-        for i in range(len(alpha_classes))
+        alpha_classes[i]: dirichlet_distribution[i] for i in range(len(alpha_classes))
     }
 
     # use class_probability_shift with fully-specified distribution
-    return class_probability_shift(data, target_col, from_index, to_index, dirichlet_probabilities)
+    return class_probability_shift(
+        data, target_col, from_index, to_index, dirichlet_probabilities
+    )
+
 
 # endregion
