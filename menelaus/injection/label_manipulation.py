@@ -1,37 +1,78 @@
 import numpy as np
-import pandas as pd
 
 from menelaus.injection.injector import Injector
-
-
-
 
 
 # region - Simple Label Manipulation
 
 class LabelSwapInjector(Injector):
     """
+    Swaps two classes in a target column of a given dataset with each other.
+    Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
+    with column indices.
+
+    Ref. :cite:t:`souza2020challenges`
     """
     def __call__(self, data, target_col, from_index, to_index, class_1, class_2):
+        """
+        Args:
+            data (np.array): data to inject with drift
+            target_col (int or str): column index/label of targets column
+            from_index: row index at which to start class swap
+            to_index: row index at which to end (non-inclusive) class swap
+            class_1 (int): value of first label in class swap
+            class_2 (int): value of second label in class swap
+        Returns:
+            np.array or pd.DataFrame: copy of data, with two classes swapped
+                in given target column, over given indices
+        """
+        # handle data type
         ret = self._preprocess(data)
+
+        # locate two classes, perform swap
         class_1_idx = np.where(ret[:, target_col] == class_1)[0]
         class_1_idx = class_1_idx[(class_1_idx < to_index) & (class_1_idx >= from_index)]
         class_2_idx = np.where(ret[:, target_col] == class_2)[0]
         class_2_idx = class_2_idx[(class_2_idx < to_index) & (class_2_idx >= from_index)]
         ret[class_1_idx, target_col] = class_2
         ret[class_2_idx, target_col] = class_1
+
+        # handle data type and return
         ret = self._postprocess(ret)
         return ret
 
 
 class LabelJoinInjector(Injector):
     """
+    Joins two [TODO or more?] classes in a unique class. Accepts
+    ``pandas.DataFrame`` with column names or ``numpy.ndarray``
+    with column indices.
+
+    Ref. :cite:t:`souza2020challenges`
     """
     def __call__(self, data, target_col, from_index, to_index, class_1, class_2, new_class):
+        """
+        Args:
+            data (np.array): data to inject with drift
+            target_col (int or str): column index/label of targets column
+            from_index: row index at which to start class join
+            to_index: row index at which to end (non-inclusive) class join
+            class_1 (int): value of first label in class join
+            class_2 (int): value of second label in class join,
+            new_class (int): new label value to assign to old classes
+        Returns:
+            np.array or pd.DataFrame: copy of data, with two classes joined
+                in given target column, over given indices, into new class
+        """
+        # handle data type
         ret = self._preprocess(data)
+
+        # locate two labels, switch both to new label
         class_idx = np.where((ret[:, target_col] == class_1) | (ret[:, target_col] == class_2))[0]
         class_idx = class_idx[(class_idx < to_index) & (class_idx >= from_index)]
         ret[class_idx, target_col] = new_class
+
+        # handle data type and return
         ret = self._postprocess(ret)
         return ret
 
@@ -41,8 +82,37 @@ class LabelJoinInjector(Injector):
 
 class LabelProbabilityInjector(Injector):
     """
+    Resamples the data over a specified window, with altered probability
+    for specified classes (and uniform probability for remaining classes).
+    Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
+    with column indices.
+
+    Note:
+    * this function can perform tweak-one and minority shift
+    * When a class is not present in the window specified,
+    but specified in ``class_probabilities``, the probability
+    value is uniformly divided into the remaining classes in
+    the window.
+
+    Ref. :cite:t:`LTFmethods`
     """
     def __call__(self, data, target_col, from_index, to_index, class_probabilities):
+        """
+        Args:
+            data (np.array): data to inject with drift
+            target_col (int or str): column index/label of targets column
+            from_index (int): row index at which to start class swap
+            to_index (int): row index at which to end (non-inclusive) class swap
+            class_probabilities (dict): classes as keys, and their desired
+                resampling chance as values. Un-specified classes are given
+                a uniform resampling chance with respect to all other
+                un-specified classes
+
+        Returns:
+            np.array or pd.DataFrame: copy of data, resampled with shifted
+                class probability for 1 or more desired classes
+        """
+        # handle data type
         ret = self._preprocess(data)
         
         # determine all unique classes and classes not specified in args
@@ -92,90 +162,56 @@ class LabelProbabilityInjector(Injector):
             sample_idxs_grouped, to_index - from_index, True, p_distribution
         )
         ret[from_index:to_index] = data[sample_idxs]
+
+        # handle data type and return
         ret = self._postprocess(ret)
         return ret
 
 
 class LabelDirichletInjector(Injector):
     """
-    """
-    def __call__(self, data, target_col, from_index, to_index, alpha):
-        alpha_classes = list(alpha.keys())
-        alpha_values = [alpha[k] for k in alpha]
-
-        # generate dirichlet distribution by class
-        # XXX - minor concern that order of these list-types not always guaranteed
-        dirichlet_distribution = np.random.dirichlet(alpha_values)
-        dirichlet_probabilities = {alpha_classes[i]: dirichlet_distribution[i] for i in range(len(alpha_classes))}
-
-        # use class_probability_shift with fully-specified distribution
-        label_prob_injector = LabelProbabilityInjector()
-        return label_prob_injector(data, target_col, from_index, to_index, dirichlet_probabilities)
-
-# endregion
-
-
-def class_probability_shift(
-    data, target_col, from_index, to_index, class_probabilities
-):
-    """
-    Resamples the data over a specified window, with altered probability
-    for specified classes (and uniform probability for remaining classes).
-    Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
-    with column indices.
-
-    Note:
-    * this function can perform tweak-one and minority shift
-    * When a class is not present in the window specified,
-    but specified in ``class_probabilities``, the probability
-    value is uniformly divided into the remaining classes in
-    the window.
-
-    Ref. :cite:t:`LTFmethods`
-
-    Args:
-        data (np.array): data to inject with drift
-        target_col (int or str): column index/label of targets column
-        from_index (int): row index at which to start class swap
-        to_index (int): row index at which to end (non-inclusive) class swap
-        class_probabilities (dict): classes as keys, and their desired
-            resampling chance as values. Un-specified classes are given
-            a uniform resampling chance with respect to all other
-            un-specified classes
-
-    Returns:
-        np.array or pd.DataFrame: copy of data, resampled with shifted
-            class probability for 1 or more desired classes
-    """
-   
-    pass
-
-
-def class_dirichlet_shift(data, target_col, from_index, to_index, alpha):
-    """
     Resamples the data over a specified window, per a generated Dirichlet
-    distribution (with specified alpha) over all labels.
-    Accepts ``pandas.DataFrame`` with column names or ``numpy.ndarray``
+    distribution (with specified alpha) over all labels. Accepts 
+    ``pandas.DataFrame`` with column names or ``numpy.ndarray``
     with column indices.
 
-    Note: If all labels are not given weights, unexpected behavior may
+    Notes:
+    * If all labels are not given weights, unexpected behavior may
     cause all un-specified classes to be given uniform resampling chance.
 
     Ref. :cite:t:`LTFmethods`
-
-    Args:
-        data (np.array): data to inject with drift
-        target_col (int or str): column index/label of targets column
-        from_index: row index at which to start class swap
-        to_index: row index at which to end (non-inclusive) class swap
-        alpha (dict): used to derive alpha parameter for Dirichlet
-            distribution. Keys are ALL labels, values are the desired
-            average weight (typically ``int``) per label when resampling.
-            For example, weights of [4,1] correspond to an expected 80/20
-            percent split between first and second classes.
-
-    Returns:
-        np.array or pd.DataFrame: copy of data, resampled per Dirichlet
-            distribution over classes with specified alpha
     """
-    pass
+    def __call__(self, data, target_col, from_index, to_index, alpha):
+        """
+        Args:
+            data (np.array): data to inject with drift
+            target_col (int or str): column index/label of targets column
+            from_index: row index at which to start class swap
+            to_index: row index at which to end (non-inclusive) class swap
+            alpha (dict): used to derive alpha parameter for Dirichlet
+                distribution. Keys are ALL labels, values are the desired
+                average weight (typically ``int``) per label when resampling.
+                For example, weights of [4,1] correspond to an expected 80/20
+                percent split between first and second classes.
+
+        Returns:
+            np.array or pd.DataFrame: copy of data, resampled per Dirichlet
+                distribution over classes with specified alpha
+        """
+        # weights dictionary into lists of keys and values
+        self._alpha_classes = list(alpha.keys())
+        self._alpha_values = [alpha[k] for k in alpha]
+
+        # generate dirichlet distribution by class
+        # XXX - minor concern that order of these list-types not always guaranteed
+        self._dirichlet_distribution = np.random.dirichlet(self._alpha_values)
+        self._dirichlet_probabilities = {
+            self._alpha_classes[i]: self._dirichlet_distribution[i] 
+            for i in range(len(self._alpha_classes))
+        }
+
+        # use class_probability_shift with fully-specified distribution
+        label_prob_injector = LabelProbabilityInjector()
+        return label_prob_injector(data, target_col, from_index, to_index, self._dirichlet_probabilities)
+
+# endregion
