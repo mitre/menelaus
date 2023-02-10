@@ -147,6 +147,32 @@ class InjectionTesting:
         self.df['drift_state'] = drift_state
 
 
+    def test_nndvi_detector(self, cols, group_name=None, k_nn=2, sampling_times=50):
+        if not group_name:
+            group_name = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+
+            while group_name in cols:
+                group_name = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+
+        filtered_df = self.df.copy()
+        for filter_col in filtered_df.columns:
+            if filter_col != group_name and not pd.api.types.is_numeric_dtype(filtered_df[filter_col]):
+                filtered_df.drop(columns=filter_col, inplace=True)
+
+        grouped_df = filtered_df.groupby(group_name)
+        status = pd.DataFrame(columns=[group_name, 'drift'])
+        batches = {group_id: group.sample(frac=0.1).drop(columns=group_name).values for group_id, group in grouped_df}
+
+        detector = NNDVI(k_nn=k_nn, sampling_times=sampling_times)
+        detector.set_reference(batches.pop(min(self.df[group_name])))
+
+        for group_id, batch in batches.items():
+            detector.update(pd.DataFrame(batch))
+            status = pd.concat([status, pd.DataFrame({group_name: [group_id], 'drift': [detector.drift_state]})], ignore_index=True)
+
+        return status
+
+
     def test_pcacd_detector(self, window_size=50, divergence_metric='intersection'):
         detector = PCACD(window_size=window_size, divergence_metric=divergence_metric)
         drift_state = []
@@ -191,5 +217,4 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_adwin_detector(drift_cols)
-    tester.plot_drift_scatter(drift_cols)
+    tester.test_nndvi_detector(drift_cols)
