@@ -46,6 +46,10 @@ class InjectionTesting:
                     self.numeric_cols.append(col)
                 elif self.df[col].nunique() < len(self.df) and categorical_cols is None:
                     self.categorical_cols.append(col)
+        if numeric_cols is None:
+            self.numeric_cols = numeric_cols
+        if categorical_cols is None:
+            self.categorical_cols = categorical_cols
 
         if seed:
             random.seed(seed)
@@ -135,6 +139,7 @@ class InjectionTesting:
             drift_state.append(detector.drift_state)
 
         self.df['drift_state'] = drift_state
+        return detector
 
 
     def test_kdq_tree_streaming_detector(self, cols, window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50):
@@ -146,6 +151,7 @@ class InjectionTesting:
             drift_state.append(detector.drift_state)
 
         self.df['drift_state'] = drift_state
+        return detector
 
 
     def test_nndvi_detector(self, cols, group_name=None, k_nn=2, sampling_times=50):
@@ -171,7 +177,7 @@ class InjectionTesting:
             detector.update(pd.DataFrame(batch))
             status = pd.concat([status, pd.DataFrame({group_name: [group_id], 'drift': [detector.drift_state]})], ignore_index=True)
 
-        return status
+        return detector, status
 
 
     def test_pcacd_detector(self, window_size=50, divergence_metric='intersection'):
