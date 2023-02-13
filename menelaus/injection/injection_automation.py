@@ -27,7 +27,7 @@ def select_random_classes(series):
 
 
 class InjectionTesting:
-    def __init__(self, data_path, seed=None):
+    def __init__(self, data_path, seed=None, numeric_cols=None, categorical_cols=None):
         file_type = data_path.split('.')[-1]
         self.numeric_cols = []
         self.categorical_cols = []
@@ -40,11 +40,12 @@ class InjectionTesting:
         else:
             raise ValueError(f'Invalid file type: {file_type}')
 
-        for col in self.df.columns:
-            if pd.api.types.is_numeric_dtype(self.df[col]):
-                self.numeric_cols.append(col)
-            elif self.df[col].nunique() < len(self.df):
-                self.categorical_cols.append(col)
+        if numeric_cols is None or categorical_cols is None:
+            for col in self.df.columns:
+                if pd.api.types.is_numeric_dtype(self.df[col]) and numeric_cols is None:
+                    self.numeric_cols.append(col)
+                elif self.df[col].nunique() < len(self.df) and categorical_cols is None:
+                    self.categorical_cols.append(col)
 
         if seed:
             random.seed(seed)
