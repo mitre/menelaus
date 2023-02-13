@@ -6,6 +6,8 @@ from scipy.io.arff import loadarff
 
 from menelaus.concept_drift import LinearFourRates, ADWINAccuracy, DDM, EDDM, STEPD, MD3
 from menelaus.data_drift import PCACD, KdqTreeStreaming, KdqTreeBatch, NNDVI
+from menelaus.data_drift.cdbd import CDBD
+from menelaus.data_drift.hdddm import HDDDM
 import class_manipulation
 import feature_manipulation
 import noise
@@ -46,9 +48,9 @@ class InjectionTesting:
                     self.numeric_cols.append(col)
                 elif self.df[col].nunique() < len(self.df) and categorical_cols is None:
                     self.categorical_cols.append(col)
-        if numeric_cols is None:
+        if numeric_cols is not None:
             self.numeric_cols = numeric_cols
-        if categorical_cols is None:
+        if categorical_cols is not None:
             self.categorical_cols = categorical_cols
 
         if seed:
@@ -142,6 +144,26 @@ class InjectionTesting:
         return detector
 
 
+    def test_cbdb_detector(self, cols, group_col=None, subsets=8):
+        if not group_col:
+            group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+
+            while group_col in cols:
+                group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+
+        reference_df = self.df[self.df[group_col] == self.df[group_col].min()][cols]
+        test_df = self.df[self.df[group_col] != self.df[group_col].min()]
+        detector = CDBD(subsets=subsets)
+        detector.set_reference(reference_df)
+        drift_state = []
+
+        for group_id, subset_data in test_df.groupby(group_col):
+            detector.update(subset_data[cols])
+            drift_state.append(detector.drift_state)
+
+        return detector, drift_state
+
+
     def test_kdq_tree_streaming_detector(self, cols, window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50):
         detector = KdqTreeStreaming(window_size, alpha, bootstrap_samples, count_ubound)
         drift_state = []
@@ -154,28 +176,28 @@ class InjectionTesting:
         return detector
 
 
-    def test_nndvi_detector(self, cols, group_name=None, k_nn=2, sampling_times=50):
-        if not group_name:
-            group_name = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+    def test_nndvi_detector(self, cols, group_col=None, k_nn=2, sampling_times=50):
+        if not group_col:
+            group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
-            while group_name in cols:
-                group_name = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+            while group_col in cols:
+                group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
         filtered_df = self.df.copy()
         for filter_col in filtered_df.columns:
-            if filter_col != group_name and not pd.api.types.is_numeric_dtype(filtered_df[filter_col]):
+            if filter_col != group_col and not pd.api.types.is_numeric_dtype(filtered_df[filter_col]):
                 filtered_df.drop(columns=filter_col, inplace=True)
 
-        grouped_df = filtered_df.groupby(group_name)
-        status = pd.DataFrame(columns=[group_name, 'drift'])
-        batches = {group_id: group.sample(frac=0.1).drop(columns=group_name).values for group_id, group in grouped_df}
+        grouped_df = filtered_df.groupby(group_col)
+        status = pd.DataFrame(columns=[group_col, 'drift'])
+        batches = {group_id: group.sample(frac=0.1).drop(columns=group_col).values for group_id, group in grouped_df}
 
         detector = NNDVI(k_nn=k_nn, sampling_times=sampling_times)
-        detector.set_reference(batches.pop(min(self.df[group_name])))
+        detector.set_reference(batches.pop(min(self.df[group_col])))
 
         for group_id, batch in batches.items():
             detector.update(pd.DataFrame(batch))
-            status = pd.concat([status, pd.DataFrame({group_name: [group_id], 'drift': [detector.drift_state]})], ignore_index=True)
+            status = pd.concat([status, pd.DataFrame({group_col: [group_id], 'drift': [detector.drift_state]})], ignore_index=True)
 
         return detector, status
 
@@ -189,6 +211,7 @@ class InjectionTesting:
             drift_state.append(detector.drift_state)
 
         self.df['drift_state'] = drift_state
+        return detector
 
 
     def plot_drift_scatter(self, cols, output_file='plots/drift_scatter_test.png'):
@@ -224,4 +247,4 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_nndvi_detector(drift_cols)
+    tester.test_cbdb_detector(drift_cols)
