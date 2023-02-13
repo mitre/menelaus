@@ -13,21 +13,22 @@ class LabelSwapInjector(Injector):
 
     Ref. :cite:t:`souza2020challenges`
     """
-    def __call__(self, data, target_col, from_index, to_index, class_1, class_2):
+    def __call__(self, data, from_index, to_index, target_col, class_1, class_2):
         """
         Args:
             data (np.array): data to inject with drift
-            target_col (int or str): column index/label of targets column
             from_index: row index at which to start class swap
             to_index: row index at which to end (non-inclusive) class swap
+            target_col (int or str): column index/name of targets column
             class_1 (int): value of first label in class swap
             class_2 (int): value of second label in class swap
+
         Returns:
             np.array or pd.DataFrame: copy of data, with two classes swapped
                 in given target column, over given indices
         """
         # handle data type
-        ret = self._preprocess(data)
+        ret, (target_col,) = self._preprocess(data, target_col)
 
         # locate two classes, perform swap
         class_1_idx = np.where(ret[:, target_col] == class_1)[0]
@@ -50,22 +51,23 @@ class LabelJoinInjector(Injector):
 
     Ref. :cite:t:`souza2020challenges`
     """
-    def __call__(self, data, target_col, from_index, to_index, class_1, class_2, new_class):
+    def __call__(self, data, from_index, to_index, target_col, class_1, class_2, new_class):
         """
         Args:
             data (np.array): data to inject with drift
-            target_col (int or str): column index/label of targets column
             from_index: row index at which to start class join
             to_index: row index at which to end (non-inclusive) class join
+            target_col (int or str): column index/name of targets column
             class_1 (int): value of first label in class join
             class_2 (int): value of second label in class join,
             new_class (int): new label value to assign to old classes
+            
         Returns:
             np.array or pd.DataFrame: copy of data, with two classes joined
                 in given target column, over given indices, into new class
         """
         # handle data type
-        ret = self._preprocess(data)
+        ret, (target_col,) = self._preprocess(data, target_col)
 
         # locate two labels, switch both to new label
         class_idx = np.where((ret[:, target_col] == class_1) | (ret[:, target_col] == class_2))[0]
@@ -96,13 +98,13 @@ class LabelProbabilityInjector(Injector):
 
     Ref. :cite:t:`LTFmethods`
     """
-    def __call__(self, data, target_col, from_index, to_index, class_probabilities):
+    def __call__(self, data, from_index, to_index, target_col, class_probabilities):
         """
         Args:
             data (np.array): data to inject with drift
-            target_col (int or str): column index/label of targets column
             from_index (int): row index at which to start class swap
             to_index (int): row index at which to end (non-inclusive) class swap
+            target_col (int or str): column index/name of targets column
             class_probabilities (dict): classes as keys, and their desired
                 resampling chance as values. Un-specified classes are given
                 a uniform resampling chance with respect to all other
@@ -113,7 +115,7 @@ class LabelProbabilityInjector(Injector):
                 class probability for 1 or more desired classes
         """
         # handle data type
-        ret = self._preprocess(data)
+        ret, (target_col,) = self._preprocess(data, target_col)
         
         # determine all unique classes and classes not specified in args
         all_classes = np.unique(ret[:, target_col])
@@ -181,13 +183,13 @@ class LabelDirichletInjector(Injector):
 
     Ref. :cite:t:`LTFmethods`
     """
-    def __call__(self, data, target_col, from_index, to_index, alpha):
+    def __call__(self, data, from_index, to_index, target_col, alpha):
         """
         Args:
             data (np.array): data to inject with drift
-            target_col (int or str): column index/label of targets column
             from_index: row index at which to start class swap
             to_index: row index at which to end (non-inclusive) class swap
+            target_col (int or str): column index/name of targets column
             alpha (dict): used to derive alpha parameter for Dirichlet
                 distribution. Keys are ALL labels, values are the desired
                 average weight (typically ``int``) per label when resampling.

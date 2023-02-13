@@ -11,4 +11,4 @@ from menelaus.injection.label_manipulation import (
     LabelProbabilityInjector,
     LabelDirichletInjector,
 )
-from menelaus.injection.noise import brownian_noise, random_walk
+from menelaus.injection.noise import BrownianNoiseInjector
