@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 
-from menelaus.injection import class_join, class_swap, class_probability_shift, class_dirichlet_shift
+from menelaus.injection import LabelJoinInjector, LabelSwapInjector, LabelProbabilityInjector, LabelDirichletInjector
 
 
 def test_join_1():

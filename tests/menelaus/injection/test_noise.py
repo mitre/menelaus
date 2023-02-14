@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from menelaus.injection import brownian_noise, random_walk
+from menelaus.injection import BrownianNoiseInjector
 
 
 def test_brownian_noise_1():

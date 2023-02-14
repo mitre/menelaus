@@ -18,9 +18,17 @@ class Injector(ABC):
     """
     def _preprocess(self, data, *columns, return_df=False):
         """
-        Preprocesses data and column indicators into desired format. By default
-        returns data as ``numpy.ndarray`` and columns as integer column indices
-        unless told otherwise. 
+        Preprocesses data and any column indicators into desired format. By 
+        default returns data as ``numpy.ndarray`` and any columns as integer
+        column indices unless told otherwise. 
+
+        Note:
+        * ``*columns`` is used to preprocess any columns used by a sub-class'
+        ``__call__`` function, and does not necessarily represent ALL columns
+        * if the input is in ``numpy`` format, and a ``numpy.ndarray`` is
+        desired, ``*columns`` should be integers
+        * ``*columns`` should only be string names if the input is a 
+        ``pandas.DataFrame``
 
         Args:
             data (numpy.ndarray or pd.DataFrame): data to preprocess
@@ -45,7 +53,7 @@ class Injector(ABC):
         # column str names to integer idxs if needed
         elif isinstance(data, pd.DataFrame):
             self._columns = data.columns
-            column_idxs = [data.columns.get_loc(c) for c in columns]
+            column_idxs = tuple([data.columns.get_loc(c) for c in columns])
 
         # only two types supported
         else:
@@ -54,7 +62,7 @@ class Injector(ABC):
         # copy and return desired type
         copy = np.copy(data)
         if return_df:
-            return pd.DataFrame(copy, columns=columns), columns
+            return pd.DataFrame(copy, columns=self._columns), columns
         else:
             return copy, column_idxs
     

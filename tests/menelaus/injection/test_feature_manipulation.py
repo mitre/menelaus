@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from menelaus.injection import feature_swap, feature_hide_and_sample
+from menelaus.injection import FeatureSwapInjector, FeatureCoverInjector
 
 
 def test_feature_swap_1():
