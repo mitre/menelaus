@@ -1,4 +1,6 @@
-"""This module contains functions with which to artificially inject drift into a dataset."""
+"""
+This module contains classes with which to artificially inject drift into a dataset.
+"""
 
 from menelaus.injection.feature_manipulation import (
     FeatureSwapInjector,

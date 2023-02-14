@@ -21,7 +21,7 @@ class BrownianNoiseInjector(Injector):
             x0 (int): starting point for random walk noise
 
         Returns:
-            np.ndarray or pd.DataFrame: copy of data, with two columns swapped
+            np.ndarray or pd.DataFrame: copy of data, with Brownian noise injected
                 over given indices
         """
         # handle type
