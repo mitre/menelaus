@@ -1,5 +1,3 @@
-import numpy as np
-
 from menelaus.injection.injector import Injector
 
 
@@ -49,7 +47,7 @@ class FeatureCoverInjector(Injector):
 
     Ref. :cite:t:`souza2020challenges`
     """
-    def __call__(self, data, col, sample_size, random_state=0):
+    def __call__(self, data, col, sample_size, random_state=None):
         """
         Args:
             data (np.ndarray or pd.DataFrame): data to inject with drift
