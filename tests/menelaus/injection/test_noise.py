@@ -1,6 +1,5 @@
 """ Module to test noise injection functions """
 
-import pytest
 import pandas as pd
 import numpy as np
 
@@ -8,29 +7,35 @@ from menelaus.injection import BrownianNoiseInjector
 
 
 def test_brownian_noise_1():
-    ''' Check general behavior for pandas DataFrame'''
-    old_values = [0,1,2,3,4,5,6]
-    data = pd.DataFrame({'a': old_values})
-    data = brownian_noise(data, 'a', 0, 1, 5)
-    assert not data.equals(pd.Series(old_values))
+    ''' Check RW noise injected correctly '''
+    i = BrownianNoiseInjector()
+    exp_data = np.array([[0],[1],[2],[3],[4],[5],[6]])
+    copy = i(exp_data, from_index=1, to_index=5, col=0, x0=0, random_state=0)
+    
+    # copy of random walk function
+    np.random.seed(0)
+    w = np.ones(5-1) * 0
+    for i in range(1,5-1):
+        yi = np.random.choice([1,-1])
+        w[i] = w[i-1] + (yi / np.sqrt(5-1))
+    
+    exp_data[1:5, 0] = exp_data[1:5, 0] + w
 
-def test_brownian_noise_2():
-    ''' Check general behavior for numpy array '''
-    old_values = np.array([[0],[1],[2],[3],[4],[5],[6]])
-    data = np.copy(old_values)
-    data = brownian_noise(data, 0, 0, 1, 5)
-    assert not np.array_equal(data, old_values)
-
-def test_bronwian_noise_3():
-    ''' Check ValueError if data neither pandas DataFrame nor numpy array '''
-    data = [[1,2], [0,1]]
-    with pytest.raises(ValueError):
-        brownian_noise(data, 0, 0, 0, 2)
+    # XXX - repeated code for testing random walk, no good alternatives
+    assert np.array_equal(exp_data, copy)
 
 def test_random_walk():
-    ''' Check random walk generally behaves within bounds '''
-    vec = random_walk(10, 0)
-    for i in range(1,10):
-        assert vec[i] <= vec[i-1] + 1/np.sqrt(10)
-        assert vec[i] >= vec[i-1] - 1/np.sqrt(10)
+    ''' Check random walk values '''
+    vec = BrownianNoiseInjector._random_walk(steps=5, x0=0, random_state=0)
+
+    # copy of random walk function
+    np.random.seed(0)
+    w = np.ones(5) * 0
+    for i in range(1, 5):
+        yi = np.random.choice([1, -1])
+        w[i] = w[i - 1] + (yi / np.sqrt(5))
+    
+    # XXX - repeating code for test coverage, although this may help if
+    #       implementation of random walk changes over time
+    assert np.array_equal(w, vec)
 
