@@ -7,27 +7,28 @@ import pandas as pd
 class Injector(ABC):
     """
     Abstract base class for drift injection callables. Classes using this
-    pattern should implement a ``__call__`` function, and also make use of the 
+    pattern should implement a ``__call__`` function, and also make use of the
     ``_preprocess()`` and ``_postprocess`` type handling capabilities of this
-    class. 
+    class.
 
     When called, an ``Injector`` typically accepts either ``pandas.DataFrame``
     or ``numpy.ndarray`` data, along with other parameters for the injection
     technique it is modeling, and returns the data with drift injected over a
-    specified window. 
+    specified window.
     """
+
     def _preprocess(self, data, *columns, return_df=False):
         """
-        Preprocesses data and any column indicators into desired format. By 
+        Preprocesses data and any column indicators into desired format. By
         default returns data as ``numpy.ndarray`` and any columns as integer
-        column indices unless told otherwise. 
+        column indices unless told otherwise.
 
         Note:
         * ``*columns`` is used to preprocess any columns used by a sub-class'
         ``__call__`` function, and does not necessarily represent ALL columns
         * if the input is in ``numpy`` format, and a ``numpy.ndarray`` is
         desired, ``*columns`` should be integers
-        * ``*columns`` should only be string names if the input is a 
+        * ``*columns`` should only be string names if the input is a
         ``pandas.DataFrame``
 
         Args:
@@ -39,7 +40,7 @@ class Injector(ABC):
 
         Returns:
             tuple: first item is a deep-copy of the data in ``numpy.ndarray``,
-                unless ``return_df`` is True, in which case a 
+                unless ``return_df`` is True, in which case a
                 ``pandas.DataFrame`` is returned. Second item is the column
                 indicators as integer indexes, unless ``return_df`` is True, in
                 which case the column indicators should be strings and are
@@ -65,11 +66,11 @@ class Injector(ABC):
             return pd.DataFrame(copy, columns=self._columns), columns
         else:
             return copy, column_idxs
-    
+
     def _postprocess(self, data):
         """
         Postprocesses data and returns as its initial type, which was
-        determined and recorded during preprocessing. 
+        determined and recorded during preprocessing.
 
         Args:
             data (``numpy.ndarray`` or ``pandas.DataFrame``): data to
@@ -80,13 +81,13 @@ class Injector(ABC):
                 transformed into its original state
         """
         # if column names were stored and data is not already DF, return DF
-        if self._columns is not None and not isinstance(data, pd.DataFrame):   
+        if self._columns is not None and not isinstance(data, pd.DataFrame):
             return pd.DataFrame(data, columns=self._columns)
 
         # if column names not stored and data is DF, return original ndarray
         elif self._columns is None and isinstance(data, pd.DataFrame):
             return data.to_numpy()
-        
+
         # if column names stored and data is DF, return unchanged
         # if column names not stored and data is ndarray, return unchanged
         else:
@@ -94,8 +95,5 @@ class Injector(ABC):
 
     @abstractclassmethod
     def __call__(self):
-        """ Implemented by sub-classes. """
+        """Implemented by sub-classes."""
         raise NotImplementedError
-
-
-

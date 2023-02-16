@@ -11,6 +11,7 @@ class BrownianNoiseInjector(Injector):
 
     Ref. :cite:t:`fields2019mitigating`
     """
+
     def __call__(self, data, from_index, to_index, col, x0, random_state=None):
         """
         Args:
@@ -52,7 +53,7 @@ class BrownianNoiseInjector(Injector):
         """
         # set seed if given
         np.random.seed(random_state)
-        
+
         # perform random walk
         w = np.ones(steps) * x0
         for i in range(1, steps):

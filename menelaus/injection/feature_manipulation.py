@@ -9,6 +9,7 @@ class FeatureSwapInjector(Injector):
 
     Ref. :cite:t:`souza2020challenges`
     """
+
     def __call__(self, data, from_index, to_index, col_1, col_2):
         """
         Args:
@@ -22,7 +23,7 @@ class FeatureSwapInjector(Injector):
             np.ndarray or pd.DataFrame: copy of data, with two columns swapped
                 over given indices
         """
-        # handle type 
+        # handle type
         ret, (col_1, col_2) = self._preprocess(data, col_1, col_2)
 
         # swap columns
@@ -43,10 +44,11 @@ class FeatureCoverInjector(Injector):
 
     Note:
     * This function cannot hide a feature over a window, as the appearance of the
-        column outside the window may raise errors. 
+        column outside the window may raise errors.
 
     Ref. :cite:t:`souza2020challenges`
     """
+
     def __call__(self, data, col, sample_size, random_state=None):
         """
         Args:
@@ -70,4 +72,3 @@ class FeatureCoverInjector(Injector):
         # handle type and return
         ret = self._postprocess(ret)
         return ret
-

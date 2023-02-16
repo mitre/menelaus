@@ -1,5 +1,4 @@
 import pytest
-import pandas as pd
 import numpy as np
 
 
@@ -37,8 +36,21 @@ def test_probability_shift_1():
     assert not np.array_equal(data[1:9], new_data[1:9])
 
 def test_probability_shift_2():
-    
-    pass
+    ''' Check drift injected when not all classes specified '''
+    i = LabelProbabilityInjector()
+    data = np.array([
+        [0,0,0], [1,0,0], [2,0,0], [3,0,0], [4,0,0], [5,0,0],
+        [6,0,0], [7,0,0], [8,0,0], [9,0,0]
+    ])
+    probs = {k:0.075 for k in range(2,10)}
+    np.random.seed(0)
+    _ = i(data, from_index=0, to_index=10, target_col=0, class_probabilities=probs)
+    # individual = class prob / class size, + leftover prob from unspecified classes
+    # 1-(8*0.075)=0.4, classes 0, 1 will have prob 0.2 each
+    # class sizes are 1, expected distr is simple
+    expected_distr = [0.2, 0.2, 0.075, 0.075, 0.075, 0.075, 0.075, 0.075, 0.075, 0.075]
+    p_distr = np.round(i._p_distribution, decimals=3)
+    assert np.array_equal(p_distr, expected_distr)
 
 def test_probability_shift_4():
     ''' Check ValueError when probabilities add to >1 '''
@@ -57,19 +69,6 @@ def test_probability_shift_5():
     with pytest.raises(ValueError):
         probs = {1000: 0.5}
         i(data, from_index=0, to_index=3, target_col=0, class_probabilities=probs)
-
-def test_probability_shift_6():
-    ''' Check drift injected when not all classes specified '''
-    np.random.seed(0)
-    data = np.array([
-        [0,0,0], [1,0,0], [2,0,0], [3,0,0], [4,0,0], [5,0,0],
-        [6,0,0], [7,0,0], [8,0,0], [9,0,0]
-    ])
-    probs = {k:0.1 for k in range(2,10)}
-    new_data = class_probability_shift(data, 0, 1, 9, probs)
-    assert np.array_equal(data[0], new_data[0])
-    assert np.array_equal(data[-1], new_data[-1])
-    assert not np.array_equal(data[1:9], new_data[1:9])
 
 def test_dirichlet_shift_1():
     ''' Ensure Dirichlet shift causes some drift '''
