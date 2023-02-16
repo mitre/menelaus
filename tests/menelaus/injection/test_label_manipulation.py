@@ -7,50 +7,20 @@ from menelaus.injection import LabelJoinInjector, LabelSwapInjector, LabelProbab
 
 
 def test_join_1():
-    ''' Check correct join in pd.DataFrame '''
-    data = pd.DataFrame({'a': [0,0,1,1], 'b': [5,5,5,5]})
-    expected_data = pd.DataFrame({'a': [0,2,2,1], 'b':[5,5,5,5]})
-    data = class_join(data, 'a', 1, 3, 0, 1, 2)
-    assert data.equals(expected_data)
-
-def test_join_2():
-    ''' Check correct join in numpy.ndarray '''
+    ''' Check correct join behavior '''
+    i = LabelJoinInjector()
     data = np.array([[0,5], [0,5], [1,5], [1,5]])
     expected_data = np.array([[0,5], [2,5], [2,5], [1,5]])
-    data = class_join(data, 0, 1, 3, 0, 1, 2)
-    assert np.array_equal(data, expected_data)
-
-def test_join_3():
-    ''' Check ValueError if data neither pandas.DataFrame nor np.ndarray '''
-    data = [[0,0], [1,1], [0,2], [1,3]]
-    with pytest.raises(ValueError):
-        class_join(
-            data, target_col=0, class_1=0, class_2=1,
-            new_class=2, from_index=1, to_index=3
-        )
+    copy = i(data, from_index=1, to_index=3, target_col=0, class_1=0, class_2=1, new_class=2)
+    assert np.array_equal(copy, expected_data)
 
 def test_swap_1():
     ''' Check correct swap in pd.DataFrame '''
-    data = pd.DataFrame({'a': [0,0,1,1], 'b': [5,5,6,6]})
-    expected_data = pd.DataFrame({'a': [1,1,0,0], 'b':[5,5,6,6]})
-    data = class_swap(data, 'a', 0, 4, 0, 1)
-    assert data.equals(expected_data)
-
-def test_swap_2():
-    ''' Check correct swap in numpy.ndarray'''
+    i = LabelSwapInjector()
     data = np.array([[0,5], [0,5], [1,6], [1,6]])
     expected_data = np.array([[1,5], [1,5], [0,6], [0,6]])
-    data = class_swap(data, 0, 0, 4, 0, 1)
-    assert np.array_equal(data, expected_data)
-
-def test_swap_3():
-    ''' Check ValueError if data neither pandas.DataFrame nor np.ndarray '''
-    data = [[0,0], [1,1], [0,2], [1,3]]
-    with pytest.raises(ValueError):
-        class_swap(
-            data, target_col=0, class_1=0, class_2=1, 
-            from_index=1, to_index=3
-        )
+    copy = i(data, from_index=0, to_index=4, target_col=0, class_1=0, class_2=1)
+    assert np.array_equal(copy, expected_data)
 
 def test_probability_shift_1():
     ''' Ensure probability shift causes some drift in numpy.ndarray '''
@@ -78,15 +48,6 @@ def test_probability_shift_2():
     assert data.iloc[-1].equals(new_data.iloc[-1])
     assert not np.array_equal(data[1:9], new_data[1:9])
     assert list(new_data.columns) == ['a', 'b']
-
-def test_probability_shift_3():
-    ''' Check ValueError if data neither pandas.DataFrame nor numpy.ndarray '''
-    data = [[0,0], [1,1], [0,2], [1,3]]
-    with pytest.raises(ValueError):
-        class_probability_shift(
-            data, target_col=0, from_index=0, to_index=2, 
-            class_probabilities={0: 0.5}
-        )
 
 def test_probability_shift_4():
     ''' Check ValueError when probabilities add to >1 '''
