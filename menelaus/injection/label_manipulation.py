@@ -214,6 +214,12 @@ class LabelDirichletInjector(Injector):
 
         # use class_probability_shift with fully-specified distribution
         label_prob_injector = LabelProbabilityInjector()
-        return label_prob_injector(data, target_col, from_index, to_index, self._dirichlet_probabilities)
-
+        return label_prob_injector(
+            data, 
+            from_index=from_index,
+            to_index=to_index,
+            target_col=target_col,
+            class_probabilities=self._dirichlet_probabilities
+        )
+    
 # endregion
