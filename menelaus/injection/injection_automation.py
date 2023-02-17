@@ -184,6 +184,26 @@ class InjectionTesting:
         return detector, drift_state
 
 
+    def test_kdq_tree_batch_detector(self, cols, group_col=None):
+        if not group_col:
+            group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+
+            while group_col in cols:
+                group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+
+        reference_df = self.df[self.df[group_col] == self.df[group_col].min()][cols]
+        test_df = self.df[self.df[group_col] != self.df[group_col].min()]
+        detector = KdqTreeBatch()
+        detector.set_reference(reference_df)
+        drift_state = []
+
+        for group_id, subset_data in test_df.groupby(group_col):
+            detector.update(subset_data[cols])
+            drift_state.append(detector.drift_state)
+
+        return detector, drift_state
+
+
     def test_kdq_tree_streaming_detector(self, cols, window_size=500, alpha=0.05, bootstrap_samples=500, count_ubound=50):
         detector = KdqTreeStreaming(window_size, alpha, bootstrap_samples, count_ubound)
         drift_state = []
@@ -267,4 +287,4 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_hdddm_detector(drift_cols)
+    tester.test_kdq_tree_batch_detector(drift_cols)
