@@ -1,13 +1,16 @@
-"""This module contains functions with which to artificially inject drift into a dataset."""
+"""
+This module contains classes with which to artificially inject drift into a dataset.
+"""
 
 from menelaus.injection.feature_manipulation import (
-    feature_swap,
-    feature_hide_and_sample,
+    FeatureSwapInjector,
+    FeatureCoverInjector,
 )
-from menelaus.injection.class_manipulation import (
-    class_swap,
-    class_join,
-    class_dirichlet_shift,
-    class_probability_shift,
+from menelaus.injection.injector import Injector
+from menelaus.injection.label_manipulation import (
+    LabelSwapInjector,
+    LabelJoinInjector,
+    LabelProbabilityInjector,
+    LabelDirichletInjector,
 )
-from menelaus.injection.noise import brownian_noise, random_walk
+from menelaus.injection.noise import BrownianNoiseInjector
