@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import random
+import sklearn
 from scipy.io.arff import loadarff
 
 from menelaus.concept_drift import LinearFourRates, ADWINAccuracy, DDM, EDDM, STEPD, MD3
@@ -58,10 +59,28 @@ class InjectionTesting:
 
 
     def select_rows(self, start, end):
-        start_drift = int(start * len(self.df))
-        end_drift = int(end * len(self.df))
+        start_row = int(start * len(self.df))
+        end_row = int(end * len(self.df))
 
-        return [start_drift, end_drift]
+        return [start_row, end_row]
+
+
+    def train_linear_model(self, x_cols, y_col=None, start=0, end=0.75):
+        if not y_col:
+            if len(x_cols) < len(self.numeric_cols):
+                y_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
+
+                while y_col in x_cols:
+                    y_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
+            else:
+                raise ValueError('Insufficient numerical columns to select a y variable')
+
+        model = sklearn.linear_model.LinearRegression()
+        start_train, end_train = self.select_rows(start, end)
+        train_df = self.df.iloc[start_train:end_train, ]
+        model.fit(train_df[x_cols], train_df[y_col])
+
+        return model, y_col
 
 
     def inject_random_brownian_noise(self, x, start=.75, end=1, num_drift_cols=1):
@@ -132,12 +151,16 @@ class InjectionTesting:
         return rand_col
 
 
-    def test_adwin_detector(self, cols):
+    def test_adwin_detector(self, cols, model=None, y_col=None):
+        if not model:
+            model, y_col = self.train_linear_model(x_cols=cols)
+
+        self.df['y_pred'] = model.predict(self.df[cols])
         detector = ADWINAccuracy()
         drift_state = []
 
         for i, row in self.df.iterrows():
-            detector.update(X=None, y_true=row[cols], y_pred=0)
+            detector.update(X=row[cols], y_true=row[y_col], y_pred=row['y_pred'])
             drift_state.append(detector.drift_state)
 
         self.df['drift_state'] = drift_state
@@ -287,4 +310,4 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_kdq_tree_batch_detector(drift_cols)
+    tester.test_adwin_detector(drift_cols)
