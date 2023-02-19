@@ -65,22 +65,18 @@ class InjectionTesting:
         return [start_row, end_row]
 
 
-    def train_linear_model(self, x_cols, y_col=None, start=0, end=0.75):
-        if not y_col:
-            if len(x_cols) < len(self.numeric_cols):
-                y_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
-
-                while y_col in x_cols:
-                    y_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
-            else:
-                raise ValueError('Insufficient numerical columns to select a y variable')
+    def train_linear_model(self, x_cols=None, y_col=None, start=0, end=0.75):
+        if not x_cols or not y_col:
+            y_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
+            x_cols = self.numeric_cols.copy()
+            x_cols.remove(y_col)
 
         model = sklearn.linear_model.LinearRegression()
         start_train, end_train = self.select_rows(start, end)
         train_df = self.df.iloc[start_train:end_train, ]
         model.fit(train_df[x_cols], train_df[y_col])
 
-        return model, y_col
+        return model, x_cols, y_col
 
 
     def inject_random_brownian_noise(self, x, start=.75, end=1, num_drift_cols=1):
@@ -151,16 +147,16 @@ class InjectionTesting:
         return rand_col
 
 
-    def test_adwin_detector(self, cols, model=None, y_col=None):
+    def test_adwin_detector(self, model=None, x_cols=None, y_col=None):
         if not model:
-            model, y_col = self.train_linear_model(x_cols=cols)
+            model, x_cols, y_col = self.train_linear_model(x_cols=x_cols, y_col=y_col)
 
-        self.df['y_pred'] = model.predict(self.df[cols])
+        self.df['y_pred'] = model.predict(self.df[x_cols])
         detector = ADWINAccuracy()
         drift_state = []
 
         for i, row in self.df.iterrows():
-            detector.update(X=row[cols], y_true=row[y_col], y_pred=row['y_pred'])
+            detector.update(X=row[x_cols], y_true=row[y_col], y_pred=row['y_pred'])
             drift_state.append(detector.drift_state)
 
         self.df['drift_state'] = drift_state
@@ -310,4 +306,5 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_adwin_detector(drift_cols)
+    tester.test_adwin_detector()
+    print(tester.df['drift_state'].describe())
