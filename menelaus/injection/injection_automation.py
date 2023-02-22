@@ -235,6 +235,24 @@ class InjectionTesting:
         return detector
 
 
+    def test_lfr_detector(self, model=None, x_cols=None, y_col=None, time_decay_factor=0.6, warning_level=0.01,
+                          detect_level=0.001, num_mc=5000, burn_in=10, subsample=10):
+        if not model:
+            model, x_cols, y_col = self.train_linear_model(x_cols=x_cols, y_col=y_col)
+
+        self.df['y_pred'] = model.predict(self.df[x_cols])
+        detector = LinearFourRates(time_decay_factor=time_decay_factor, warning_level=warning_level, detect_level=detect_level,
+                                   num_mc=num_mc, burn_in=burn_in, subsample=subsample)
+        drift_state = []
+
+        for i, row in self.df.iterrows():
+            detector.update(X=row[x_cols], y_true=row[y_col], y_pred=row['y_pred'])
+            drift_state.append(detector.drift_state)
+
+        self.df['drift_state'] = drift_state
+        return detector
+
+
     def test_nndvi_detector(self, cols, group_col=None, k_nn=2, sampling_times=50):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
@@ -306,5 +324,5 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_adwin_detector()
+    tester.test_lfr_detector()
     print(tester.df['drift_state'].describe())
