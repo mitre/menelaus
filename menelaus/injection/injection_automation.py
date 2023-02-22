@@ -79,6 +79,24 @@ class InjectionTesting:
         return model, x_cols, y_col
 
 
+    def train_logistic_model(self, x_cols=None, y_col=None, start=0, end=0.75):
+        if not x_cols or not y_col:
+            y_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+            x_cols = self.numeric_cols.copy()
+
+        encoder = sklearn.preprocessing.LabelEncoder()
+        encoder.fit(self.df[y_col])
+        self.df[f'{y_col}_encoded'] = encoder.transform(self.df[y_col])
+        y_col = f'{y_col}_encoded'
+
+        model = sklearn.linear_model.LogisticRegression()
+        start_train, end_train = self.select_rows(start, end)
+        train_df = self.df.iloc[start_train:end_train, ]
+        model.fit(train_df[x_cols], train_df[y_col])
+
+        return model, x_cols, y_col
+
+
     def inject_random_brownian_noise(self, x, start=.75, end=1, num_drift_cols=1):
         rand_cols = []
         start_drift, end_drift = self.select_rows(start, end)
@@ -238,7 +256,7 @@ class InjectionTesting:
     def test_lfr_detector(self, model=None, x_cols=None, y_col=None, time_decay_factor=0.6, warning_level=0.01,
                           detect_level=0.001, num_mc=5000, burn_in=10, subsample=10):
         if not model:
-            model, x_cols, y_col = self.train_linear_model(x_cols=x_cols, y_col=y_col)
+            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
 
         self.df['y_pred'] = model.predict(self.df[x_cols])
         detector = LinearFourRates(time_decay_factor=time_decay_factor, warning_level=warning_level, detect_level=detect_level,
