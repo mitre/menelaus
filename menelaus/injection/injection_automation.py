@@ -220,6 +220,22 @@ class InjectionTesting:
         return detector
 
 
+    def test_eddm_detector(self, model=None, x_cols=None, y_col=None, n_threshold=30, warning_thresh=0.7, drift_thresh=0.5):
+        if not model:
+            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
+
+        self.df['y_pred'] = model.predict(self.df[x_cols])
+        detector = EDDM(n_threshold=n_threshold, warning_thresh=warning_thresh, drift_thresh=drift_thresh)
+        drift_state = []
+
+        for i, row in self.df.iterrows():
+            detector.update(y_true=row[y_col], y_pred=row['y_pred'])
+            drift_state.append(detector.drift_state)
+
+        self.df['drift_state'] = drift_state
+        return detector
+
+
     def test_hdddm_detector(self, cols, group_col=None, subsets=8):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
@@ -361,5 +377,5 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_ddm_detector()
+    tester.test_eddm_detector()
     print(tester.df['drift_state'].describe())
