@@ -344,6 +344,22 @@ class InjectionTesting:
         return detector
 
 
+    def test_stepd_detector(self, model=None, x_cols=None, y_col=None, window_size=250):
+        if not model:
+            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
+
+        self.df['y_pred'] = model.predict(self.df[x_cols])
+        detector = STEPD(window_size=window_size)
+        drift_state = []
+
+        for i, row in self.df.iterrows():
+            detector.update(y_true=row[y_col], y_pred=row['y_pred'])
+            drift_state.append(detector.drift_state)
+
+        self.df['drift_state'] = drift_state
+        return detector
+
+
     def plot_drift_scatter(self, cols, output_file='plots/drift_scatter_test.png'):
         plt.figure(figsize=(20, 6))
         y_min = None
@@ -377,5 +393,5 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_eddm_detector()
+    tester.test_stepd_detector()
     print(tester.df['drift_state'].describe())
