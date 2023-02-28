@@ -184,15 +184,18 @@ class InjectionTesting:
         return detector
 
 
-    def test_cbdb_detector(self, cols, group_col=None, subsets=8):
+    def test_cbdb_detector(self, cols, group_col=None, reference_group=None, subsets=8):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
             while group_col in cols:
                 group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
-        reference_df = self.df[self.df[group_col] == self.df[group_col].min()][cols]
-        test_df = self.df[self.df[group_col] != self.df[group_col].min()]
+        if not reference_group:
+            reference_group = self.df[group_col].min()
+
+        reference_df = self.df[self.df[group_col] == reference_group][cols]
+        test_df = self.df[self.df[group_col] != reference_group]
         detector = CDBD(subsets=subsets)
         detector.set_reference(reference_df)
         drift_state = []
@@ -236,15 +239,18 @@ class InjectionTesting:
         return detector
 
 
-    def test_hdddm_detector(self, cols, group_col=None, subsets=8):
+    def test_hdddm_detector(self, cols, group_col=None, reference_group=None, subsets=8):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
             while group_col in cols:
                 group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
-        reference_df = self.df[self.df[group_col] == self.df[group_col].min()][cols]
-        test_df = self.df[self.df[group_col] != self.df[group_col].min()]
+        if not reference_group:
+            reference_group = self.df[group_col].min()
+
+        reference_df = self.df[self.df[group_col] == reference_group][cols]
+        test_df = self.df[self.df[group_col] != reference_group]
         detector = HDDDM(subsets=subsets)
         detector.set_reference(reference_df)
         drift_state = []
@@ -256,15 +262,18 @@ class InjectionTesting:
         return detector, drift_state
 
 
-    def test_kdq_tree_batch_detector(self, cols, group_col=None):
+    def test_kdq_tree_batch_detector(self, cols, group_col=None, reference_group=None):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
             while group_col in cols:
                 group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
-        reference_df = self.df[self.df[group_col] == self.df[group_col].min()][cols]
-        test_df = self.df[self.df[group_col] != self.df[group_col].min()]
+        if not reference_group:
+            reference_group = self.df[group_col].min()
+
+        reference_df = self.df[self.df[group_col] == reference_group][cols]
+        test_df = self.df[self.df[group_col] != reference_group]
         detector = KdqTreeBatch()
         detector.set_reference(reference_df)
         drift_state = []
@@ -306,12 +315,15 @@ class InjectionTesting:
         return detector
 
 
-    def test_nndvi_detector(self, cols, group_col=None, k_nn=2, sampling_times=50):
+    def test_nndvi_detector(self, cols, group_col=None, reference_group=None, k_nn=2, sampling_times=50):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
             while group_col in cols:
                 group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+
+        if not reference_group:
+            reference_group = self.df[group_col].min()
 
         filtered_df = self.df.copy()
         for filter_col in filtered_df.columns:
@@ -323,7 +335,7 @@ class InjectionTesting:
         batches = {group_id: group.sample(frac=0.1).drop(columns=group_col).values for group_id, group in grouped_df}
 
         detector = NNDVI(k_nn=k_nn, sampling_times=sampling_times)
-        detector.set_reference(batches.pop(min(self.df[group_col])))
+        detector.set_reference(batches.pop(reference_group))
 
         for group_id, batch in batches.items():
             detector.update(pd.DataFrame(batch))
