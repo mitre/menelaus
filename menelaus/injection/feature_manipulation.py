@@ -10,6 +10,7 @@ class FeatureShiftInjector(Injector):
 
     The alpha is a small value used to inject drift even if the mean is 0.
     """
+
     def __call__(self, data, from_index, to_index, col, shift_factor, alpha=0.001):
         """
         Args:
@@ -19,7 +20,7 @@ class FeatureShiftInjector(Injector):
             col (int or str): column index/name of column to shift
             shift_factor (float): percentage of mean by which to shift data
             alpha (float): small initial value to add to shift amount, in case mean is 0. Default 0.001
-            
+
         Returns:
             np.ndarray or pd.DataFrame: copy of data, with two columns swapped
                 over given indices
@@ -28,9 +29,11 @@ class FeatureShiftInjector(Injector):
         ret, (col,) = self._preprocess(data, col)
 
         # add shift
-        section = ret[from_index:to_index, col]
-        section_mean = np.mean(section)
-        ret[from_index:to_index, col] = section + ((alpha + section_mean) * shift_factor)
+        self._section_mean = np.mean(ret[from_index:to_index, col])
+        self._delta = (alpha + self._section_mean) * shift_factor
+        ret[from_index:to_index, col] = np.add(
+            ret[from_index:to_index, col], self._delta
+        )
 
         # handle type and return
         ret = self._postprocess(ret)
