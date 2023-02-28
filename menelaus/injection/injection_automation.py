@@ -32,6 +32,7 @@ def select_random_classes(series):
 class InjectionTesting:
     def __init__(self, data_path, seed=None, numeric_cols=None, categorical_cols=None):
         file_type = data_path.split('.')[-1]
+        self.seed = seed
         self.numeric_cols = []
         self.categorical_cols = []
 
@@ -315,6 +316,29 @@ class InjectionTesting:
         return detector
 
 
+    def test_md3_detector(self, model=None, x_cols=None, y_col=None, sensitivity=1.5, oracle_labels=1000):
+        if not model:
+            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
+
+        cols = x_cols.copy()
+        cols.append(y_col)
+        self.df['y_pred'] = model.predict(self.df[x_cols])
+        detector = MD3(clf=model, sensitivity=sensitivity, oracle_data_length_required=oracle_labels)
+        detector.set_reference(X=self.df[cols], target_name=y_col)
+        drift_state = []
+
+        for i, row in self.df.iterrows():
+            if detector.waiting_for_oracle:
+                oracle_label = pd.DataFrame([row[cols]])
+                detector.give_oracle_label(oracle_label)
+
+            detector.update(X=pd.DataFrame([row[x_cols]]), y_true=row[y_col], y_pred=row['y_pred'])
+            drift_state.append(detector.drift_state)
+
+        self.df['drift_state'] = drift_state
+        return detector
+
+
     def test_nndvi_detector(self, cols, group_col=None, reference_group=None, k_nn=2, sampling_times=50):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
@@ -405,5 +429,5 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_stepd_detector()
+    tester.test_md3_detector()
     print(tester.df['drift_state'].describe())
