@@ -80,7 +80,7 @@ class InjectionTesting:
         return model, x_cols, y_col
 
 
-    def train_logistic_model(self, x_cols=None, y_col=None, start=0, end=0.75, limit_classes=None):
+    def train_classifier_model(self,  model_type='svc', x_cols=None, y_col=None, start=0, end=0.75, limit_classes=None):
         if not x_cols or not y_col:
             y_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
             x_cols = self.numeric_cols.copy()
@@ -93,7 +93,13 @@ class InjectionTesting:
         if limit_classes:
             self.df = self.df[self.df[y_col] < limit_classes]
 
-        model = sklearn.linear_model.LogisticRegression()
+        if model_type == 'svc':
+            model = sklearn.svm.SVC(kernel='linear')
+        elif model_type == 'logistic':
+            model = sklearn.linear_model.LogisticRegression()
+        else:
+            raise ValueError(f'Model type not supported: {model_type}')
+
         start_train, end_train = self.select_rows(start, end)
         train_df = self.df.iloc[start_train:end_train, ]
         model.fit(train_df[x_cols], train_df[y_col])
@@ -210,7 +216,7 @@ class InjectionTesting:
 
     def test_ddm_detector(self, model=None, x_cols=None, y_col=None, n_threshold=100, warning_scale=7, drift_scale=10):
         if not model:
-            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
+            model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col)
 
         self.df['y_pred'] = model.predict(self.df[x_cols])
         detector = DDM(n_threshold=n_threshold, warning_scale=warning_scale, drift_scale=drift_scale)
@@ -226,7 +232,7 @@ class InjectionTesting:
 
     def test_eddm_detector(self, model=None, x_cols=None, y_col=None, n_threshold=30, warning_thresh=0.7, drift_thresh=0.5):
         if not model:
-            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
+            model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col)
 
         self.df['y_pred'] = model.predict(self.df[x_cols])
         detector = EDDM(n_threshold=n_threshold, warning_thresh=warning_thresh, drift_thresh=drift_thresh)
@@ -301,7 +307,7 @@ class InjectionTesting:
     def test_lfr_detector(self, model=None, x_cols=None, y_col=None, time_decay_factor=0.6, warning_level=0.01,
                           detect_level=0.001, num_mc=5000, burn_in=10, subsample=10):
         if not model:
-            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col, limit_classes=2)
+            model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col, limit_classes=2)
 
         self.df['y_pred'] = model.predict(self.df[x_cols])
         detector = LinearFourRates(time_decay_factor=time_decay_factor, warning_level=warning_level, detect_level=detect_level,
@@ -318,7 +324,7 @@ class InjectionTesting:
 
     def test_md3_detector(self, model=None, x_cols=None, y_col=None, sensitivity=1.5, oracle_labels=1000):
         if not model:
-            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
+            model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col)
 
         cols = x_cols.copy()
         cols.append(y_col)
@@ -382,7 +388,7 @@ class InjectionTesting:
 
     def test_stepd_detector(self, model=None, x_cols=None, y_col=None, window_size=250):
         if not model:
-            model, x_cols, y_col = self.train_logistic_model(x_cols=x_cols, y_col=y_col)
+            model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col)
 
         self.df['y_pred'] = model.predict(self.df[x_cols])
         detector = STEPD(window_size=window_size)
