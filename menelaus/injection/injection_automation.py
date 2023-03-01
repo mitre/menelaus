@@ -44,15 +44,15 @@ class InjectionTesting:
         else:
             raise ValueError(f'Invalid file type: {file_type}')
 
-        if numeric_cols is None or categorical_cols is None:
+        if not numeric_cols or not categorical_cols:
             for col in self.df.columns:
                 if pd.api.types.is_numeric_dtype(self.df[col]) and numeric_cols is None:
                     self.numeric_cols.append(col)
                 elif self.df[col].nunique() < len(self.df) and categorical_cols is None:
                     self.categorical_cols.append(col)
-        if numeric_cols is not None:
+        if numeric_cols:
             self.numeric_cols = numeric_cols
-        if categorical_cols is not None:
+        if categorical_cols:
             self.categorical_cols = categorical_cols
 
         if seed:
@@ -322,10 +322,14 @@ class InjectionTesting:
         return detector
 
 
-    def test_md3_detector(self, model=None, x_cols=None, y_col=None, sensitivity=1.5, oracle_labels=1000):
+    def test_md3_detector(self, model=None, x_cols=None, y_col=None, start=0, end=0.75, sensitivity=1.5, oracle_labels=None):
         if not model:
-            model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col)
+            model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col, start=start, end=end)
 
+        if not oracle_labels:
+            oracle_labels = self.df[y_col].nunique()
+
+        training_size = int(len(self.df) * end)
         cols = x_cols.copy()
         cols.append(y_col)
         self.df['y_pred'] = model.predict(self.df[x_cols])
@@ -333,8 +337,8 @@ class InjectionTesting:
         detector.set_reference(X=self.df[cols], target_name=y_col)
         drift_state = []
 
-        for i, row in self.df.iterrows():
-            if detector.waiting_for_oracle:
+        for i, row in self.df.iloc[training_size:len(self.df), ].iterrows():
+            while detector.waiting_for_oracle:
                 oracle_label = pd.DataFrame([row[cols]])
                 detector.give_oracle_label(oracle_label)
 
