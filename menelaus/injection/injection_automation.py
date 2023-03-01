@@ -322,31 +322,35 @@ class InjectionTesting:
         return detector
 
 
-    def test_md3_detector(self, model=None, x_cols=None, y_col=None, start=0, end=0.75, sensitivity=1.5, oracle_labels=None):
+    def test_md3_detector(self, model=None, x_cols=None, y_col=None, start=0, end=0.75, sensitivity=1.5, oracle_labels=1000):
         if not model:
             model, x_cols, y_col = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col, start=start, end=end)
+            retrain_model, _, _ = self.train_classifier_model(model_type='svc', x_cols=x_cols, y_col=y_col, start=start, end=end)
 
-        if not oracle_labels:
-            oracle_labels = self.df[y_col].nunique()
-
-        training_size = int(len(self.df) * end)
+        end_train = int(end * len(self.df))
         cols = x_cols.copy()
         cols.append(y_col)
         self.df['y_pred'] = model.predict(self.df[x_cols])
+        self.df['y_pred_retrain'] = retrain_model.predict(self.df[x_cols])
         detector = MD3(clf=model, sensitivity=sensitivity, oracle_data_length_required=oracle_labels)
         detector.set_reference(X=self.df[cols], target_name=y_col)
         drift_state = []
 
-        for i, row in self.df.iloc[training_size:len(self.df), ].iterrows():
-            while detector.waiting_for_oracle:
+        for i, row in self.df.iloc[end_train:len(self.df), ].iterrows():
+            if detector.waiting_for_oracle:
                 oracle_label = pd.DataFrame([row[cols]])
                 detector.give_oracle_label(oracle_label)
 
-            detector.update(X=pd.DataFrame([row[x_cols]]), y_true=row[y_col], y_pred=row['y_pred'])
-            drift_state.append(detector.drift_state)
+                if not detector.waiting_for_oracle:
+                    retrain_model.fit(detector.reference_batch_features, detector.reference_batch_target.values.ravel())
+                    self.df['y_pred_retrain'] = retrain_model.predict(self.df[x_cols])
 
-        self.df['drift_state'] = drift_state
-        return detector
+                drift_state.append(detector.drift_state)
+            else:
+                detector.update(X=pd.DataFrame([row[x_cols]]), y_true=row[y_col], y_pred=row['y_pred_retrain'])
+                drift_state.append(detector.drift_state)
+
+        return detector, drift_state
 
 
     def test_nndvi_detector(self, cols, group_col=None, reference_group=None, k_nn=2, sampling_times=50):
@@ -439,5 +443,4 @@ if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
     drift_cols = tester.inject_random_brownian_noise(10)
-    tester.test_md3_detector()
-    print(tester.df['drift_state'].describe())
+    detector, drift = tester.test_md3_detector()
