@@ -1,6 +1,6 @@
 import numpy as np
 
-from menelaus.injection import FeatureSwapInjector, FeatureCoverInjector
+from menelaus.injection import FeatureSwapInjector, FeatureCoverInjector, FeatureShiftInjector
 
 
 def test_feature_swap_1():
@@ -19,3 +19,12 @@ def test_feature_cover_1():
     assert copy.shape == (4,1)
     assert np.array_equal(np.where(copy[:,0]==2)[0], [0,1])
     assert np.array_equal(np.where(copy[:,0]==3)[0], [2,3])
+
+def test_feature_shift_1():
+    ''' Check correct feature cover behavior '''
+    data = np.array([[0.0], [0.0], [3.0]])
+    i = FeatureShiftInjector()
+    copy = i(data=data, from_index=0, to_index=3, col=0, shift_factor=0.5, alpha=0.001)
+    # delta = 0.5(0.001 + mean) = 0.5(1.001) = 0.5005
+    exp = np.array([[0.5005], [0.5005], [3.5005]])
+    assert np.allclose(copy, exp)

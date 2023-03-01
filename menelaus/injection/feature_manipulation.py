@@ -1,4 +1,43 @@
+import numpy as np
+
 from menelaus.injection.injector import Injector
+
+
+class FeatureShiftInjector(Injector):
+    """
+    Shifts a column in a dataset by increasing it according to a formula:
+    * ``column = column + (shift_factor * (alpha + mean_column))``
+
+    The alpha is a small value used to inject drift even if the mean is 0.
+    """
+
+    def __call__(self, data, from_index, to_index, col, shift_factor, alpha=0.001):
+        """
+        Args:
+            data (np.ndarray or pd.DataFrame): data to inject with drift
+            from_index (int): row index at which to start shift
+            to_index (int): row index at which to end (non-inclusive) shift
+            col (int or str): column index/name of column to shift
+            shift_factor (float): percentage of mean by which to shift data
+            alpha (float): small initial value to add to shift amount, in case mean is 0. Default 0.001
+
+        Returns:
+            np.ndarray or pd.DataFrame: copy of data, with two columns swapped
+                over given indices
+        """
+        # handle type
+        ret, (col,) = self._preprocess(data, col)
+
+        # add shift
+        self._section_mean = np.mean(ret[from_index:to_index, col])
+        self._delta = (alpha + self._section_mean) * shift_factor
+        ret[from_index:to_index, col] = np.add(
+            ret[from_index:to_index, col], self._delta
+        )
+
+        # handle type and return
+        ret = self._postprocess(ret)
+        return ret
 
 
 class FeatureSwapInjector(Injector):
