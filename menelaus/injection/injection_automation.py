@@ -353,12 +353,13 @@ class InjectionTesting:
         return detector, drift_state
 
 
-    def test_nndvi_detector(self, cols, group_col=None, reference_group=None, k_nn=2, sampling_times=50):
+    def test_nndvi_detector(self, cols=None, group_col=None, reference_group=None, k_nn=2, sampling_times=50):
         if not group_col:
             group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
-            while group_col in cols:
-                group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
+            if cols:
+                while group_col in cols:
+                    group_col = self.categorical_cols[random.randint(0, len(self.categorical_cols) - 1)]
 
         if not reference_group:
             reference_group = self.df[group_col].min()
@@ -382,12 +383,15 @@ class InjectionTesting:
         return detector, status
 
 
-    def test_pcacd_detector(self, window_size=50, divergence_metric='intersection'):
+    def test_pcacd_detector(self, cols=None, window_size=50, divergence_metric='intersection'):
+        if not cols:
+            cols = self.numeric_cols.copy()
+
         detector = PCACD(window_size=window_size, divergence_metric=divergence_metric)
         drift_state = []
 
         for i, row in self.df.iterrows():
-            detector.update(row)
+            detector.update(row[cols])
             drift_state.append(detector.drift_state)
 
         self.df['drift_state'] = drift_state
@@ -442,5 +446,7 @@ class InjectionTesting:
 if __name__ == '__main__':
     file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
     tester = InjectionTesting(file)
-    drift_cols = tester.inject_random_brownian_noise(10)
-    detector, drift = tester.test_md3_detector()
+    _, classes = tester.inject_random_class_manipulation(manipulation_type='class_swap')
+    nndvi, status = tester.test_nndvi_detector(k_nn=1000, sampling_times=1000)
+    print(classes)
+    print(status)
