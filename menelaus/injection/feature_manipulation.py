@@ -5,7 +5,7 @@ from menelaus.injection.injector import Injector
 
 class FeatureShiftInjector(Injector):
     """
-    Shifts a column in a dataset by increasing it according to a formula:
+    Shifts a column in a dataset by a fixed value relative to the current mean. Formula:
     * ``column = column + (shift_factor * (alpha + mean_column))``
 
     The alpha is a small value used to inject drift even if the mean is 0.
