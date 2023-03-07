@@ -444,9 +444,9 @@ class InjectionTesting:
 
 
 if __name__ == '__main__':
-    file = 'souza_data/INSECTS-abrupt_balanced_norm.arff'
+    file = 'souza_data/gassensor.arff'
     tester = InjectionTesting(file)
     _, classes = tester.inject_random_class_manipulation(manipulation_type='class_swap')
-    nndvi, status = tester.test_nndvi_detector(k_nn=1000, sampling_times=1000)
+    nndvi, status = tester.test_nndvi_detector(k_nn=50, sampling_times=100)
     print(classes)
     print(status)
