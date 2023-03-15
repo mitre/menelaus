@@ -125,7 +125,7 @@ class InjectionTesting:
             rand_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
             rand_cols.append(rand_col)
 
-            self.df = noise.BrownianNoiseInjector.__call__(self.df, rand_col, x, start_drift, end_drift)
+            self.df = noise.BrownianNoiseInjector(self.df, rand_col, x, start_drift, end_drift)
 
         return rand_cols
 
@@ -145,7 +145,7 @@ class InjectionTesting:
             all_rand_classes.append(rand_classes)
 
             if manipulation_type == "class_swap":
-                self.df = label_manipulation.LabelSwapInjector().__call__(
+                self.df = label_manipulation.LabelSwapInjector(
                     self.df,
                     rand_col,
                     rand_classes[0],
@@ -155,7 +155,7 @@ class InjectionTesting:
                 )
             elif manipulation_type == "class_join":
                 new_label = f"{rand_classes[0]}_{rand_classes[1]}"
-                self.df = label_manipulation.LabelJoinInjector().__call__(
+                self.df = label_manipulation.LabelJoinInjector(
                     self.df,
                     rand_col,
                     rand_classes[0],
@@ -201,7 +201,7 @@ class InjectionTesting:
 
             swap_cols = [col_a, col_b]
             all_swap_cols.append(swap_cols)
-            self.df = feature_manipulation.FeatureSwapInjector().__call__(
+            self.df = feature_manipulation.FeatureSwapInjector(
                 self.df, col_a, col_b, start_drift, end_drift
             )
 
@@ -210,7 +210,7 @@ class InjectionTesting:
     def inject_random_feature_hide_and_sample(self):
         rand_col = self.df.columns[random.randint(0, len(self.df.columns) - 1)]
         sample_size = min(self.df[rand_col].value_counts())
-        self.df = feature_manipulation.FeatureCoverInjector().__call__(
+        self.df = feature_manipulation.FeatureCoverInjector(
             self.df, rand_col, sample_size
         )
 
