@@ -9,9 +9,9 @@ from menelaus.concept_drift import LinearFourRates, ADWINAccuracy, DDM, EDDM, ST
 from menelaus.data_drift import PCACD, KdqTreeStreaming, KdqTreeBatch, NNDVI
 from menelaus.data_drift.cdbd import CDBD
 from menelaus.data_drift.hdddm import HDDDM
-import label_manipulation
-import feature_manipulation
-import noise
+from menelaus.injection import label_manipulation
+from menelaus.injection import feature_manipulation
+from menelaus.injection import noise
 
 
 def select_random_classes(series):
@@ -30,19 +30,23 @@ def select_random_classes(series):
 
 
 class InjectionTesting:
-    def __init__(self, data_path, seed=None, numeric_cols=None, categorical_cols=None):
-        file_type = data_path.split(".")[-1]
+    def __init__(self, data, seed=None, numeric_cols=None, categorical_cols=None):
         self.seed = seed
         self.numeric_cols = []
         self.categorical_cols = []
 
-        if file_type == "csv":
-            self.df = pd.read_csv(data_path)
-        elif file_type == "arff":
-            raw_data = loadarff(data_path)
-            self.df = pd.DataFrame(raw_data[0])
+        if isinstance(data, pd.DataFrame):
+            self.df = data.copy()
         else:
-            raise ValueError(f"Invalid file type: {file_type}")
+            file_type = data.split(".")[-1]
+
+            if file_type == "csv":
+                self.df = pd.read_csv(data)
+            elif file_type == "arff":
+                raw_data = loadarff(data)
+                self.df = pd.DataFrame(raw_data[0])
+            else:
+                raise ValueError(f"Invalid file type: {file_type}")
 
         if not numeric_cols or not categorical_cols:
             for col in self.df.columns:
@@ -118,6 +122,7 @@ class InjectionTesting:
         return model, x_cols, y_col
 
     def inject_random_brownian_noise(self, x, start=0.75, end=1, num_drift_cols=1):
+        injector = noise.BrownianNoiseInjector()
         rand_cols = []
         start_drift, end_drift = self.select_rows(start, end)
 
@@ -125,7 +130,7 @@ class InjectionTesting:
             rand_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
             rand_cols.append(rand_col)
 
-            self.df = noise.BrownianNoiseInjector(self.df, rand_col, x, start_drift, end_drift)
+            self.df = injector(self.df, start_drift, end_drift, rand_col, x)
 
         return rand_cols
 
@@ -145,7 +150,8 @@ class InjectionTesting:
             all_rand_classes.append(rand_classes)
 
             if manipulation_type == "class_swap":
-                self.df = label_manipulation.LabelSwapInjector(
+                injector = label_manipulation.LabelSwapInjector()
+                self.df = injector(
                     self.df,
                     rand_col,
                     rand_classes[0],
@@ -154,8 +160,9 @@ class InjectionTesting:
                     end_drift,
                 )
             elif manipulation_type == "class_join":
+                injector = label_manipulation.LabelJoinInjector()
                 new_label = f"{rand_classes[0]}_{rand_classes[1]}"
-                self.df = label_manipulation.LabelJoinInjector(
+                self.df = injector(
                     self.df,
                     rand_col,
                     rand_classes[0],
@@ -172,6 +179,7 @@ class InjectionTesting:
         return rand_cols, all_rand_classes
 
     def inject_random_feature_swap(self, start=0.75, end=1, num_swaps=1):
+        injector = feature_manipulation.FeatureSwapInjector()
         all_swap_cols = []
         start_drift, end_drift = self.select_rows(start, end)
 
@@ -201,16 +209,17 @@ class InjectionTesting:
 
             swap_cols = [col_a, col_b]
             all_swap_cols.append(swap_cols)
-            self.df = feature_manipulation.FeatureSwapInjector(
+            self.df = injector(
                 self.df, col_a, col_b, start_drift, end_drift
             )
 
         return all_swap_cols
 
     def inject_random_feature_hide_and_sample(self):
+        injector = feature_manipulation.FeatureCoverInjector()
         rand_col = self.df.columns[random.randint(0, len(self.df.columns) - 1)]
         sample_size = min(self.df[rand_col].value_counts())
-        self.df = feature_manipulation.FeatureCoverInjector(
+        self.df = injector(
             self.df, rand_col, sample_size
         )
 
