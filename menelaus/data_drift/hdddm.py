@@ -202,6 +202,7 @@ class HDDDM(HistogramDensityMethod):
             subsets=subsets,
         )
 
+
     def update(self, X, y_true=None, y_pred=None):
         """
         Update the detector with a new test batch. If drift is detected, new

@@ -134,8 +134,8 @@ class KdqTreeDetector:
             # check for drift if either: we're streaming and the reference
             # window is full, or we're doing batch detection
             if input_type == "batch" or (self._test_data_size >= self.window_size):
-                test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
-                if test_dist > self._critical_dist:
+                self._test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
+                if self._test_dist > self._critical_dist:
                     if input_type == "stream":
                         self._drift_counter += 1
                         if self._drift_counter > self.persistence * self.window_size:

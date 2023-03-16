@@ -50,6 +50,7 @@ class Ensemble:
 
         det_list = list(self.detectors.values())
         self.drift_state = self.election(det_list)
+        
 
     def reset(self):
         """
@@ -58,6 +59,13 @@ class Ensemble:
         """
         for det_key in self.detectors:
             self.detectors[det_key].reset()
+
+    @property
+    def drift_state_dict(self):
+        """ 
+        Access the ensemble members' current drift states.
+        """
+        return {detector_name : det.drift_state for detector_name, det in self.detectors.items()}
 
 
 class StreamingEnsemble(StreamingDetector, Ensemble):
