@@ -153,23 +153,23 @@ class InjectionTesting:
                 injector = label_manipulation.LabelSwapInjector()
                 self.df = injector(
                     self.df,
+                    start_drift,
+                    end_drift,
                     rand_col,
                     rand_classes[0],
                     rand_classes[1],
-                    start_drift,
-                    end_drift,
                 )
             elif manipulation_type == "class_join":
                 injector = label_manipulation.LabelJoinInjector()
                 new_label = f"{rand_classes[0]}_{rand_classes[1]}"
                 self.df = injector(
                     self.df,
+                    start_drift,
+                    end_drift,
                     rand_col,
                     rand_classes[0],
                     rand_classes[1],
                     new_label,
-                    start_drift,
-                    end_drift,
                 )
             else:
                 raise ValueError(
@@ -209,9 +209,7 @@ class InjectionTesting:
 
             swap_cols = [col_a, col_b]
             all_swap_cols.append(swap_cols)
-            self.df = injector(
-                self.df, col_a, col_b, start_drift, end_drift
-            )
+            self.df = injector(self.df, col_a, col_b, start_drift, end_drift)
 
         return all_swap_cols
 
@@ -219,9 +217,7 @@ class InjectionTesting:
         injector = feature_manipulation.FeatureCoverInjector()
         rand_col = self.df.columns[random.randint(0, len(self.df.columns) - 1)]
         sample_size = min(self.df[rand_col].value_counts())
-        self.df = injector(
-            self.df, rand_col, sample_size
-        )
+        self.df = injector(self.df, rand_col, sample_size)
 
         return rand_col
 
