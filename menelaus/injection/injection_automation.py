@@ -209,13 +209,15 @@ class InjectionTesting:
 
             swap_cols = [col_a, col_b]
             all_swap_cols.append(swap_cols)
-            self.df = injector(self.df, col_a, col_b, start_drift, end_drift)
+            self.df = injector(self.df, start_drift, end_drift, col_a, col_b)
 
         return all_swap_cols
 
     def inject_random_feature_hide_and_sample(self):
         injector = feature_manipulation.FeatureCoverInjector()
-        rand_col = self.df.columns[random.randint(0, len(self.df.columns) - 1)]
+        rand_col = self.categorical_cols[
+            random.randint(0, len(self.categorical_cols) - 1)
+        ]
         sample_size = min(self.df[rand_col].value_counts())
         self.df = injector(self.df, rand_col, sample_size)
 

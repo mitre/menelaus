@@ -17,7 +17,7 @@ def test_brownian_noise():
 
 
 def test_class_manipulation():
-    df = pd.DataFrame(np.random.choice(a=["a", "b", "c"], size=100, p=[0.4, 0.3, 0.3]))
+    df = pd.DataFrame(np.random.choice(a=["x", "y", "z"], size=100, p=[0.4, 0.3, 0.3]))
     swap_tester = InjectionTesting(df)
     join_tester = InjectionTesting(df)
     start = 0
@@ -38,3 +38,24 @@ def test_class_manipulation():
 
     assert len(join_tester.df[join_tester.df[col] == join_classes[0]]) == 0
     assert len(join_tester.df[join_tester.df[col] == join_classes[1]]) == 0
+
+def test_feature_swap():
+    df = pd.DataFrame()
+    df['a'] = [0] * 100
+    df['b'] = [1] * 100
+    tester = InjectionTesting(df)
+    start = 0.75
+    end = 1
+
+    tester.inject_random_feature_swap(start=start, end=end)
+    assert(tester.df['a'].sum() == 25)
+    assert(tester.df['b'].sum() == 75)
+
+def test_feature_hide_and_sample():
+    df = pd.DataFrame()
+    df['a'] = np.random.choice(a=["x", "y", "z"], size=100, p=[0.4, 0.3, 0.3])
+    df['b'] = np.random.rand(100, 1)
+    tester = InjectionTesting(df)
+
+    tester.inject_random_feature_hide_and_sample()
+    assert(len(tester.df) < len(df))
