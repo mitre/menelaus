@@ -121,17 +121,18 @@ def test_ensemble_recs_1():
     """ Check member retraining recs are correctly reported by attribute """
     adwin1 = ADWIN()
     adwin2 = ADWIN()
-    adwin3 = ADWIN()
+    k1 = KdqTreeBatch()
 
     se = StreamingEnsemble(
-        detectors={"a1": adwin1, "a2": adwin2, "a3": adwin3},
+        detectors={"a1": adwin1, "a2": adwin2, "k1": k1},
         election=SimpleMajorityElection(),
         column_selectors={}
     )
 
-    se.detectors['a1'].retraining_recs = "PLACEHOLDER VALUE"
-    se.detectors['a2'].retraining_recs = "PLACEHOLDER VALUE"    
-    assert se.drift_states == {"a1": "PLACEHOLDER VALUE", "a2": "PLACEHOLDER VALUE"}
+    se.detectors['a1']._retraining_recs = "PLACEHOLDER VALUE"
+    se.detectors['a2']._retraining_recs = "PLACEHOLDER VALUE"  
+    assert not hasattr(k1, "retraining_recs")  
+    assert se.retraining_recs == {"a1": "PLACEHOLDER VALUE", "a2": "PLACEHOLDER VALUE"}
 
 # endregion
 
