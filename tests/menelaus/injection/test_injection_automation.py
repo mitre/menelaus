@@ -84,6 +84,7 @@ def test_detectors():
         tester.test_nndvi_detector()
         tester.test_pcacd_detector()
         tester.test_stepd_detector()
+        tester.plot_drift_scatter(cols=['b'])
     except Exception as e:
         failed = True
 

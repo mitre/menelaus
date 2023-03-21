@@ -22,5 +22,6 @@ menelaus/injection/plots
 examples/*.png
 menelaus/*.png
 tests/*.png
+tests/menelaus/injection/plots
 
 *.tox*
