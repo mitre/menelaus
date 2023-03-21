@@ -27,7 +27,6 @@ def test_stream_ensemble_1():
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
     assert se.drift_state == None
 
-
 def test_stream_ensemble_2():
     """Ensure stream ensemble executes when columns specified"""
     step1 = STEPD(window_size=2)
@@ -48,7 +47,6 @@ def test_stream_ensemble_2():
     df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
     assert se.drift_state == None
-
 
 def test_stream_ensemble_3():
     """Ensure stream ensemble executes with univariate data"""
@@ -71,7 +69,6 @@ def test_stream_ensemble_3():
     df = pd.DataFrame({"a": [0,0], "b": [0,0], "c": [0,0]})
     se.update(X=df.iloc[[0]], y_true=0, y_pred=0)
     assert se.drift_state == None
-
 
 def test_stream_ensemble_reset_1():
     """Ensure reset works in stream ensemble and its detectors"""
@@ -105,7 +102,7 @@ def test_stream_ensemble_reset_1():
 # region - general tests
 
 def test_ensemble_drift_states_1():
-    """ """
+    """ Check member drift states are correctly reported by attribute """
     adwin1 = ADWIN()
     adwin2 = ADWIN()
     adwin3 = ADWIN()
@@ -120,10 +117,21 @@ def test_ensemble_drift_states_1():
     se.detectors['a2'].drift_state = "warning"    
     assert se.drift_states == {"a1": "drift", "a2": "warning", "a3": None}
 
-
 def test_ensemble_recs_1():
-    """ """
-    assert False
+    """ Check member retraining recs are correctly reported by attribute """
+    adwin1 = ADWIN()
+    adwin2 = ADWIN()
+    adwin3 = ADWIN()
+
+    se = StreamingEnsemble(
+        detectors={"a1": adwin1, "a2": adwin2, "a3": adwin3},
+        election=SimpleMajorityElection(),
+        column_selectors={}
+    )
+
+    se.detectors['a1'].retraining_recs = "PLACEHOLDER VALUE"
+    se.detectors['a2'].retraining_recs = "PLACEHOLDER VALUE"    
+    assert se.drift_states == {"a1": "PLACEHOLDER VALUE", "a2": "PLACEHOLDER VALUE"}
 
 # endregion
 
@@ -148,7 +156,6 @@ def test_batch_ensemble_1():
     be.set_reference(df.loc[:1])
     be.update(df.loc[2:])
     assert be.drift_state == None
-
 
 def test_batch_ensemble_2():
     """Ensure batch ensemble executes when columns specified"""
@@ -175,7 +182,6 @@ def test_batch_ensemble_2():
     be.update(df.loc[2:])
     assert len(be.detectors["k1"]._input_cols) == 2
     assert len(be.detectors["k2"]._input_cols) == 2
-
 
 def test_batch_ensemble_reset_1():
     """Ensure reset works in batch ensemble and its detectors"""
@@ -224,7 +230,6 @@ def test_eval_simple_majority_1():
     election = SimpleMajorityElection()
     assert election([det1, det2, det3]) == "drift"
 
-
 def test_eval_simple_majority_2():
     """Ensure simple majority scheme does not false alarm"""
     det1 = det2 = KdqTreeBatch()
@@ -233,7 +238,6 @@ def test_eval_simple_majority_2():
     det3.drift_state = "drift"
     election = SimpleMajorityElection()
     assert election([det1, det2, det3]) == None
-
 
 def test_eval_min_election_1():
     """Ensure minimimum approval scheme can identify drift"""
@@ -244,7 +248,6 @@ def test_eval_min_election_1():
     election = MinimumApprovalElection(approvals_needed=2)
     assert election([s1, s2, s3]) == "drift"
 
-
 def test_eval_min_election_2():
     """Ensure minimimum approval scheme does not false alarm"""
     s1 = s2 = STEPD()
@@ -253,7 +256,6 @@ def test_eval_min_election_2():
     s3.drift_state = "drift"
     election = MinimumApprovalElection(approvals_needed=2)
     assert election([s1, s2, s3]) == None
-
 
 def test_eval_ordered_election_1():
     """Ensure confirmed approval scheme can identify drift"""
@@ -267,7 +269,6 @@ def test_eval_ordered_election_1():
     )
     assert election([s1, s2, s3]) == "drift"
 
-
 def test_eval_ordered_election_2():
     """Ensure confirmed approval scheme does not false alarm"""
     s1 = s2 = STEPD()
@@ -280,7 +281,6 @@ def test_eval_ordered_election_2():
     )
     assert election([s1, s2, s3]) == None
 
-
 def test_confirmed_election_1():
     """Ensure ConfirmedElection can detect drift"""
     d1 = ADWIN()
@@ -291,7 +291,6 @@ def test_confirmed_election_1():
     election([d1,d2,d3]) # call #1
     d2.drift_state = "drift"
     assert election([d1, d2, d3]) == "drift" # by call #2, drift
-
 
 def test_confirmed_election_2():
     """Ensure ConfirmedElection can detect warnings"""
@@ -304,7 +303,6 @@ def test_confirmed_election_2():
     d2.drift_state = "warning"
     assert election([d1, d2, d3]) == "warning" # by call #2, warning
 
-
 def test_confirmed_election_3():
     """Ensure ConfirmedElection does not false alarm"""
     d1 = ADWIN()
@@ -314,7 +312,6 @@ def test_confirmed_election_3():
     election = ConfirmedElection(sensitivity=2, wait_time=10)
     election([d1, d2, d3]) # call 1
     assert election([d1, d2, d3]) == None # no more drift, so call 2 : None
-
 
 def test_confirmed_election_4():
     """Ensure resetting of wait period counters"""
