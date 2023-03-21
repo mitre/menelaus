@@ -16,8 +16,9 @@ class Ensemble:
     detectors per some voting scheme.
 
     Any class hoping to implement ensemble functionality should implement
-    from this. 
+    from this.
     """
+
     def __init__(self, detectors: dict, election, column_selectors: dict = {}):
         # XXX - Since rigid type-checking is sort of discouraged in Python
         #       it makes the most sense to just treat election as (always)
@@ -64,8 +65,11 @@ class Ensemble:
         Returns dict where keys are detector identifiers as specified in ``self.detectors``,
         values are drift states for corresponding detector objects.
         """
-        return {detector_id:detector.drift_state for detector_id, detector in self.detectors.items()}
-    
+        return {
+            detector_id: detector.drift_state
+            for detector_id, detector in self.detectors.items()
+        }
+
     @property
     def retraining_recs(self):
         """
@@ -76,7 +80,7 @@ class Ensemble:
         ret = {}
         for detector_id, detector in self.detectors.items():
             # XXX - some explicit handling may be better practice than hasattr
-            if hasattr(detector, 'retraining_recs'):
+            if hasattr(detector, "retraining_recs"):
                 ret[detector_id] = detector.retraining_recs
         return ret
 
@@ -98,7 +102,7 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
             keys of ``detectors``. A column selector function for a given
             key determines how data is selected to be fed into that detector.
         drift_state (str or None): Overall ensemble drift state. Can be ``"drift"``,
-            ``"warning"``, or ``None``. 
+            ``"warning"``, or ``None``.
         drift_states (dict): ``dict`` of drift states whose keys match the keys
             of ``detectors``, and whose values are the drift states for those
             detector objects
@@ -169,7 +173,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
             keys of ``detectors``. A column selector function for a given
             key determines how data is selected to be fed into that detector.
         drift_state (str or None): Overall ensemble drift state. Can be ``"drift"``,
-            ``"warning"``, or ``None``. 
+            ``"warning"``, or ``None``.
         drift_states (dict): ``dict`` of drift states whose keys match the keys
             of ``detectors``, and whose values are the drift states for those
             detector objects
