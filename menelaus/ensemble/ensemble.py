@@ -16,7 +16,19 @@ class Ensemble:
     detectors per some voting scheme.
 
     Any class hoping to implement ensemble functionality should implement
-    from this.
+    from this. 
+
+    Attributes
+    ----------
+    -
+    drift state
+    column selectors
+    detectors
+    election
+    drift states
+    retraining recs
+    
+    ? TODO
     """
 
     def __init__(self, detectors: dict, election, column_selectors: dict = {}):
@@ -58,6 +70,22 @@ class Ensemble:
         """
         for det_key in self.detectors:
             self.detectors[det_key].reset()
+
+    @property
+    def drift_states(self):
+        """
+        Returns dict where keys are detector identifiers as specified in ``self.detectors``,
+        values are drift states for corresponding detector objects.
+        """
+        return {detector_id:detector.drift_state for detector_id, detector in self.detectors.items()}
+    
+    @property
+    def retraining_recs(self):
+        """
+        Returns dict where keys are detector identifiers as specified in ``self.detectors``,
+        values are retraining recommendation values from corresponding detector objects.
+        """
+        return None
 
 
 class StreamingEnsemble(StreamingDetector, Ensemble):

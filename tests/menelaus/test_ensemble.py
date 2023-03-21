@@ -1,6 +1,6 @@
 import pandas as pd
 
-from menelaus.ensemble import Ensemble, StreamingEnsemble, BatchEnsemble
+from menelaus.ensemble import StreamingEnsemble, BatchEnsemble
 from menelaus.ensemble import (
     SimpleMajorityElection,
     MinimumApprovalElection,
@@ -11,6 +11,8 @@ from menelaus.data_drift import KdqTreeBatch
 from menelaus.concept_drift import STEPD
 from menelaus.change_detection import ADWIN
 
+
+# region - test stream ensemble
 
 def test_stream_ensemble_1():
     """Ensure stream ensemble executes with no drift"""
@@ -98,6 +100,34 @@ def test_stream_ensemble_reset_1():
         assert be.detectors[det_key].drift_state == None
         assert be.detectors[det_key].total_samples == 1
 
+# endregion
+
+# region - general tests
+
+def test_ensemble_drift_states_1():
+    """ """
+    adwin1 = ADWIN()
+    adwin2 = ADWIN()
+    adwin3 = ADWIN()
+
+    se = StreamingEnsemble(
+        detectors={"a1": adwin1, "a2": adwin2, "a3": adwin3},
+        election=SimpleMajorityElection(),
+        column_selectors={}
+    )
+
+    se.detectors['a1'].drift_state = "drift"
+    se.detectors['a2'].drift_state = "warning"    
+    assert se.drift_states == {"a1": "drift", "a2": "warning", "a3": None}
+
+
+def test_ensemble_recs_1():
+    """ """
+    assert False
+
+# endregion
+
+# region - test batch ensemble 
 
 def test_batch_ensemble_1():
     """Ensure batch ensemble executes with no drift"""
@@ -181,6 +211,9 @@ def test_batch_ensemble_reset_1():
         assert be.detectors[det_key].drift_state == None
         assert be.detectors[det_key].total_batches == 1
 
+# endregion
+
+# region - election tests
 
 def test_eval_simple_majority_1():
     """Ensure simple majority scheme can identify drift"""
@@ -292,3 +325,5 @@ def test_confirmed_election_4():
     assert election.wait_period_counters[0] == 1
     election([d1]) # wait period counter for d1 would be 2, so rest to 0
     assert election.wait_period_counters[0] == 0
+
+# endregion
