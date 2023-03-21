@@ -39,6 +39,7 @@ def test_class_manipulation():
     assert len(join_tester.df[join_tester.df[col] == join_classes[0]]) == 0
     assert len(join_tester.df[join_tester.df[col] == join_classes[1]]) == 0
 
+
 def test_feature_swap():
     df = pd.DataFrame()
     df['a'] = [0] * 100
@@ -51,6 +52,7 @@ def test_feature_swap():
     assert(tester.df['a'].sum() == 25)
     assert(tester.df['b'].sum() == 75)
 
+
 def test_feature_hide_and_sample():
     df = pd.DataFrame()
     df['a'] = np.random.choice(a=["x", "y", "z"], size=100, p=[0.4, 0.3, 0.3])
@@ -59,3 +61,24 @@ def test_feature_hide_and_sample():
 
     tester.inject_random_feature_hide_and_sample()
     assert(len(tester.df) < len(df))
+
+
+def test_detectors():
+    df = pd.DataFrame()
+    df['a'] = np.random.choice(a=["x", "y", "z"], size=100, p=[0.4, 0.3, 0.3])
+    df['b'] = np.random.rand(100, 1)
+    df['c'] = np.random.rand(100, 1)
+    tester = InjectionTesting(df)
+
+    tester.test_adwin_detector()
+    tester.test_cbdb_detector(cols=['b'])
+    tester.test_ddm_detector()
+    tester.test_eddm_detector()
+    tester.test_hdddm_detector(cols=['b'])
+    tester.test_kdq_tree_batch_detector(cols=['b'])
+    tester.test_kdq_tree_streaming_detector(cols=['b'])
+    tester.test_lfr_detector()
+    tester.test_md3_detector()
+    tester.test_nndvi_detector()
+    tester.test_pcacd_detector()
+    tester.test_stepd_detector()
