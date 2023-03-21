@@ -69,16 +69,22 @@ def test_detectors():
     df['b'] = np.random.rand(100, 1)
     df['c'] = np.random.rand(100, 1)
     tester = InjectionTesting(df)
+    failed = False
 
-    tester.test_adwin_detector()
-    tester.test_cbdb_detector(cols=['b'])
-    tester.test_ddm_detector()
-    tester.test_eddm_detector()
-    tester.test_hdddm_detector(cols=['b'])
-    tester.test_kdq_tree_batch_detector(cols=['b'])
-    tester.test_kdq_tree_streaming_detector(cols=['b'])
-    tester.test_lfr_detector()
-    tester.test_md3_detector()
-    tester.test_nndvi_detector()
-    tester.test_pcacd_detector()
-    tester.test_stepd_detector()
+    try:
+        tester.test_adwin_detector()
+        tester.test_cbdb_detector(cols=['b'])
+        tester.test_ddm_detector()
+        tester.test_eddm_detector()
+        tester.test_hdddm_detector(cols=['b'])
+        tester.test_kdq_tree_batch_detector(cols=['b'])
+        tester.test_kdq_tree_streaming_detector(cols=['b'])
+        tester.test_lfr_detector()
+        tester.test_md3_detector()
+        tester.test_nndvi_detector()
+        tester.test_pcacd_detector()
+        tester.test_stepd_detector()
+    except Exception as e:
+        failed = True
+
+    assert(failed is False)

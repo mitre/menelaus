@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
-import random
 import sklearn
 from scipy.io.arff import loadarff
 
@@ -20,11 +20,11 @@ def select_random_classes(series):
     if len(classes) < 2:
         raise ValueError(f"Insufficient classes in series: {len(classes)}")
     else:
-        class_a = classes[random.randint(0, len(classes) - 1)]
-        class_b = classes[random.randint(0, len(classes) - 1)]
+        class_a = classes[np.random.randint(0, len(classes))]
+        class_b = classes[np.random.randint(0, len(classes))]
 
         while class_a == class_b:
-            class_b = classes[random.randint(0, len(classes) - 1)]
+            class_b = classes[np.random.randint(0, len(classes))]
 
         return [class_a, class_b]
 
@@ -60,7 +60,7 @@ class InjectionTesting:
             self.categorical_cols = categorical_cols
 
         if seed:
-            random.seed(seed)
+            np.random.seed(seed)
 
     def select_rows(self, start, end):
         start_row = int(start * len(self.df))
@@ -70,7 +70,7 @@ class InjectionTesting:
 
     def train_linear_model(self, x_cols=None, y_col=None, start=0, end=0.75):
         if not x_cols or not y_col:
-            y_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
+            y_col = self.numeric_cols[np.random.randint(0, len(self.numeric_cols))]
             x_cols = self.numeric_cols.copy()
             x_cols.remove(y_col)
 
@@ -94,7 +94,7 @@ class InjectionTesting:
     ):
         if not x_cols or not y_col:
             y_col = self.categorical_cols[
-                random.randint(0, len(self.categorical_cols) - 1)
+                np.random.randint(0, len(self.categorical_cols))
             ]
             x_cols = self.numeric_cols.copy()
 
@@ -127,7 +127,7 @@ class InjectionTesting:
         start_drift, end_drift = self.select_rows(start, end)
 
         for i in range(num_drift_cols):
-            rand_col = self.numeric_cols[random.randint(0, len(self.numeric_cols) - 1)]
+            rand_col = self.numeric_cols[np.random.randint(0, len(self.numeric_cols))]
             rand_cols.append(rand_col)
 
             self.df = injector(self.df, start_drift, end_drift, rand_col, x)
@@ -143,7 +143,7 @@ class InjectionTesting:
 
         for i in range(num_drift_cols):
             rand_col = self.categorical_cols[
-                random.randint(0, len(self.categorical_cols) - 1)
+                np.random.randint(0, len(self.categorical_cols))
             ]
             rand_cols.append(rand_col)
             rand_classes = select_random_classes(self.df[rand_col])
@@ -186,7 +186,7 @@ class InjectionTesting:
         for i in range(num_swaps):
             col_type = (
                 self.numeric_cols
-                if random.randint(0, 1) == 0
+                if np.random.randint(0, 1) == 0
                 else self.categorical_cols
             )
 
@@ -201,11 +201,11 @@ class InjectionTesting:
                     "Insufficient numeric and categorical columns for swaps"
                 )
 
-            col_a = col_type[random.randint(0, len(col_type) - 1)]
-            col_b = col_type[random.randint(0, len(col_type) - 1)]
+            col_a = col_type[np.random.randint(0, len(col_type))]
+            col_b = col_type[np.random.randint(0, len(col_type))]
 
             while col_a == col_b:
-                col_b = col_type[random.randint(0, len(col_type) - 1)]
+                col_b = col_type[np.random.randint(0, len(col_type))]
 
             swap_cols = [col_a, col_b]
             all_swap_cols.append(swap_cols)
@@ -216,7 +216,7 @@ class InjectionTesting:
     def inject_random_feature_hide_and_sample(self):
         injector = feature_manipulation.FeatureCoverInjector()
         rand_col = self.categorical_cols[
-            random.randint(0, len(self.categorical_cols) - 1)
+            np.random.randint(0, len(self.categorical_cols))
         ]
         sample_size = min(self.df[rand_col].value_counts())
         self.df = injector(self.df, rand_col, sample_size)
@@ -241,12 +241,12 @@ class InjectionTesting:
     def test_cbdb_detector(self, cols, group_col=None, reference_group=None, subsets=8):
         if not group_col:
             group_col = self.categorical_cols[
-                random.randint(0, len(self.categorical_cols) - 1)
+                np.random.randint(0, len(self.categorical_cols))
             ]
 
             while group_col in cols:
                 group_col = self.categorical_cols[
-                    random.randint(0, len(self.categorical_cols) - 1)
+                    np.random.randint(0, len(self.categorical_cols))
                 ]
 
         if not reference_group:
@@ -327,12 +327,12 @@ class InjectionTesting:
     ):
         if not group_col:
             group_col = self.categorical_cols[
-                random.randint(0, len(self.categorical_cols) - 1)
+                np.random.randint(0, len(self.categorical_cols))
             ]
 
             while group_col in cols:
                 group_col = self.categorical_cols[
-                    random.randint(0, len(self.categorical_cols) - 1)
+                    np.random.randint(0, len(self.categorical_cols))
                 ]
 
         if not reference_group:
@@ -353,12 +353,12 @@ class InjectionTesting:
     def test_kdq_tree_batch_detector(self, cols, group_col=None, reference_group=None):
         if not group_col:
             group_col = self.categorical_cols[
-                random.randint(0, len(self.categorical_cols) - 1)
+                np.random.randint(0, len(self.categorical_cols))
             ]
 
             while group_col in cols:
                 group_col = self.categorical_cols[
-                    random.randint(0, len(self.categorical_cols) - 1)
+                    np.random.randint(0, len(self.categorical_cols))
                 ]
 
         if not reference_group:
@@ -485,13 +485,13 @@ class InjectionTesting:
     ):
         if not group_col:
             group_col = self.categorical_cols[
-                random.randint(0, len(self.categorical_cols) - 1)
+                np.random.randint(0, len(self.categorical_cols))
             ]
 
             if cols:
                 while group_col in cols:
                     group_col = self.categorical_cols[
-                        random.randint(0, len(self.categorical_cols) - 1)
+                        np.random.randint(0, len(self.categorical_cols))
                     ]
 
         if not reference_group:
