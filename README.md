@@ -196,9 +196,9 @@ Install the library using the `[dev]` option, as above.
   may use them as the linter/formatter in your IDE, or manually run the
   following from the root directory:
   ```python
-  flake8                 # linting
+  flake8 ./menelaus           # linting
   bandit -r ./menelaus        # security checks
-  black ./menelaus   # formatting
+  black ./menelaus            # formatting
   ```  
 
 # Copyright
