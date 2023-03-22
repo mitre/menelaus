@@ -59,6 +59,31 @@ class Ensemble:
         for det_key in self.detectors:
             self.detectors[det_key].reset()
 
+    @property
+    def drift_states(self):
+        """
+        Returns dict where keys are detector identifiers as specified in ``self.detectors``,
+        values are drift states for corresponding detector objects.
+        """
+        return {
+            detector_id: detector.drift_state
+            for detector_id, detector in self.detectors.items()
+        }
+
+    @property
+    def retraining_recs(self):
+        """
+        Returns dict where keys are detector identifiers as specified in ``self.detectors``,
+        values are retraining recommendation values from corresponding detector objects.
+        Detectors which do not have retraining recommendations are skipped in the output.
+        """
+        ret = {}
+        for detector_id, detector in self.detectors.items():
+            # XXX - some explicit handling may be better practice than hasattr
+            if hasattr(detector, "retraining_recs"):
+                ret[detector_id] = detector.retraining_recs
+        return ret
+
 
 class StreamingEnsemble(StreamingDetector, Ensemble):
     """
@@ -67,6 +92,24 @@ class StreamingEnsemble(StreamingDetector, Ensemble):
     IS-A ``StreamingDetector``). As such it has the functions of a regular
     detector: ``update``, ``reset``, etc. Internally, these operate not only
     on the ensemble's own attributes, but on the set of detectors given to it.
+
+    Attributes:
+        detectors (dict): ``dict`` of detector objects, keyed by unique string
+            identifiers
+        election (menelaus.ensemble.Election): election object to dictate how
+            overall ensemble drift state is determined
+        column_selectors (dict): ``dict`` of functions, whose keys match the
+            keys of ``detectors``. A column selector function for a given
+            key determines how data is selected to be fed into that detector.
+        drift_state (str or None): Overall ensemble drift state. Can be ``"drift"``,
+            ``"warning"``, or ``None``.
+        drift_states (dict): ``dict`` of drift states whose keys match the keys
+            of ``detectors``, and whose values are the drift states for those
+            detector objects
+        retraining_recs (dict): ``dict`` of retraining recommendations whose keys
+            match the keys of ``detectors``, and whose values are the retraining
+            recommendations for those detector objects. Detectors who do not
+            have retraining options are skipped.
     """
 
     def __init__(self, detectors: dict, election, column_selectors: dict = {}):
@@ -120,6 +163,24 @@ class BatchEnsemble(BatchDetector, Ensemble):
     As such it has the functions of a regular detector, ``set_reference``,
     ``update``, and ``reset``. These functions will operate not only on the
     ensemble's own attributes, but on the set of detectors given to it.
+
+    Attributes:
+        detectors (dict): ``dict`` of detector objects, keyed by unique string
+            identifiers
+        election (menelaus.ensemble.Election): election object to dictate how
+            overall ensemble drift state is determined
+        column_selectors (dict): ``dict`` of functions, whose keys match the
+            keys of ``detectors``. A column selector function for a given
+            key determines how data is selected to be fed into that detector.
+        drift_state (str or None): Overall ensemble drift state. Can be ``"drift"``,
+            ``"warning"``, or ``None``.
+        drift_states (dict): ``dict`` of drift states whose keys match the keys
+            of ``detectors``, and whose values are the drift states for those
+            detector objects
+        retraining_recs (dict): ``dict`` of retraining recommendations whose keys
+            match the keys of ``detectors``, and whose values are the retraining
+            recommendations for those detector objects. Detectors who do not
+            have retraining options are skipped.
     """
 
     def __init__(self, detectors: dict, election, column_selectors: dict = {}):
