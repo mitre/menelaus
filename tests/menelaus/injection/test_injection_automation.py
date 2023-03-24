@@ -5,7 +5,7 @@ from menelaus.injection.injection_automation import InjectionTesting
 
 def test_brownian_noise():
     df = pd.DataFrame(np.random.rand(100, 5), columns=["a", "b", "c", "d", "e"])
-    tester = InjectionTesting(df)
+    tester = InjectionTesting(df, seed=2)
     start = 0.75
     end = 1
 
@@ -18,8 +18,8 @@ def test_brownian_noise():
 
 def test_class_manipulation():
     df = pd.DataFrame(np.random.choice(a=["x", "y", "z"], size=100, p=[0.4, 0.3, 0.3]))
-    swap_tester = InjectionTesting(df)
-    join_tester = InjectionTesting(df)
+    swap_tester = InjectionTesting(df, seed=3)
+    join_tester = InjectionTesting(df, seed=5)
     start = 0
     end = 1
 
@@ -44,7 +44,7 @@ def test_feature_swap():
     df = pd.DataFrame()
     df['a'] = [0] * 100
     df['b'] = [1] * 100
-    tester = InjectionTesting(df)
+    tester = InjectionTesting(df, seed=7)
     start = 0.75
     end = 1
 
@@ -57,7 +57,7 @@ def test_feature_hide_and_sample():
     df = pd.DataFrame()
     df['a'] = np.random.choice(a=["x", "y", "z"], size=100, p=[0.4, 0.3, 0.3])
     df['b'] = np.random.rand(100, 1)
-    tester = InjectionTesting(df)
+    tester = InjectionTesting(df, seed=11)
 
     tester.inject_random_feature_hide_and_sample()
     assert(len(tester.df) < len(df))
@@ -68,7 +68,7 @@ def test_detectors():
     df['a'] = np.random.choice(a=["x", "y", "z"], size=100, p=[0.4, 0.3, 0.3])
     df['b'] = np.random.rand(100, 1)
     df['c'] = np.random.rand(100, 1)
-    tester = InjectionTesting(df)
+    tester = InjectionTesting(df, seed=13)
     failed = False
 
     try:

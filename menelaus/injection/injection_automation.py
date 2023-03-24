@@ -562,35 +562,41 @@ class InjectionTesting:
         return detector
 
     def plot_drift_scatter(self, cols, output_file="plots/drift_scatter_test.png"):
-        plt.figure(figsize=(20, 6))
-        y_min = None
-        y_max = None
+        if hasattr(cols, '__iter__'):
+            if isinstance(cols, str):
+                cols = [cols]
 
-        for col in cols:
-            plt.scatter(self.df.index, self.df[col], label=col)
-            local_min = self.df[col].min()
-            local_max = self.df[col].max()
+            plt.figure(figsize=(20, 6))
+            y_min = None
+            y_max = None
 
-            if y_min is None or y_min > local_min:
-                y_min = local_min
-            if y_max is None or y_max < local_max:
-                y_max = local_max
+            for col in cols:
+                plt.scatter(self.df.index, self.df[col], label=col)
+                local_min = self.df[col].min()
+                local_max = self.df[col].max()
 
-        plt.grid(False, axis="x")
-        plt.xticks(fontsize=16)
-        plt.yticks(fontsize=16)
-        plt.title("Scatter Results", fontsize=22)
-        plt.xlabel("Index", fontsize=18)
-        plt.ylabel("Value", fontsize=18)
-        plt.ylim((y_min, y_max))
-        plt.vlines(
-            x=self.df[self.df["drift_state"] == "drift"].index,
-            ymin=y_min,
-            ymax=y_max,
-            label="Drift Detected",
-            color="red",
-        )
-        plt.legend()
+                if y_min is None or y_min > local_min:
+                    y_min = local_min
+                if y_max is None or y_max < local_max:
+                    y_max = local_max
 
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        plt.savefig(output_file)
+            plt.grid(False, axis="x")
+            plt.xticks(fontsize=16)
+            plt.yticks(fontsize=16)
+            plt.title("Scatter Results", fontsize=22)
+            plt.xlabel("Index", fontsize=18)
+            plt.ylabel("Value", fontsize=18)
+            plt.ylim((y_min, y_max))
+            plt.vlines(
+                x=self.df[self.df["drift_state"] == "drift"].index,
+                ymin=y_min,
+                ymax=y_max,
+                label="Drift Detected",
+                color="red",
+            )
+            plt.legend()
+
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            plt.savefig(output_file)
+        else:
+            raise TypeError(f'Variable cols must be an iterable object or string')
