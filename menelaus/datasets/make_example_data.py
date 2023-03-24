@@ -19,8 +19,8 @@ def make_example_batch_data():
         * The ``"cat"`` feature contains categorical variables ranging from 1-7,
           sampled with varying probability.
 
-        * ``"confidence"`` contains values on ``[0, 0.6]`` through 2018, then values
-          on ``[0.4, 1]``.
+        * ``"confidence"`` contains values uniform on ``[0, 0.6]`` through 2018,
+          then values uniform on ``[0.4, 1]``.
 
     Drift occurs as follows:
 
@@ -32,6 +32,9 @@ def make_example_batch_data():
 
         * Increase the correlation of columns ``"e"`` and ``"f"`` in 2015 (0 correlation
           to 0.5 correlation).
+
+        * Change the range of the uniform distribution for ``confidence`` from
+          ``[0, 0.6]`` to ``[0.4, 1]`` in 2019 and forward.
 
         * Change the mean and variance of column ``"h"`` in 2019, and maintain this
           new distribution going forward. Change the range of the "confidence"
@@ -54,16 +57,12 @@ def make_example_batch_data():
     df["b"] = np.random.normal(loc=200, scale=10, size=sample_size)
     df["c"] = np.random.gamma(shape=7, size=sample_size) * 1000
     df["d"] = np.random.gamma(shape=10, size=sample_size) * 10000
-    df[["e", "f"]] = np.random.multivariate_normal(
-        mean=(0, 0), cov=np.array([[2, 0], [0, 2]]), size=sample_size
-    )
+    df[["e", "f"]] = np.random.multivariate_normal(mean=(0, 0), cov=np.array([[2, 0], [0, 2]]), size=sample_size)
     df["g"] = np.random.gamma(shape=11, size=sample_size) * 10000
     df["h"] = np.random.gamma(shape=12, size=sample_size) * 1000
     df["i"] = np.random.gamma(shape=9, size=sample_size) * 1000
     df["j"] = np.random.gamma(shape=10, size=sample_size) * 100
-    df["cat"] = np.random.choice(
-        range(7), size=sample_size, p=(0.3, 0.3, 0.2, 0.1, 0.05, 0.04, 0.01)
-    )
+    df["cat"] = np.random.choice(range(7), size=sample_size, p=(0.3, 0.3, 0.2, 0.1, 0.05, 0.04, 0.01))
     df["confidence"] = np.random.uniform(low=0, high=0.6, size=sample_size)
 
     ######################################################################
@@ -94,12 +93,8 @@ def make_example_batch_data():
 
     ######################################################################
     # Drift 4: change mean and var of H and persist it from 2018 on, change range of confidence scores
-    df.loc[df.year > 2018, "h"] = (
-        np.random.gamma(shape=1, scale=1, size=3 * year_size) * 1000
-    )
-    df.loc[df.year > 2018, "confidence"] = np.random.uniform(
-        low=0.4, high=1, size=3 * year_size
-    )
+    df.loc[df.year > 2018, "h"] = np.random.gamma(shape=1, scale=1, size=3 * year_size) * 1000
+    df.loc[df.year > 2018, "confidence"] = np.random.uniform(low=0.4, high=1, size=3 * year_size)
 
     ######################################################################
     # Drift 5: change mean and var just for a year of J in 2021
