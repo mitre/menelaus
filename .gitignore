@@ -14,11 +14,15 @@ _build
 *.coverage
 *.DS_Store
 .idea/
+menelaus/injection/souza_data
+menelaus/injection/sample_scripts
+plots
 
 # Images
 
 examples/*.png
 menelaus/*.png
 tests/*.png
+tests/menelaus/injection/plots
 
 *.tox*
