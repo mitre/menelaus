@@ -16,9 +16,8 @@ def test_feature_cover_1():
     data = np.array([[0,2], [0,2], [0,2], [1,3], [1,3], [1,3]])
     i = FeatureCoverInjector()
     copy = i(data, col=0, sample_size=2, random_state=0)
-    assert copy.shape == (4,1)
-    assert np.array_equal(np.where(copy[:,0]==2)[0], [0,1])
-    assert np.array_equal(np.where(copy[:,0]==3)[0], [2,3])
+    assert copy.shape == (2,1)
+    assert np.array_equal(copy, [[2], [3]])
 
 def test_feature_shift_1():
     ''' Check correct feature cover behavior '''

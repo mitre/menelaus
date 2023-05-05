@@ -105,7 +105,8 @@ class FeatureCoverInjector(Injector):
         ret, (col,) = self._preprocess(data, col, return_df=True)
 
         # hide and reorder
-        ret = ret.groupby(col).sample(n=sample_size, random_state=random_state)
+        n = sample_size // len(ret[col].unique())
+        ret = ret.groupby(col).sample(n=n, random_state=random_state)
         ret = ret.drop(columns=[col]).reset_index(drop=True)
 
         # handle type and return
