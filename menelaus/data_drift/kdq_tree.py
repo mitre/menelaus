@@ -89,6 +89,8 @@ class KdqTreeDetector:
         self.bootstrap_samples = bootstrap_samples
         self.count_ubound = count_ubound
         self.cutpoint_proportion_lbound = cutpoint_proportion_lbound
+        self._test_dist = None
+        self._critical_dist = None
 
     def reset(self):
         """
@@ -99,6 +101,7 @@ class KdqTreeDetector:
         self._test_data_size = 0
         self._kdqtree = None
         self._critical_dist = None
+        self._test_dist = None
 
     def _evaluate_kdqtree(self, ary, input_type):
         """
@@ -135,6 +138,7 @@ class KdqTreeDetector:
             # window is full, or we're doing batch detection
             if input_type == "batch" or (self._test_data_size >= self.window_size):
                 test_dist = self._kdqtree.kl_distance(tree_id1="build", tree_id2="test")
+                self._test_dist = test_dist
                 if test_dist > self._critical_dist:
                     if input_type == "stream":
                         self._drift_counter += 1
