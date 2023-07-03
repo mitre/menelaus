@@ -14,7 +14,7 @@ class CDBD(HistogramDensityMethod):
 
         * KL divergence: the Kullback-Leibler Divergence (KLD) measure
 
-        * Epsilon: the differences in Hellinger distances between sets
+        * Epsilon: the differences in divergence metrics between sets
           of reference and test batches.
 
         * Beta: the adaptive threshold adapted at each time stamp. It is based
