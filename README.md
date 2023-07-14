@@ -5,7 +5,7 @@
 
 # Background
 
-Menelaus implements algorithms for _the purposes of_ drift detection. Drift
+Menelaus implements algorithms for drift detection in machine learning. Drift
 detection is a branch of machine learning focused on the detection of unforeseen
 shifts in data. The relationships between variables in a dataset are rarely
 static and can be affected by changes in both internal and external factors,
