@@ -159,7 +159,6 @@ class LabelProbabilityInjector(Injector):
         # locate each class in window
         for cls in all_classes:
 
-            cls_idx = None
             cls_idx = np.where(ret[:, target_col] == cls)[0]
             cls_idx = cls_idx[(cls_idx < to_index) & (cls_idx >= from_index)]
 
