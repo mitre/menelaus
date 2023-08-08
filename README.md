@@ -100,9 +100,13 @@ Create a virtual environment as desired, then:
 pip install menelaus
 
 # to allow editing, running tests, generating docs, etc.
-# First, clone the git repo, then:
+# first, clone the git repo, then:
 cd ./menelaus_clone_folder/
 pip install -e .[dev] 
+
+# to run examples which use datasets from the wilds library,
+# another install option is:
+pip install menelaus[wilds]
 ```
 
 Menelaus should work with Python 3.8 or higher. 

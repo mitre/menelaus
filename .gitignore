@@ -19,7 +19,7 @@ _build
 tmp
 
 # Example Data
-docs/source/examples/**/data/
+**wilds_datasets/
 
 # Images
 examples/*.png
