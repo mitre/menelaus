@@ -14,10 +14,14 @@ _build
 *.coverage
 *.DS_Store
 .idea/
+
+# Local Scratch Work
 tmp
 
-# Images
+# Example Data
+**wilds_datasets/
 
+# Images
 examples/*.png
 menelaus/*.png
 tests/*.png
