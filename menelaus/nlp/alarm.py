@@ -1,27 +1,15 @@
-"""  """
-
 class Alarm():
     def __init__(self, threshold):
         self.threshold = threshold
         self._state = "baseline"
 
-    def compare(self):
-        # either implement e.g. KL Divergence
-        # or just call compare on whatever tool you're using
-        pass
-
-    def evaluate(self):
+    def evaluate(self, rep_reference, rep_test):
         # parent fn. can be, check threshold crossed
         # can reuse a lot of code for different divergence metrics I feel
         pass
 
-# or should representation have compare(other)
-# do all the encoding there and alarm just checks diff
-
 class KullbackLeiblerAlarm(Alarm):
-    pass
-
-
-class ExampleNLPAlarm(Alarm):
-    pass
+    def evaluate(self, rep_reference, rep_test):
+        self._state = "warning"
+        self._state = "alarm"
 

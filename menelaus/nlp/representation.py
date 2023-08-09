@@ -4,26 +4,24 @@ class Representation():
     """
     A data representation ...
     """
-    def __init__(self, preprocessors : list = None):
+    def __init__(self, preprocessors : list = None, postprocessors : list = None):
         # avoid default [] for arguments
-        if preprocessors is not None:
-            self.preprocessors = preprocessors
-        else: 
-            self.preprocessors = []
+        self.preprocessors = preprocessors if preprocessors is not None else []
+        self.postprocessors = postprocessors if postprocessors is not None else []
 
-    def cmp(self, rep):
-        return 0
-
-    def fit(self, data):
+    def transform(self, data):
         data = pipe(data, *self.preprocessors)
         return data
 
 class ExampleNLPRepresentation(Representation):
     """
     """
-    def fit(self, data):
-        data = super().fit(data)
+    def transform(self, data):
+        data = super().transform(data)
+        
         # XXX   here an NLP representation may encode/transform, while a 
         #       kdq-tree may build/fill
         data = data + 1 
+        
+        data = pipe(data, *self.postprocessors)
         return data
