@@ -21,7 +21,7 @@ class ExampleNLPRepresentation(Representation):
         
         # XXX   here an NLP representation may encode/transform, while a 
         #       kdq-tree may build/fill
-        data = data + 1 
+        data += 1
         
         data = pipe(data, *self.postprocessors)
         return data
