@@ -11,5 +11,7 @@ class Alarm():
 class KullbackLeiblerAlarm(Alarm):
     def evaluate(self, rep_reference, rep_test):
         self._state = "warning"
-        self._state = "alarm"
+        self._state = "drift"
+
+
 

@@ -1,7 +1,8 @@
 class Detector():
-    def __init__(self, representation, alarm):
+    def __init__(self, representation, alarm, probes):
         self.representation = representation
         self.alarm = alarm
+        self.probes = probes # summary statistics, live plots, etc.
 
     def update(self, data):
         pass
