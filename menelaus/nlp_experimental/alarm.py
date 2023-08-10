@@ -3,15 +3,16 @@ class Alarm():
         self.threshold = threshold
         self._state = "baseline"
 
-    def evaluate(self, rep_reference, rep_test):
-        # parent fn. can be, check threshold crossed
-        # can reuse a lot of code for different divergence metrics I feel
-        pass
+    def evaluate(self):
+        raise NotImplementedError
 
 class KullbackLeiblerAlarm(Alarm):
     def evaluate(self, rep_reference, rep_test):
-        self._state = "warning"
-        self._state = "drift"
+        diff = rep_test - rep_reference
+        
+        if diff < self.threshold:       self._state = "baseline"
+        elif diff == self.threshold:    self._state = "warning"
+        else:                           self._state = "drift"
 
 
 
