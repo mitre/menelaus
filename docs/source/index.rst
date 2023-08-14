@@ -23,6 +23,7 @@ Package structure
    examples/concept_drift/concept_drift_examples.ipynb
    examples/data_drift/data_drift_examples.ipynb
    examples/ensembles/ensemble_examples.ipynb
+   examples/injection/synthetic_drift_injection_examples.ipynb
    examples/partitioners/partitioner_plots_example.ipynb
    references
 
