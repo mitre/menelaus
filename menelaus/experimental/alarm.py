@@ -9,7 +9,6 @@ class Alarm():
 class KullbackLeiblerAlarm(Alarm):
     def evaluate(self, rep_reference, rep_test):
         diff = rep_test - rep_reference
-        
         if diff < self.threshold:       self._state = "baseline"
         elif diff == self.threshold:    self._state = "warning"
         else:                           self._state = "drift"
