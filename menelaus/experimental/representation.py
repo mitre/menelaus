@@ -39,8 +39,10 @@ class ExampleNLPRepresentation(Representation):
     def transform(self, data):
         data = super().transform(data)
         
-        # may replace hellinger distance histograms with something else
+        # may replace e.g. hellinger distance histograms with something else
         # list of preprocessors should be "transforms" written as functions
+
+        # XXX - so functions, not sub-Representation implementations should be the focus
         # maybe user doesn't need to know about representation class at all
 
         # XXX   here an NLP representation may encode/transform, while a 
