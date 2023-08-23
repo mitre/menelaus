@@ -59,7 +59,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "**.ipynb_checkpoints", "**wilds_datasets.ipynb"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -116,6 +116,7 @@ def run_apidoc(_):
 
 # Get path to directory containing this file, conf.py.
 DOCS_DIRECTORY = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
+
 
 # Resolve the pandoc dependency for the runner.
 # There may be better options now, since pandoc is available to GitHub actions,
