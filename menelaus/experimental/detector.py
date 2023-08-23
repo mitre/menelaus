@@ -1,11 +1,12 @@
 from toolz import pipe
 
-class Detector():
+
+class Detector:
     def __init__(self, representation, alarm, operators: list = None):
         self.representation = representation
         self.alarm = alarm
         # summary statistics, live plots, etc.
-        self.probes = probes if probes is not None else []
+        self.operators = operators if operators is not None else []
         self.rep_reference = None
         self._rep_pool = []
         self.rep_test = None
@@ -15,16 +16,16 @@ class Detector():
 
     def run(self):
         # ...
-        self = pipe(self, *self.probes)
+        self = pipe(self, *self.operators)
 
     @property
     def state(self):
         return self.alarm._state
-    
+
 
 class BasicDetector(Detector):
-    """
-    """
+    """ """
+
     def update(self, data):
         if self.rep_reference is None:
             self.rep_reference = self.representation.transform(data)

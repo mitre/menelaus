@@ -192,7 +192,7 @@ class BatchEnsemble(BatchDetector, Ensemble):
             election (str): Initialized ``Election`` object for ensemble to evaluate
                 drift among constituent detectors. See implemented election schemes
                 in ``menelaus.ensemble``.
-            columns_selectors (dict, optional): Table of functions to use
+            column_selectors (dict, optional): Table of functions to use
                 for each detector. Functions should take data instance X
                 and return the columns of X that the corresponding detector
                 should operate on. Should match format of ``detectors`` i.e.
