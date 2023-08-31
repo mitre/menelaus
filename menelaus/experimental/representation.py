@@ -20,8 +20,6 @@ class Representation():
         window_not_full = True
         window_full = True
 
-
-
         if self.state == "drift":
             if len(data) == 1 and window_not_full:
                 # TODO store until window size exceeded, then merge
