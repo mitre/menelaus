@@ -1,4 +1,4 @@
-from detector import *
+from menelaus.detector import BatchDetector
 
 
 class PSI_Detector(BatchDetector):
