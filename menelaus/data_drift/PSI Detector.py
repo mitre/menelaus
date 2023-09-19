@@ -1,5 +1,6 @@
 from menelaus.detector import BatchDetector
-
+import pandas as pd
+import numpy as np
 
 class PSI_Detector(BatchDetector):
     
