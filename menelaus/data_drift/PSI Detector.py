@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[57]:
-
-
 from detector import *
+
+
 class PSI_Detector(BatchDetector):
     
     input_type = "batch"
