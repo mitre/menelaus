@@ -1,38 +1,31 @@
+from typing import List
 from toolz import pipe
 
 
 class Detector:
-    def __init__(self, representation, alarm, operators: list = None):
-        self.representation = representation
+    def __init__(self, alarm, transforms: List = None):
         self.alarm = alarm
-        # summary statistics, live plots, etc.
-        self.operators = operators if operators is not None else []
+        self.transforms = [] if transforms is None else transforms
         self.rep_reference = None
-        self._rep_pool = []
         self.rep_test = None
 
-    def update(self, data):
-        raise NotImplementedError
+    def transform(self, raw_values):
+        ret = pipe(raw_values, *self.transforms)
+        return ret
 
-    def run(self):
-        # ...
-        self = pipe(self, *self.operators)
+    def recalibrate(self, raw_values):
+        return 0
 
     @property
     def state(self):
         return self.alarm._state
 
-
-class BasicDetector(Detector):
-    """ """
-
-    def update(self, data):
+    def step(self, raw_values):
         if self.rep_reference is None:
-            self.rep_reference = self.representation.transform(data)
+            self.rep_reference = self.transform(raw_values)
         else:
-            initial_rep_test = self.rep_test is None
-            self.rep_test = self.representation.transform(data)
+            if self.rep_test is None:
+                self.rep_test = self.transform(raw_values)
+            else:
+                self.recalibrate(raw_values)
             self.alarm.evaluate(self.rep_reference, self.rep_test)
-
-            if not initial_rep_test:
-                self.representation.recalibrate(data)
