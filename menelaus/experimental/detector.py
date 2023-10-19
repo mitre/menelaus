@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 from toolz import pipe
 
@@ -14,7 +15,11 @@ class Detector:
         return ret
 
     def recalibrate(self, raw_values):
-        return 0
+        if self.state == "alarm":
+            rep_new = self.transform(raw_values)
+            self.rep_test = np.vstack((self.rep_test, rep_new))
+        else:
+            self.rep_test = self.transform(raw_values)
 
     @property
     def state(self):

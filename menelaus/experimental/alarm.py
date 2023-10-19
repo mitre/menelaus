@@ -16,8 +16,6 @@ class KolmogorovSmirnovAlarm:
     def evaluate(self, rep_reference, rep_test):
         rep_reference = rep_reference.reshape(rep_reference.shape[0], -1)
         rep_test = rep_test.reshape(rep_test.shape[0], -1)
-        if rep_reference.shape[0] != rep_test.shape[0]:
-            raise ValueError(f"...")
         n_features = rep_reference.shape[1]
         p_values = np.zeros(n_features, dtype=np.float32)
         # distances = np.zeros_like(p_values)
@@ -38,4 +36,3 @@ class KolmogorovSmirnovAlarm:
             self._state = STATE_DRIFT
         else:
             self._state = STATE_INIT
-        print(p_values)
