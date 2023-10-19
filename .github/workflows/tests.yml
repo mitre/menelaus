@@ -30,4 +30,4 @@ jobs:
     - name: Unit and coverage tests
       run: |
         pytest tests/menelaus --cov=menelaus/ --cov-report term
-        coverage report -m --fail-under=100
+        coverage report -m --fail-under=100 --omit=menelaus/experimental

@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Flatten, Dense
+from tensorflow.keras.layers import Flatten, Dense, InputLayer
 from toolz import curry
 from transformers import AutoConfig, AutoTokenizer, TFAutoModel
 from typing import Optional, Dict, Union, List
