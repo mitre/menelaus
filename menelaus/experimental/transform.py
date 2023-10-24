@@ -8,6 +8,11 @@ from typing import Optional, Dict, Union, List
 
 @curry
 def auto_tokenize(data, model_name, **kwargs):
+    """
+    Curried function that takes raw data (typically list of strings), model
+    name, and other optional arguments, and returns the tokens created from
+    using the pre-trained model.
+    """
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokens = tokenizer.batch_encode_plus(data, **kwargs)
     return tokens
@@ -15,6 +20,11 @@ def auto_tokenize(data, model_name, **kwargs):
 
 @curry
 def _hidden_state_embeddings(hidden_states, layers, use_cls):
+    """
+    Curried helper function to assist with extracting embeddings from tokens.
+
+    Ref. :cite:t:`alibi-detect`
+    """
     hs = [
         hidden_states[layer][:, 0:1, :] if use_cls else hidden_states[layer]
         for layer in layers
@@ -30,6 +40,8 @@ class TransformerEmbedding(tf.keras.Model):
     ) -> None:
         """
         Extract text embeddings from transformer models.
+
+        Ref. :cite:t:`alibi-detect`
 
         Parameters
         ----------
@@ -88,6 +100,13 @@ class TransformerEmbedding(tf.keras.Model):
 
 @curry
 def extract_embedding(tokens, model_name, embedding_type, layers):
+    """
+    Curried function to extract embeddings from tokens. Takes tokens,
+    name of transformer embedding model, embedding type, and layers.
+    Returns tokens, embedding, and embedding model.
+
+    Ref. :cite:t:`alibi-detect`
+    """
     te = TransformerEmbedding(
         model_name_or_path=model_name, embedding_type=embedding_type, layers=layers
     )
@@ -96,6 +115,13 @@ def extract_embedding(tokens, model_name, embedding_type, layers):
 
 
 class _Encoder(tf.keras.Model):
+    """
+    Helper class to assist with encoding embeddings into a reduced-dimension
+    output.
+
+    Ref. :cite:t:`alibi-detect`
+    """
+
     def __init__(
         self,
         input_layer: Union[tf.keras.layers.Layer, tf.keras.Model],
@@ -128,7 +154,13 @@ class _Encoder(tf.keras.Model):
 
 
 class UAE(tf.keras.Model):
-    # copied from alibi-detect
+    """
+    Untrained AutoEncoder class to reduce dimension of embedding output from previous
+    steps.
+
+    Ref. :cite:t:`alibi-detect`
+    """
+
     def __init__(
         self,
         encoder_net: Optional[tf.keras.Model] = None,
@@ -160,6 +192,13 @@ class UAE(tf.keras.Model):
 
 @curry
 def uae_reduce_dimension(input, enc_dim, seed=0, to_numpy=True):
+    """
+    Curried function to reduce dimension of embedding output via Untrained
+    AutoEncoder. Takes input tuple (tokens, embedding, input layer), encoding
+    dimension size, optional seed. Returns reduced array (numpy or tensor).
+
+    Ref. :cite:t:`alibi-detect`
+    """
     tf.random.set_seed(seed)
     tokens, embedding, input_layer = input
     uae = UAE(input_layer=input_layer, shape=embedding.shape, enc_dim=enc_dim)
