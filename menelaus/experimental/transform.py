@@ -1,3 +1,10 @@
+""" 
+Contains transform functions, which are curried functions initialized with a certain configuration,
+and called in some sequence to transform an initial batch of data into a final formatted data
+representation. Applying transforms helps compare two sets of data, and convert data into a format
+accepted by some ``Alarm`` type.
+"""
+
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Flatten, Dense, InputLayer
@@ -35,42 +42,54 @@ def _hidden_state_embeddings(hidden_states, layers, use_cls):
 
 
 class TransformerEmbedding(tf.keras.Model):
-    def __init__(
-        self, model_name_or_path: str, embedding_type: str, layers: List[int] = None
-    ) -> None:
-        """
-        Extract text embeddings from transformer models.
+    """
+    Extracts texts embeddings from transformer models. Pulled directly from ``alibi-detect``.
 
-        Ref. :cite:t:`alibi-detect`
+    Ref. :cite:t:`alibi-detect`
 
-        Parameters
-        ----------
+    Attributes:
         model_name_or_path
-            Name of or path to the model.
+            Name of or path to the transformer model.
         embedding_type
             Type of embedding to extract. Needs to be one of pooler_output,
             last_hidden_state, hidden_state or hidden_state_cls.
-
-            From the HuggingFace documentation:
-
-            - pooler_output
-                Last layer hidden-state of the first token of the sequence
-                (classification token) further processed by a Linear layer and a Tanh
-                activation function. The Linear layer weights are trained from the next
-                sentence prediction (classification) objective during pre-training.
-                This output is usually not a good summary of the semantic content of the
-                input, you’re often better with averaging or pooling the sequence of
-                hidden-states for the whole input sequence.
-            - last_hidden_state
-                Sequence of hidden-states at the output of the last layer of the model.
-            - hidden_state
-                Hidden states of the model at the output of each layer.
-            - hidden_state_cls
-                See hidden_state but use the CLS token output.
         layers
             If "hidden_state" or "hidden_state_cls" is used as embedding
             type, layers has to be a list with int's referring to the hidden layers used
             to extract the embedding.
+    """
+
+    def __init__(
+        self, model_name_or_path: str, embedding_type: str, layers: List[int] = None
+    ) -> None:
+        """
+        Args:
+            model_name_or_path
+                Name of or path to the transformer model.
+            embedding_type
+                Type of embedding to extract. Needs to be one of pooler_output,
+                last_hidden_state, hidden_state or hidden_state_cls.
+
+                From the HuggingFace documentation:
+
+                - pooler_output
+                    Last layer hidden-state of the first token of the sequence
+                    (classification token) further processed by a Linear layer and a Tanh
+                    activation function. The Linear layer weights are trained from the next
+                    sentence prediction (classification) objective during pre-training.
+                    This output is usually not a good summary of the semantic content of the
+                    input, you’re often better with averaging or pooling the sequence of
+                    hidden-states for the whole input sequence.
+                - last_hidden_state
+                    Sequence of hidden-states at the output of the last layer of the model.
+                - hidden_state
+                    Hidden states of the model at the output of each layer.
+                - hidden_state_cls
+                    See hidden_state but use the CLS token output.
+            layers
+                If "hidden_state" or "hidden_state_cls" is used as embedding
+                type, layers has to be a list with int's referring to the hidden layers used
+                to extract the embedding.
         """
         super(TransformerEmbedding, self).__init__()
         self.config = AutoConfig.from_pretrained(
@@ -83,6 +102,18 @@ class TransformerEmbedding(tf.keras.Model):
         )
 
     def call(self, tokens: Dict[str, tf.Tensor]) -> tf.Tensor:
+        """
+        Applies transformer model to tokens, then extracts embeddings from output.
+
+        Args:
+            tokens
+                Dictionary output of transformer model on raw strings. For details
+                on output format, see return values of ``encode_plus``, ``__call__``,
+                or ``batch_encode_plus`` methods in ``transformers.BatchEncoding``.
+
+        Returns:
+            Extracted embeddings, typically as ``tf.tensor`` or ``numpy.ndarray``.
+        """
         output = self.model(tokens)
         if self.embedding_type == "pooler_output":
             return output.pooler_output
@@ -117,9 +148,15 @@ def extract_embedding(tokens, model_name, embedding_type, layers):
 class _Encoder(tf.keras.Model):
     """
     Helper class to assist with encoding embeddings into a reduced-dimension
-    output.
+    output. Pulled directly from ``alibi-detect``.
 
     Ref. :cite:t:`alibi-detect`
+
+    Attributes:
+        input_layer
+            Input layer from which new encodings will be generated.
+        mlp
+            Multilayer perceptron network used for dimension-reduction step.
     """
 
     def __init__(
@@ -129,6 +166,18 @@ class _Encoder(tf.keras.Model):
         enc_dim: Optional[int] = None,
         step_dim: Optional[int] = None,
     ) -> None:
+        """
+        Args:
+            input_layer
+                Input layer from which new encodings will be generated.
+            mlp
+                Multilayer perceptron network used for dimension-reduction step.
+                Default ``None``.
+            enc_dim
+                Desired size for final encoded output. Default ``None``.
+            step_dim
+                Optional step size for constructing MLP if none given. Default ``None``.
+        """
         super().__init__()
         self.input_layer = input_layer
         if isinstance(mlp, tf.keras.Model):
@@ -149,6 +198,16 @@ class _Encoder(tf.keras.Model):
             )
 
     def call(self, x: Union[np.ndarray, tf.Tensor, Dict[str, tf.Tensor]]) -> tf.Tensor:
+        """
+        Performs reduced-dimension encoding step on new data.
+
+        Args:
+            x
+                New input batch.
+
+        Returns
+            Encoded data (processed through input layer and MLP).
+        """
         x = self.input_layer(x)
         return self.mlp(x)
 
@@ -156,9 +215,14 @@ class _Encoder(tf.keras.Model):
 class UAE(tf.keras.Model):
     """
     Untrained AutoEncoder class to reduce dimension of embedding output from previous
-    steps.
+    steps. Pulled directly from ``alibi-detect``.
 
     Ref. :cite:t:`alibi-detect`
+
+    Attributes:
+        encoder
+            Encoder network to be used on tokens resulting in reduced-dimension
+            embeddings.
     """
 
     def __init__(
@@ -168,6 +232,21 @@ class UAE(tf.keras.Model):
         shape: Optional[tuple] = None,
         enc_dim: Optional[int] = None,
     ) -> None:
+        """
+        Args:
+            encoder_net
+                If this is given as a ``tf.keras.Model``, use this to obtain embeddings.
+                Default ``None``.
+            input_layer
+                If ``encoder_net`` not given, this is used as the input layer which
+                accepts tokens. Default ``None``.
+            shape
+                If ``encoder_net`` not given, this is the desired input shape for the
+                input layer. Default ``None``.
+            enc_dim
+                If ``encoder_net`` not given, this is the desired encoding dimension
+                for the final output. Default ``None``.
+        """
         super().__init__()
         is_enc = isinstance(encoder_net, tf.keras.Model)
         is_enc_dim = isinstance(enc_dim, int)
@@ -187,6 +266,16 @@ class UAE(tf.keras.Model):
             )
 
     def call(self, x: Union[np.ndarray, tf.Tensor, Dict[str, tf.Tensor]]) -> tf.Tensor:
+        """
+        Performs encoding step on tensors.
+
+        Args:
+            x
+                New batch of tensors.
+
+        Returns:
+            Encoded and reduced-dimension output via UAE.
+        """
         return self.encoder(x)
 
 
