@@ -1,10 +1,3 @@
-""" 
-Contains transform functions, which are curried functions initialized with a certain configuration,
-and called in some sequence to transform an initial batch of data into a final formatted data
-representation. Applying transforms helps compare two sets of data, and convert data into a format
-accepted by some ``Alarm`` type.
-"""
-
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Flatten, Dense, InputLayer
