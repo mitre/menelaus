@@ -13,9 +13,10 @@ nature of the use case, a significant time lag exists between when the models
 are applied and when the results are verified. Data drift detection is also
 applicable in unsupervised learning settings.
 """
-from menelaus.data_drift.hdddm import HDDDM
-from menelaus.data_drift.kdq_tree import KdqTreeStreaming, KdqTreeBatch
-from menelaus.data_drift.pca_cd import PCACD
-from menelaus.data_drift.nndvi import NNDVI
 from menelaus.data_drift.cdbd import CDBD
+from menelaus.data_drift.hdddm import HDDDM
 from menelaus.data_drift.histogram_density_method import HistogramDensityMethod
+from menelaus.data_drift.kdq_tree import KdqTreeStreaming, KdqTreeBatch
+from menelaus.data_drift.nndvi import NNDVI
+from menelaus.data_drift.pca_cd import PCACD
+from menelaus.data_drift.psi_detector import PSI
