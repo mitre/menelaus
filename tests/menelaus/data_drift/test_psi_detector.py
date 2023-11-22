@@ -1,10 +1,10 @@
 import pytest
 import numpy as np
-from menelaus.data_drift.psi_detector import PSI_Detector
+from menelaus.data_drift.psi_detector import PSI
 
 def test_psi_init():
     """Test correct default initialization for PSI"""
-    det = PSI_Detector()
+    det = PSI()
     assert det.eps == 1e-4
     assert det.threshold == 0.1
     assert det.batches_since_reset == 0
@@ -12,20 +12,20 @@ def test_psi_init():
     
 def test_psi_set_reference():
     """Assert PSI.set_reference works as intended"""
-    det = PSI_Detector()
+    det = PSI()
     ref = np.random.randint(0, 5, (3, 3))
     det.set_reference(ref)
     assert np.array_equal(ref, det.reference_batch)
     
 def test_psi_update_1():
     """Ensure PSI can update with small random batches"""
-    det = PSI_Detector()
+    det = PSI()
     det.set_reference(np.random.randint(0, 5, (10, 10)))
     det.update(X=np.random.randint(0, 5, (10, 10)))
 
 def test_psi_update_2():
     """Ensure PSI can update with drift actions triggered"""
-    det = PSI_Detector()
+    det = PSI()
     # XXX - AS added this method of forcing drift in psi, which
     #       is otherwise hard to induce drift in, for small data
     #       examples. More stable alternatives may exist
@@ -36,7 +36,7 @@ def test_psi_update_2():
 
 def test_psi_update_3():
     """Check PSI.update behavior after drift alarm"""
-    det = PSI_Detector()
+    det = PSI()
     det.set_reference(np.random.randint(0, 5, (5, 5)))
     det._drift_state = "drift"
     det.update(X=np.random.randint(0, 5, (5, 5)))
@@ -44,14 +44,14 @@ def test_psi_update_3():
 
 def test_psi_update_4():
     """Check failure when batch shapes don't match"""
-    det = PSI_Detector()
+    det = PSI()
     det.set_reference(np.random.randint(0, 5, (5, 6)))
     with pytest.raises(ValueError):
         det.update(np.random.randint(0, 5, (5, 5)))
 
 def test_psi_reset():
     """Check psi.reset works as intended"""
-    det = PSI_Detector()
+    det = PSI()
     det.batches_since_reset = 1
     det.drift_state = "drift"
     det.reset()
@@ -61,7 +61,7 @@ def test_psi_reset():
     
 def test_psi_compute_PSI():
     """Check psi._compute_threshold works correctly"""
-    det = PSI_Detector()
+    det = PSI()
     # XXX - Hardcoded known example added by AS, in the future a
     #       dynamic way to test this function may be used
     np.random.seed(123)
