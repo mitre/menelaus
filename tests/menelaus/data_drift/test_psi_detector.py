@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from menelaus.data_drift.psi_detector import PSI
+from menelaus.data_drift import PSI
 
 def test_psi_init():
     """Test correct default initialization for PSI"""
