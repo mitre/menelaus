@@ -27,9 +27,6 @@ def test_psi_update_1():
 def test_psi_update_2():
     """Ensure PSI can update with drift actions triggered"""
     det = PSI()
-    # XXX - AS added this method of forcing drift in psi, which
-    #       is otherwise hard to induce drift in, for small data
-    #       examples. More stable alternatives may exist
     np.random.seed(123)
     det.set_reference(np.random.randint(0, 5, (100, 1)))
     det.update(X=np.random.randint(10, 40, (100, 1)))
