@@ -57,4 +57,9 @@ def test_psi_compute_PSI():
     test = np.random.randint(0,100,100)
     det.set_reference(X = ref)
     det.update(X = test)
+    result = det.PSI_value
+    det = PSI()
+    det.set_reference(X = ref)
+    det.update(X = test)
+    assert det.PSI_value == result
     assert det.PSI_value >= 0 and det.PSI_value <= 1
