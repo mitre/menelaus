@@ -21,15 +21,15 @@ def test_psi_set_reference():
 def test_psi_update_1():
     """Ensure PSI can update with small random batches"""
     det = PSI()
-    det.set_reference(np.random.randint(0, 5, (100, 1)))
-    det.update(X=np.random.randint(0, 5, (100, 1)))
+    det.set_reference(np.random.randint(0, 5, (10, 1)))
+    det.update(X=np.random.randint(0, 5, (10, 1)))
 
 def test_psi_update_2():
     """Ensure PSI can update with drift actions triggered"""
     det = PSI()
     np.random.seed(123)
-    det.set_reference(np.random.randint(0, 5, (100, 1)))
-    det.update(X=np.random.randint(10, 40, (100, 1)))
+    det.set_reference(np.random.randint(0, 100, (200, 1)))
+    det.update(X=np.random.randint(150, 200, (100, 1)))
     assert det.drift_state is not None
 
 def test_psi_update_3():
