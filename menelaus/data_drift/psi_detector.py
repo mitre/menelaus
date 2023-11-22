@@ -90,11 +90,10 @@ class PSI(BatchDetector):
         grp_new = df_new.groupby("bin").count()
         grp_new["percent_new"] = grp_new["new"] / sum(grp_new["new"])
         psi_value = self._PSI(grp_initial, grp_new)
-        self._PSI_value = psi_value
         if psi_value >= self.threshold:
             self._drift_state = "drift"
             self.set_reference(test_batch)
-
+        return psi_value
     def _bin_data(self, feature, min, max):
         """
         Bin the given feature based on the specified minimum and maximum values.
@@ -143,12 +142,3 @@ class PSI(BatchDetector):
             psi_df["percent_initial"] / psi_df["percent_new"]
         )
         return np.mean(psi_df["psi"])
-
-    def _PSI_value(self):
-        """
-        Get the last calculated PSI value.
-
-        Returns:
-            float: The PSI value from the most recent update.
-        """
-        return self.PSI_value
