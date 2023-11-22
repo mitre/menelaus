@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 
-class PSI_Detector(BatchDetector):
+class PSI(BatchDetector):
     """
     Parent class for PSI-based drift detector, it serves as a fundamental framework for batch data applications.
 
