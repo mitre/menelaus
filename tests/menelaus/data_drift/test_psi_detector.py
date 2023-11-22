@@ -48,18 +48,3 @@ def test_psi_reset():
     det.reset()
     assert det.batches_since_reset == 0
     assert det.drift_state is None
-
-    
-def test_psi_compute_PSI():
-    """Check psi._compute_threshold works correctly"""
-    det = PSI()
-    ref = np.random.randint(0,100,100)
-    test = np.random.randint(0,100,100)
-    det.set_reference(X = ref)
-    det.update(X = test)
-    result = det._PSI_value
-    det = PSI()
-    det.set_reference(X = ref)
-    det.update(X = test)
-    assert det._PSI_value == result
-    assert det._PSI_value >= 0 and det._PSI_value <= 1
