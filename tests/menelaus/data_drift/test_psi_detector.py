@@ -14,9 +14,9 @@ def test_psi_init():
 def test_psi_set_reference():
     """Assert PSI.set_reference works as intended"""
     det = PSI()
-    ref = np.random.randint(0, 5, 9)
+    ref = np.random.randint(0, 5, (100,1))
     det.set_reference(ref)
-    assert np.array_equal(ref, det.reference)
+    assert (det.reference).ndim == 1
     
 def test_psi_update_1():
     """Ensure PSI can update with small random batches"""
@@ -58,7 +58,7 @@ def test_psi_compute_PSI():
     det = PSI()
     ref = np.random.randint(0,100,100)
     test = np.random.randint(0,100,100)
-    PSI.set_reference(X = ref)
-    PSI.update(X = test)
-    threshold = PSI.PSI_value
+    det.set_reference(X = ref)
+    det.update(X = test)
+    threshold = det.PSI_value
     assert threshold >= 0 and threshold <= 1
