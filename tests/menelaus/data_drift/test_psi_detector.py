@@ -57,5 +57,4 @@ def test_psi_compute_PSI():
     test = np.random.randint(0,100,100)
     det.set_reference(X = ref)
     det.update(X = test)
-    threshold = det.PSI_value
-    assert threshold >= 0 and threshold <= 1
+    assert det.PSI_value >= 0 and det.PSI_value <= 1
