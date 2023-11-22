@@ -90,7 +90,7 @@ class PSI(BatchDetector):
         grp_new = df_new.groupby("bin").count()
         grp_new["percent_new"] = grp_new["new"] / sum(grp_new["new"])
         psi_value = self._PSI(grp_initial, grp_new)
-        self.PSI_value = psi_value
+        self._PSI_value = psi_value
         if psi_value >= self.threshold:
             self._drift_state = "drift"
             self.set_reference(test_batch)
@@ -144,7 +144,7 @@ class PSI(BatchDetector):
         )
         return np.mean(psi_df["psi"])
 
-    def PSI_value(self):
+    def _PSI_value(self):
         """
         Get the last calculated PSI value.
 
