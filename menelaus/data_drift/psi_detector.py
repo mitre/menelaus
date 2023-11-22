@@ -94,6 +94,7 @@ class PSI(BatchDetector):
             self._drift_state = "drift"
             self.set_reference(test_batch)
         return psi_value
+
     def _bin_data(self, feature, min, max):
         """
         Bin the given feature based on the specified minimum and maximum values.
