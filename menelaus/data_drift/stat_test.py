@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from menelaus.detector import BatchDetector
 from scipy.stats import chi2_contingency, kstest, cramervonmises_2samp, fisher_exact
-from menelaus.detector import BatchDetector
 
 class GenericDetector(BatchDetector):
     """
