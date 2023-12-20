@@ -1,5 +1,5 @@
 import pytest
-from stat_test import GenericDetector, CHIDetector, KSDetector, CVMDetector, FETDetector
+from menelaus.data_drift.stat_test import GenericDetector, CHIDetector, KSDetector, CVMDetector, FETDetector
 import numpy as np
 import pandas as pd
 
