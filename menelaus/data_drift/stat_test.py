@@ -63,8 +63,6 @@ class GenericDetector(BatchDetector):
         """
         if self.drift_state == "drift":
             self.reset()
-            self.reference = self.test
-
         X, _, _ = super()._validate_input(X, None, None)
         X = X.reshape(
             len(X),
