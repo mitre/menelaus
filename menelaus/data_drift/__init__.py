@@ -19,4 +19,4 @@ from menelaus.data_drift.pca_cd import PCACD
 from menelaus.data_drift.nndvi import NNDVI
 from menelaus.data_drift.cdbd import CDBD
 from menelaus.data_drift.histogram_density_method import HistogramDensityMethod
-from menelaus.data_drift.stat_test import CHIDetector, KSDetector, CVMDetector, FETDetector
+from menelaus.data_drift.stat_test import GenericDetector, CHIDetector, KSDetector, CVMDetector, FETDetector
