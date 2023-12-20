@@ -52,6 +52,17 @@ class TestGenericDetector:
         detector.set_reference(reference_data)
         detector.update(new_data)
         assert detector.drift_state is not None  #drift expected
+
+    def test_update_reset():
+        """Check GenericDetector.update behavior after drift alarm"""
+        detector = GenericDetector(representation=MockRepresentation(), 
+                      divergence=MockDivergence, 
+                      crit_function=MockCritFunction)
+        detector.set_reference([1,2,3])
+        detector.drift_state = 'drift'
+        detector.reset()
+        detector.update(X=[1,2,3])
+        assert detector.drift_state is None 
     
 class TestCHIDetector:
     def test_initialization(self):
