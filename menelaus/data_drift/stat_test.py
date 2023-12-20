@@ -3,6 +3,7 @@ import numpy as np
 from menelaus.detector import BatchDetector
 from scipy.stats import chi2_contingency, kstest, cramervonmises_2samp, fisher_exact
 
+
 class GenericDetector(BatchDetector):
     """
     Generic Detector class for detecting batched data drift.
@@ -37,8 +38,10 @@ class GenericDetector(BatchDetector):
             y_pred (numpy.array): predicted labels, not used in GenericDetector
         """
         X, _, _ = super()._validate_input(X, None, None)
-        X = X.reshape(len(X),)
-        X = self.representation.fit(X)#, y_true)
+        X = X.reshape(
+            len(X),
+        )
+        X = self.representation.fit(X)  # , y_true)
         self.reference = X
 
     def update(self, X, y_true=None, y_pred=None, alt=None):
@@ -63,7 +66,9 @@ class GenericDetector(BatchDetector):
             self.reference = self.test
 
         X, _, _ = super()._validate_input(X, None, None)
-        X = X.reshape(len(X),)
+        X = X.reshape(
+            len(X),
+        )
         X = self.representation.fit(X)
         self.test = X  # , y_true, y_pred)
         if alt == None:
@@ -88,7 +93,9 @@ class GenericDetector(BatchDetector):
         self.div = None
         pass
 
+
 # region Validations
+
 
 class IdentityValidation:
     """
@@ -116,7 +123,10 @@ class IdentityValidation:
         if any(np.issubdtype(X_ref.dtype, dtype) for dtype in numeric_dtypes):
             return X_ref
         else:
-            raise ValueError("No numerical data detected. Please pass numerical features.")
+            raise ValueError(
+                "No numerical data detected. Please pass numerical features."
+            )
+
 
 class CategoricalValidation:
     """
@@ -138,10 +148,15 @@ class CategoricalValidation:
             X_ref: Confirmed categorical data.
         """
         categorical_dtypes = [np.object_]
-        if (any(np.issubdtype(X_ref.dtype, dtype) for dtype in categorical_dtypes)) or len(np.unique(X_ref)) < 10:
+        if (
+            any(np.issubdtype(X_ref.dtype, dtype) for dtype in categorical_dtypes)
+        ) or len(np.unique(X_ref)) < 10:
             return X_ref
         else:
-            raise ValueError("No categorical columns detected. Please pass categorical features.")
+            raise ValueError(
+                "No categorical columns detected. Please pass categorical features."
+            )
+
 
 class BinaryValidation:
     """
@@ -167,11 +182,15 @@ class BinaryValidation:
         if (set(unique_values) == {0, 1}) or (set(unique_values) == {False, True}):
             return X_ref
         else:
-            raise ValueError("The X_ref data must consist of only (0,1)'s or (False,True)'s for the FETDrift detector.")
+            raise ValueError(
+                "The X_ref data must consist of only (0,1)'s or (False,True)'s for the FETDrift detector."
+            )
+
 
 # endregion
 
 # region Hypothesis test wrappers
+
 
 def chi2Divergence(rep_ref, rep_test):
     """
@@ -192,6 +211,7 @@ def chi2Divergence(rep_ref, rep_test):
     _, pval, _, _ = chi2_contingency(contingency_table)
     return pval
 
+
 def ksDivergence(rep_ref, rep_test):
     """
     Calculate the p-value for the Kolmogorov-Smirnov test between two distributions.
@@ -206,6 +226,7 @@ def ksDivergence(rep_ref, rep_test):
     pval = kstest(rep_ref, rep_test).pvalue
     return pval
 
+
 def cvmDivergence(rep_ref, rep_test):
     """
     Calculate the p-value for the Cramér-von Mises test between two distributions.
@@ -219,6 +240,7 @@ def cvmDivergence(rep_ref, rep_test):
     """
     pval = cramervonmises_2samp(rep_ref, rep_test).pvalue
     return pval
+
 
 def fetDivergence(ref, test, alternative):
     """
@@ -239,14 +261,18 @@ def fetDivergence(ref, test, alternative):
     n_ref, n = ref.shape[0], test.shape[0]
     p_val, odds_ratio = np.empty(1), np.empty(1)
 
-    table = np.array([[np.sum(test), np.sum(ref)], [n - np.sum(test), n_ref - np.sum(ref)]])
+    table = np.array(
+        [[np.sum(test), np.sum(ref)], [n - np.sum(test), n_ref - np.sum(ref)]]
+    )
     odds_ratio[0], p_val[0] = fisher_exact(table, alternative)
 
     return p_val
 
+
 # endregion
 
 # region Critical value functions
+
 
 def crit(pval, alpha=0.05):
     """
@@ -264,9 +290,11 @@ def crit(pval, alpha=0.05):
     else:
         return False
 
+
 # endregion
 
 # region Implemented classes
+
 
 class CHIDetector(GenericDetector):
     """
@@ -283,6 +311,7 @@ class CHIDetector(GenericDetector):
             crit_function=crit,
         )
 
+
 class KSDetector(GenericDetector):
     """
     Kolmogorov-Smirnov Test Data drift detector using the Kolmogorov-Smirnov test for numerical data.
@@ -297,6 +326,7 @@ class KSDetector(GenericDetector):
             divergence=ksDivergence,
             crit_function=crit,
         )
+
 
 class CVMDetector(GenericDetector):
     """
@@ -313,6 +343,7 @@ class CVMDetector(GenericDetector):
             crit_function=crit,
         )
 
+
 class FETDetector(GenericDetector):
     """
     Fisher's Exact Test Data drift detector using Fisher's Exact Test for binary data.
@@ -327,5 +358,6 @@ class FETDetector(GenericDetector):
             divergence=fetDivergence,
             crit_function=crit,
         )
+
 
 # endregion
