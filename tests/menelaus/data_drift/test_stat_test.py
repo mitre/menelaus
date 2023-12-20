@@ -166,5 +166,5 @@ class TestFETDetector:
         reference_data = np.array([1,1,1,1,1,0,0,0,0,0])
         new_data = np.array([1,0,0,0,0,0,0,0,0,0,0,0,0])
         detector.set_reference(reference_data)
-        detector.update(new_data,alt = 'two-sided')
+        detector.update(new_data,alt = 'less')
         assert detector.drift_state is not None
