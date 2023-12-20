@@ -59,8 +59,7 @@ class TestGenericDetector:
                       divergence=MockDivergence, 
                       crit_function=MockCritFunction)
         detector.set_reference([1,2,3])
-        detector.drift_state = 'drift'
-        detector.reset()
+        detector.drift_state = "drift"
         detector.update(X=[1,2,3])
         assert detector.drift_state is None 
     
