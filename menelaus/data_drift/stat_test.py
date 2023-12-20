@@ -86,9 +86,6 @@ class GenericDetector(BatchDetector):
         after ``drift_state == 'drift'``
         """
         super().reset(self)
-        self.reference = None
-        self.test = None
-        self.div = None
         pass
 
 
