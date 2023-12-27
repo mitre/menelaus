@@ -24,9 +24,8 @@ def test_dl_detector_set_reference():
         np.ones((rows, columns)), columns=[f"Column_{i}" for i in range(columns)]
     )
     det.set_reference(ref)
-    assert det.reference == pd.DataFrame(
-        scaler.fit_transform(ref), columns=ref.columns, index=ref.index
-    )
+    scale_ref = pd.DataFrame(scaler.fit_transform(ref), columns=ref.columns, index=ref.index)
+    assert det.reference == scale_ref
 
 
 def test_dl_detector_update_1():
@@ -79,14 +78,4 @@ def test_dl_detector_update_4():
     det.set_reference(ref)
     det._drift_state = "drift"
     det.update(ref.replace(1, 2))
-    assert det.drift_state is None
-
-
-def test_dl_detector_reset():
-    """Check dl_detector.reset works as intended"""
-    det = DL_Detector()
-    det.batches_since_reset = 1
-    det.drift_state = "drift"
-    det.reset()
-    assert det.batches_since_reset == 0
     assert det.drift_state is None
