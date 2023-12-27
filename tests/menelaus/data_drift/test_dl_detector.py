@@ -68,8 +68,21 @@ def test_dl_detector_update_3():
     det.update(test, by_feature=False)
     assert det.drift_state is not None
 
-
 def test_dl_detector_update_4():
+    """Ensure dl_detector can update with drift actions triggered when X_by_feature is activated"""
+    det = DL_Detector()
+    ref = pd.DataFrame(
+        np.ones((rows, columns)), columns=[f"Column_{i}" for i in range(columns)]
+    )
+    test = pd.DataFrame(
+        np.random.randint(0, 100, size=(rows, columns)),
+        columns=[f"Column_{i}" for i in range(columns)],
+    )
+    det.set_reference(ref)
+    det.update(test, X_by_feature='Column_0')
+    assert det.drift_state is not None
+
+def test_dl_detector_update_5():
     """Check dl_detector.update behavior after drift alarm"""
     det = DL_Detector()
     ref = pd.DataFrame(
