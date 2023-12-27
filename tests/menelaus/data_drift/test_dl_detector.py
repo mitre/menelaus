@@ -4,7 +4,8 @@ import pytest
 from menelaus.data_drift.dl_detector import DL_Detector
 from sklearn.preprocessing import StandardScaler
 
-
+rows = 10
+columns = 5
 def test_dl_detector_init():
     """Test correct default initialization for dl_detector"""
     det = DL_Detector()
