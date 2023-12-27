@@ -253,11 +253,15 @@ class DL_Detector(BatchDetector):
         X_test.loc[:, "target"] = 1
 
         X_reference = X_reference.sample(frac=1)
-        train_source = X_reference.iloc[0 : int(len(X_reference) / 2),]
+        train_source = X_reference.iloc[
+            0 : int(len(X_reference) / 2),
+        ]
         test_source = X_reference[~X_reference.index.isin(train_source)]
 
         X_test = X_test.sample(frac=1)
-        train_target = X_test.iloc[0 : int(len(X_test) / 2),]
+        train_target = X_test.iloc[
+            0 : int(len(X_test) / 2),
+        ]
         test_target = X_test[~X_test.index.isin(train_target)]
 
         X_train = pd.concat([train_source, train_target], axis=0, ignore_index=False)
