@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from menelaus.data_drift import dl_detector
+from menelaus.data_drift import DL_Detector
 from sklearn.preprocessing import StandardScaler
 
 
