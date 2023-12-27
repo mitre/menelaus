@@ -25,7 +25,7 @@ def test_dl_detector_set_reference():
     )
     det.set_reference(ref)
     scale_ref = pd.DataFrame(scaler.fit_transform(ref), columns=ref.columns, index=ref.index)
-    assert det.reference == scale_ref
+    pd.testing.assert_frame_equal(det.reference, scale_ref)
 
 
 def test_dl_detector_update_1():
